@@ -12,7 +12,8 @@ type ProcessorId =
   | 'docx-to-odt'
   | 'odt-to-docx'
   | 'compress-docx'
-  | 'repair-docx';
+  | 'repair-docx'
+  | 'remove-word-metadata';
 
 const processorNames: Record<ProcessorId, string> = {
   'docx-to-html': 'DOCX-to-HTML processor',
@@ -25,6 +26,7 @@ const processorNames: Record<ProcessorId, string> = {
   'odt-to-docx': 'ODT-to-DOCX processor',
   'compress-docx': 'DOCX compression processor',
   'repair-docx': 'DOCX repair processor',
+  'remove-word-metadata': 'DOCX metadata-removal processor',
 };
 
 export function WordSingleProcessorPage({
