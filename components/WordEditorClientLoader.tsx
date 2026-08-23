@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import type { EditorIntentMode } from '@/components/EditorIntentPrompt';
 import type { SerializableEditorRuntimeOptions } from '@/components/WordEditorClientRuntime';
 
 const LazyWordEditorClientRuntime = dynamic(
@@ -18,6 +19,12 @@ const LazyWordEditorClientRuntime = dynamic(
   },
 );
 
-export function WordEditorClientLoader({ runtimeOptions = {} }: { runtimeOptions?: SerializableEditorRuntimeOptions }) {
-  return <LazyWordEditorClientRuntime runtimeOptions={runtimeOptions} />;
+export function WordEditorClientLoader({
+  runtimeOptions = {},
+  intentPrompt,
+}: {
+  runtimeOptions?: SerializableEditorRuntimeOptions;
+  intentPrompt?: EditorIntentMode;
+}) {
+  return <LazyWordEditorClientRuntime runtimeOptions={runtimeOptions} intentPrompt={intentPrompt} />;
 }
