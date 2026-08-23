@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { pageMetadata } from '@/lib/seo';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SoftwareJsonLd } from '@/components/JsonLd';
+import { wordInterfaces } from '@/tools/word/interfaces/config';
 
 export const metadata = pageMetadata({
   title: 'Free Word Online – Edit Word Documents Free',
@@ -9,14 +10,7 @@ export const metadata = pageMetadata({
   path: '/',
 });
 
-const tools = [
-  { href: '/docx-editor', title: 'DOCX Editor', text: 'Open and edit Word documents in the browser.' },
-  { href: '/docx-viewer', title: 'DOCX Viewer', text: 'Read DOCX files without editing them.' },
-  { href: '/create-word-document', title: 'Create Word Document', text: 'Start from a blank page or template.' },
-  { href: '/word-to-pdf', title: 'Word to PDF', text: 'Convert a DOCX document to PDF.' },
-  { href: '/word-count', title: 'Word Count', text: 'Count words, characters and DOCX statistics.' },
-  { href: '/merge-word-documents', title: 'Merge Word Documents', text: 'Combine multiple DOCX files into one.' },
-];
+const tools = wordInterfaces.filter((tool) => tool.id !== 'word-online' && tool.indexable);
 
 export default function HomePage() {
   return (
@@ -46,7 +40,7 @@ export default function HomePage() {
         <section className="home-features">
           <article><h2>Open DOCX files</h2><p>Import standard Word documents directly in the browser and continue editing without installing desktop software.</p></article>
           <article><h2>Familiar editing tools</h2><p>Use common document controls for fonts, text styling, alignment, lists, links, images and tables.</p></article>
-          <article><h2>Export when finished</h2><p>Download your document as DOCX or HTML, or convert Word documents to PDF with the dedicated tool.</p></article>
+          <article><h2>One engine, many tools</h2><p>Editing, viewing, conversion and document utilities share the same underlying document-processing architecture.</p></article>
         </section>
         <section className="fwo-tool-directory" aria-labelledby="fwo-tool-directory-title">
           <style>{`
@@ -55,7 +49,7 @@ export default function HomePage() {
           <h2 id="fwo-tool-directory-title">Word document tools</h2>
           <p>One document engine, configured for different real document tasks.</p>
           <div className="fwo-tool-grid">
-            {tools.map((tool) => <Link className="fwo-tool-card" href={tool.href} key={tool.href}><strong>{tool.title}</strong><span>{tool.text}</span></Link>)}
+            {tools.map((tool) => <Link className="fwo-tool-card" href={tool.route} key={tool.id}><strong>{tool.name}</strong><span>{tool.primaryIntent}</span></Link>)}
           </div>
         </section>
       </main>
