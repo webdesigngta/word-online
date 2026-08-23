@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Download, FileOutput, FileUp, RefreshCw } from 'lucide-react';
+import { trackToolEvent } from '@/lib/toolAnalytics';
 import {
   docxCompressProcessor,
   docxRemoveMetadataProcessor,
@@ -99,10 +100,12 @@ export function WordSingleFileProcessorInterface({
     setBusy(true);
     setFileName(file.name);
     setStatus(`${actionLabel}…`);
+    trackToolEvent('tool_start', { toolId: processorId, fileType: file.type || file.name.split('.').pop() || 'unknown' });
     try {
       const result = await processors[processorId].process(file);
       if (!result.success || !result.output) {
         setStatus(result.errors[0]?.message || 'The file could not be processed.');
+        trackToolEvent('tool_error', { toolId: processorId, fileType: file.type || 'unknown' });
         return;
       }
       const url = URL.createObjectURL(result.output.blob);
@@ -111,8 +114,15 @@ export function WordSingleFileProcessorInterface({
       setOutputSize(result.output.size);
       setWarnings(result.warnings.map((warning) => warning.message));
       setStatus('Your output file is ready.');
+      trackToolEvent('tool_success', {
+        toolId: processorId,
+        fileType: file.type || 'unknown',
+        outputType: result.output.type,
+        metadata: { outputSize: result.output.size },
+      });
     } catch {
       setStatus('The file could not be processed.');
+      trackToolEvent('tool_error', { toolId: processorId, fileType: file.type || 'unknown' });
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = '';
@@ -143,7 +153,14 @@ export function WordSingleFileProcessorInterface({
             <span className="fwo-single-result-icon"><FileOutput /></span>
             <span className="fwo-single-result-copy"><strong>{downloadName}</strong><span>{formatBytes(outputSize)}</span></span>
           </div>
-          <a className="fwo-single-download" href={downloadUrl} download={downloadName}><Download />{downloadLabel}</a>
+          <a
+            className="fwo-single-download"
+            href={downloadUrl}
+            download={downloadName}
+            onClick={() => trackToolEvent('tool_download', { toolId: processorId, outputType: downloadName.split('.').pop() || 'unknown' })}
+          >
+            <Download />{downloadLabel}
+          </a>
         </div>
       ) : null}
     </div>
