@@ -1,6 +1,12 @@
+import {
+  wordRuntime as defaultWordRuntime,
+  type WordRuntime,
+} from '../runtime';
+
 export type EditorRuntimeOptions = {
   documentId?: string;
   initialContent?: string;
+  wordRuntime?: WordRuntime;
 };
 
 export type EditorRuntimeSnapshot = {
@@ -10,13 +16,39 @@ export type EditorRuntimeSnapshot = {
 
 /**
  * Runtime boundary for the Word editor.
- * Keeps page components separated from editor lifecycle logic.
+ *
+ * The UI talks to this runtime instead of importing file, draft, or session
+ * services directly. That keeps the current editor compatible while giving
+ * future tool interfaces a stable lifecycle boundary.
  */
 export class EditorRuntime {
-  private options: EditorRuntimeOptions;
+  private readonly options: Omit<EditorRuntimeOptions, 'wordRuntime'>;
+  private readonly runtime: WordRuntime;
 
   constructor(options: EditorRuntimeOptions = {}) {
-    this.options = options;
+    const {
+      wordRuntime = defaultWordRuntime,
+      ...editorOptions
+    } = options;
+
+    this.options = editorOptions;
+    this.runtime = wordRuntime;
+  }
+
+  get files() {
+    return this.runtime.files;
+  }
+
+  get session() {
+    return this.runtime.session;
+  }
+
+  get draft() {
+    return this.runtime.draft;
+  }
+
+  getWordRuntime(): WordRuntime {
+    return this.runtime;
   }
 
   getDocumentId() {
@@ -24,7 +56,7 @@ export class EditorRuntime {
   }
 
   getInitialContent() {
-    return this.options.initialContent ?? "";
+    return this.options.initialContent ?? '';
   }
 
   getSnapshot(): EditorRuntimeSnapshot {
