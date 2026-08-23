@@ -1,0 +1,1 @@
+export interface DocxRemoveMetadataOptions { filename?: string }

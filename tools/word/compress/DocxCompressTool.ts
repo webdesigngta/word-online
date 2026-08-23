@@ -1,0 +1,2 @@
+import type { Tool } from '../../../core/tool-registry/Tool'; import type { ToolExecutionContext } from '../../../core/tool-execution/ToolExecutionContext'; import { docxCompressProcessor } from './DocxCompressProcessor';
+export const docxCompressTool = { id: 'docx-compress', name: 'Compress DOCX', description: 'Repackage a DOCX with optimized ZIP compression.', category: 'utility', supportedDocumentTypes: ['docx'], execute: async (context: ToolExecutionContext) => docxCompressProcessor.process(context.file ?? context.files?.[0]!, context.options) } satisfies Tool;

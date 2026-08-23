@@ -1,0 +1,1 @@
+export { docxExtractImagesProcessor, DocxExtractImagesProcessor, registerDocxExtractImagesProcessor } from './DocxExtractImagesProcessor'; export { docxExtractImagesTool } from './DocxExtractImagesTool'; export type { DocxExtractImagesOptions } from './DocxExtractImagesOptions'; export type { DocxExtractImagesResult } from './DocxExtractImagesResult';

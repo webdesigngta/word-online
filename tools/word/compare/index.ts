@@ -1,0 +1,1 @@
+export { docxCompareProcessor, DocxCompareProcessor, registerDocxCompareProcessor } from './DocxCompareProcessor'; export { docxCompareTool } from './DocxCompareTool'; export type { DocxCompareOptions } from './DocxCompareOptions'; export type { DocxCompareResult } from './DocxCompareResult';

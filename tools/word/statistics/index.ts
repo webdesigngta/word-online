@@ -1,0 +1,1 @@
+export { wordStatisticsProcessor, WordStatisticsProcessor, registerWordStatisticsProcessor } from './WordStatisticsProcessor'; export { wordStatisticsTool } from './WordStatisticsTool'; export type { WordStatisticsOptions } from './WordStatisticsOptions'; export type { WordStatisticsResult } from './WordStatisticsResult';

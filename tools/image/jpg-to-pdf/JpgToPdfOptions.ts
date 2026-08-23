@@ -1,0 +1,1 @@
+export type { ImageToPdfOptions as JpgToPdfOptions } from '../shared/imageTypes';

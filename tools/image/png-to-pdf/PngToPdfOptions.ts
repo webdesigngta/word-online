@@ -1,0 +1,1 @@
+export type { ImageToPdfOptions as PngToPdfOptions } from '../shared/imageTypes';

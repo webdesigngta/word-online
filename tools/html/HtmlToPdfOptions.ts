@@ -1,0 +1,1 @@
+export type { HtmlToPdfOptions } from './shared/htmlTypes';

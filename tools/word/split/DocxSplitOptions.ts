@@ -1,0 +1,1 @@
+export interface DocxSplitOptions { mode?: 'heading' | 'paragraph'; headingLevel?: number; ranges?: Array<{ start: number; end: number }>; filename?: string }

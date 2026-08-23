@@ -1,0 +1,1 @@
+export { docxCompressProcessor, DocxCompressProcessor, registerDocxCompressProcessor } from './DocxCompressProcessor'; export { docxCompressTool } from './DocxCompressTool'; export type { DocxCompressOptions } from './DocxCompressOptions'; export type { DocxCompressResult } from './DocxCompressResult';

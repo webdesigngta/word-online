@@ -1,0 +1,1 @@
+export { wordDocumentInfoProcessor, WordDocumentInfoProcessor, registerWordDocumentInfoProcessor } from './WordDocumentInfoProcessor'; export { wordDocumentInfoTool } from './WordDocumentInfoTool'; export type { WordDocumentInfoOptions } from './WordDocumentInfoOptions'; export type { WordDocumentInfoResult } from './WordDocumentInfoResult';

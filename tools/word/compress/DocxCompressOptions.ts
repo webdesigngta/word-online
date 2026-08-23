@@ -1,0 +1,1 @@
+export interface DocxCompressOptions { removeUnreferencedThumbnail?: boolean; filename?: string }

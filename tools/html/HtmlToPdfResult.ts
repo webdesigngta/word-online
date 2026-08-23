@@ -1,0 +1,1 @@
+export type { HtmlToPdfResult, HtmlToPdfOutput, HtmlToPdfWarning, HtmlToPdfError } from './shared/htmlTypes';

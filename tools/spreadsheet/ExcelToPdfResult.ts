@@ -1,0 +1,1 @@
+export type { SpreadsheetToPdfResult as ExcelToPdfResult, SpreadsheetToPdfOutput as ExcelToPdfOutput } from './shared/spreadsheetTypes';

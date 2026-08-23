@@ -1,0 +1,1 @@
+export { docxRemoveMetadataProcessor, DocxRemoveMetadataProcessor, registerDocxRemoveMetadataProcessor } from './DocxRemoveMetadataProcessor'; export { docxRemoveMetadataTool } from './DocxRemoveMetadataTool'; export type { DocxRemoveMetadataOptions } from './DocxRemoveMetadataOptions'; export type { DocxRemoveMetadataResult } from './DocxRemoveMetadataResult';

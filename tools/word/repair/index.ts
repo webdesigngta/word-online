@@ -1,0 +1,1 @@
+export { docxRepairProcessor, DocxRepairProcessor, registerDocxRepairProcessor } from './DocxRepairProcessor'; export { docxRepairTool } from './DocxRepairTool'; export type { DocxRepairOptions } from './DocxRepairOptions'; export type { DocxRepairResult } from './DocxRepairResult';
