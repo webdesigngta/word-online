@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 
+// Week 3 roadmap gate: this runner must fail when fewer than 19 of 20 round trips succeed.
 const url = process.env.WORD_COMPATIBILITY_URL || 'http://127.0.0.1:4173/word-online/qa/word-compatibility/';
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
