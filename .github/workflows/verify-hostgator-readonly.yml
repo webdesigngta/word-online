@@ -35,16 +35,27 @@ jobs:
           EXPECTED="${{ github.event.pull_request.base.sha }}"
           EXPECTED="${EXPECTED:0:12}"
 
-          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+          for attempt in $(seq 1 30); do
+            rm -f /tmp/build.txt
+            if lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
           set ftp:passive-mode true
           set ssl:verify-certificate no
           set net:max-retries 2
           set net:timeout 30
           get "${FTP_PATH%/}/build.txt" -o /tmp/build.txt
           bye
-          EOF
+EOF
+            then
+              if [ -f /tmp/build.txt ]; then
+                REMOTE="$(tr -d '\r\n' < /tmp/build.txt)"
+                echo "Attempt $attempt — expected: $EXPECTED, remote: $REMOTE"
+                if [ "$REMOTE" = "$EXPECTED" ]; then
+                  exit 0
+                fi
+              fi
+            fi
+            sleep 10
+          done
 
-          REMOTE="$(tr -d '\r\n' < /tmp/build.txt)"
-          echo "Expected deployed build: $EXPECTED"
-          echo "HostGator deployed build: $REMOTE"
-          test "$REMOTE" = "$EXPECTED"
+          echo "HostGator did not reach expected build $EXPECTED in time." >&2
+          exit 1
