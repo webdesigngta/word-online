@@ -6,6 +6,7 @@ import { CompactStyleMenu } from '@/components/CompactStyleMenu';
 import { DelayedTooltips } from '@/components/DelayedTooltips';
 import { DocumentOutline } from '@/components/DocumentOutline';
 import { EditorContextMenu } from '@/components/EditorContextMenu';
+import { EditorIntentPrompt, type EditorIntentMode } from '@/components/EditorIntentPrompt';
 import { FontMenuEnhancer } from '@/components/FontMenuEnhancer';
 import { FunctionalMainMenus } from '@/components/FunctionalMainMenus';
 import { GracefulEditorDialogs } from '@/components/GracefulEditorDialogs';
@@ -29,7 +30,13 @@ export type SerializableEditorRuntimeOptions = {
   initialContent?: string;
 };
 
-export function WordEditorClientRuntime({ runtimeOptions = {} }: { runtimeOptions?: SerializableEditorRuntimeOptions }) {
+export function WordEditorClientRuntime({
+  runtimeOptions = {},
+  intentPrompt,
+}: {
+  runtimeOptions?: SerializableEditorRuntimeOptions;
+  intentPrompt?: EditorIntentMode;
+}) {
   return (
     <>
       <WordEditorTool {...runtimeOptions} />
@@ -43,6 +50,7 @@ export function WordEditorClientRuntime({ runtimeOptions = {} }: { runtimeOption
       <LocalVersionHistory />
       <VersionHistoryToolbarButton />
       <PageStructureFeatures />
+      {intentPrompt ? <EditorIntentPrompt mode={intentPrompt} /> : null}
       <ResponsiveDropdownStyles />
       <DelayedTooltips />
       <SpellingContextMenu />
