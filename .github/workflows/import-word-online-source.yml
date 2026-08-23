@@ -11,7 +11,9 @@ on:
 permissions:
   contents: write
 
-group: word-online-source-migration
+concurrency:
+  group: word-online-source-migration
+  cancel-in-progress: true
 
 jobs:
   import:
