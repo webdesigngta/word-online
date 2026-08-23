@@ -1,4 +1,5 @@
 import { storageService } from '@/core/storage/storageService';
+import { recordWordHistorySnapshot } from './wordHistory';
 
 const WORD_DRAFT_KEY = 'word-online:draft:v2';
 const LEGACY_WORD_DRAFT_KEY = 'free-word-online:draft:v1';
@@ -19,6 +20,7 @@ export async function saveWordDraft(input: { title: string; html: string }): Pro
   };
 
   await storageService.save(WORD_DRAFT_KEY, draft);
+  await recordWordHistorySnapshot(draft);
   return draft;
 }
 
