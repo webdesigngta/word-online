@@ -1,0 +1,1 @@
+Week 3 compatibility proof branch. The automated compatibility workflow is expected to run the 20-case browser gate and enforce the >=95% threshold.
