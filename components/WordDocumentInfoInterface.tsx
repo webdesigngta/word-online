@@ -12,6 +12,8 @@ type InfoResult = {
   errors: Array<{ message: string }>;
 };
 
+type InfoEntry = [label: string, value: unknown];
+
 function displayValue(value: unknown) {
   if (value === null || value === undefined || value === '') return 'Not set';
   if (typeof value === 'number') return value.toLocaleString();
@@ -62,11 +64,11 @@ export function WordDocumentInfoInterface() {
     }
   }
 
-  const primary = metadata ? [
+  const primary: InfoEntry[] = metadata ? [
     ['Words', metadata.wordCount], ['Characters', metadata.characterCount], ['Paragraphs', metadata.paragraphCount],
     ['Headings', metadata.headingCount], ['Tables', metadata.tableCount], ['Images', metadata.imageCount],
   ] : [];
-  const properties = metadata ? [
+  const properties: InfoEntry[] = metadata ? [
     ['Title', metadata.title], ['Subject', metadata.subject], ['Author', metadata.author], ['Last modified by', metadata.lastModifiedBy],
     ['Created', metadata.created], ['Modified', metadata.modified], ['Keywords', metadata.keywords], ['Application', metadata.application],
   ] : [];
@@ -79,7 +81,7 @@ export function WordDocumentInfoInterface() {
       <input ref={inputRef} hidden type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => void inspect(event.target.files?.[0])} />
       <div className="fwo-info-picker"><div><FileSearch /><h2>Inspect Word document information</h2><p>See document statistics and metadata stored inside a DOCX file.</p><button className="fwo-info-button" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? <RefreshCw /> : <FileSearch />}{busy ? 'Inspecting…' : fileName ? 'Choose another DOCX' : 'Choose DOCX file'}</button><div className="fwo-info-status">{fileName ? <><strong>{fileName}</strong> · </> : null}{status}</div></div></div>
       {warnings.length ? <div className="fwo-info-warning">{warnings.slice(0,3).join(' · ')}</div> : null}
-      {metadata ? <><div className="fwo-info-stats">{primary.map(([label,value]) => <div className="fwo-info-stat" key={String(label)}><span>{label}</span><strong>{displayValue(value)}</strong></div>)}</div><div className="fwo-info-properties">{properties.map(([label,value]) => <div className="fwo-info-property" key={String(label)}><span>{label}</span><strong>{displayValue(value)}</strong></div>)}</div><div className="fwo-info-footer"><span className="fwo-info-status">File size: {displayValue(metadata.size)} bytes</span>{downloadUrl ? <a className="fwo-info-download" href={downloadUrl} download={downloadName}><Download />Download info JSON</a> : null}</div></> : null}
+      {metadata ? <><div className="fwo-info-stats">{primary.map(([label,value]) => <div className="fwo-info-stat" key={label}><span>{label}</span><strong>{displayValue(value)}</strong></div>)}</div><div className="fwo-info-properties">{properties.map(([label,value]) => <div className="fwo-info-property" key={label}><span>{label}</span><strong>{displayValue(value)}</strong></div>)}</div><div className="fwo-info-footer"><span className="fwo-info-status">File size: {displayValue(metadata.size)} bytes</span>{downloadUrl ? <a className="fwo-info-download" href={downloadUrl} download={downloadName}><Download />Download info JSON</a> : null}</div></> : null}
     </div>
   );
 }
