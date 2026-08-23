@@ -36,6 +36,8 @@ Optional secret:
 
 No production credentials belong in source control.
 
+The standalone public-repository deployment pipeline was enabled and verified in August 2026.
+
 ## Source notice
 
 Copyright © 2026. All rights reserved. Public source visibility does not grant permission to copy, redistribute, sublicense, or commercially reuse this code except as allowed by applicable law or GitHub's platform terms.
