@@ -1,0 +1,50 @@
+name: Verify HostGator deployment
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FTP_SERVER: ${{ secrets.HOSTGATOR_FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.HOSTGATOR_FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.HOSTGATOR_FTP_PASSWORD }}
+      FTP_PATH: ${{ secrets.HOSTGATOR_FTP_PATH }}
+    steps:
+      - name: Install FTP client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends lftp
+
+      - name: Verify deployed build marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${FTP_SERVER:?HOSTGATOR_FTP_SERVER is required}"
+          : "${FTP_USERNAME:?HOSTGATOR_FTP_USERNAME is required}"
+          : "${FTP_PASSWORD:?HOSTGATOR_FTP_PASSWORD is required}"
+          FTP_PATH="${FTP_PATH:-./word-online/}"
+          EXPECTED="${{ github.event.pull_request.base.sha }}"
+          EXPECTED="${EXPECTED:0:12}"
+
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+          set ftp:passive-mode true
+          set ssl:verify-certificate no
+          set net:max-retries 2
+          set net:timeout 30
+          get "${FTP_PATH%/}/build.txt" -o /tmp/build.txt
+          bye
+          EOF
+
+          REMOTE="$(tr -d '\r\n' < /tmp/build.txt)"
+          echo "Expected deployed build: $EXPECTED"
+          echo "HostGator deployed build: $REMOTE"
+          test "$REMOTE" = "$EXPECTED"
