@@ -1,7 +1,6 @@
 /* Editor layout fixes layered after docs-body.css.
    Keep one real DocumentOutline and contain editor chrome to the viewport. */
 
-/* Legacy docs-body.css drew a second, fake Document tabs sidebar as an SVG. */
 .docs-editor-workspace::before {
   content: none !important;
   display: none !important;
@@ -47,7 +46,7 @@
   max-width: 52vw;
 }
 
-/* Toolbar stays inside viewport like modern office apps. */
+/* Word-like toolbar: groups stay inside the viewport. */
 .docs-toolbar {
   width: calc(100% - 28px);
   max-width: calc(100% - 28px);
@@ -59,6 +58,11 @@
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
   scrollbar-width: none;
+  gap: 3px;
+  padding: 4px 8px;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
 }
 
 .docs-toolbar::-webkit-scrollbar {
@@ -69,7 +73,7 @@
   flex-shrink: 0;
 }
 
-/* Center the white document canvas after removing the fake sidebar. */
+/* Real document workspace. */
 .docs-editor-workspace .paper-stage {
   justify-content: center;
   padding-left: 24px;
@@ -79,31 +83,47 @@
 .docs-editor-workspace .editor-page {
   margin-left: auto;
   margin-right: auto;
+  box-shadow: 0 1px 4px rgba(60,64,67,.18), 0 2px 8px rgba(60,64,67,.12);
 }
 
-/* More Google Docs / Word Online style toolbar language: consistent pills. */
+/* Remove dashboard-like icon boxes. */
 .docs-toolbar-icon,
 .docs-toolbar-split,
 .docs-color-tool {
-  border-radius: 8px;
-  transition: background .15s ease, transform .12s ease;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  transition: background .15s ease;
 }
 
 .docs-toolbar-icon:hover,
 .docs-toolbar-split:hover,
 .docs-color-tool:hover {
-  background: #e8edf5;
+  background: #edf3ff;
+}
+
+.docs-toolbar-icon:active,
+.docs-toolbar-split:active {
+  background: #dbe8ff;
 }
 
 .docs-toolbar-select {
-  border-radius: 8px;
-  height: 34px;
-  font-weight: 400;
+  border-radius: 4px;
+  height: 32px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.docs-toolbar-select:hover {
+  border-color: #dadce0;
+  background: #f8f9fa;
 }
 
 .docs-toolbar-divider {
-  height: 20px;
-  opacity: .7;
+  width: 1px;
+  height: 24px;
+  background: #dadce0;
+  opacity: 1;
 }
 
 .docs-action-pill,
@@ -118,14 +138,6 @@
     justify-content: center;
     padding-left: 18px !important;
     padding-right: 18px !important;
-  }
-
-  .docs-toolbar-divider {
-    margin-inline: 4px;
-  }
-
-  .docs-zoom-select {
-    width: 72px;
   }
 
   .docs-style-select {
@@ -163,8 +175,8 @@
   }
 
   .docs-toolbar-icon {
-    width: 30px;
-    flex-basis: 30px;
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -176,7 +188,7 @@
   }
 
   .docs-toolbar {
-    border-radius: 17px;
+    border-radius: 6px;
   }
 
   .docs-toolbar-select {
