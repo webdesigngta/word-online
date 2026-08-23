@@ -1,11 +1,6 @@
 name: Import Word Online source
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/import-word-online-source.yml'
   pull_request:
     branches:
       - main
@@ -23,8 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout new repository
+      - name: Checkout current main
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Download migration archive
         shell: bash
@@ -72,4 +69,4 @@ jobs:
           fi
 
           git commit -m 'Migrate Word Online into standalone repository'
-          git push origin HEAD:main
+          git push origin main
