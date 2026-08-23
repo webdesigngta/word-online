@@ -8,6 +8,7 @@ import { CompactStyleMenu } from '@/components/CompactStyleMenu';
 import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { NoLoginToolbarFeatures } from '@/components/NoLoginToolbarFeatures';
 import { LocalUndoManager } from '@/components/LocalUndoManager';
+import { LocalVersionHistory } from '@/components/LocalVersionHistory';
 import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles';
 import { DelayedTooltips } from '@/components/DelayedTooltips';
 import { SpellingContextMenu } from '@/components/SpellingContextMenu';
@@ -78,6 +79,7 @@ export default function WordOnlinePage() {
         <ToolbarGalleryMenus />
         <NoLoginToolbarFeatures />
         <LocalUndoManager />
+        <LocalVersionHistory />
         <ResponsiveDropdownStyles />
         <DelayedTooltips />
         <SpellingContextMenu />
