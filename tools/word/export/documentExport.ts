@@ -46,7 +46,7 @@ async function imageBytes(src: string): Promise<Uint8Array | null> {
   }
 }
 
-export async function exportWordDocumentDocx(root: HTMLElement, title: string): Promise<void> {
+export async function buildWordDocumentDocxBlob(root: HTMLElement): Promise<Blob> {
   const docx = await import('docx');
   const blocks: any[] = [];
 
@@ -197,7 +197,11 @@ export async function exportWordDocumentDocx(root: HTMLElement, title: string): 
   }
 
   const output = new docx.Document({ sections: [section] });
-  const blob = await docx.Packer.toBlob(output);
+  return docx.Packer.toBlob(output);
+}
+
+export async function exportWordDocumentDocx(root: HTMLElement, title: string): Promise<void> {
+  const blob = await buildWordDocumentDocxBlob(root);
   downloadBlob(blob, `${sanitizeWordFilename(title)}.docx`);
 }
 
