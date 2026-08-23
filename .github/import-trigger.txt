@@ -1,1 +1,1 @@
-Trigger observable Word Online cloud import.
+Trigger observable Word Online cloud import, attempt 2.
