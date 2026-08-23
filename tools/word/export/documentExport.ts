@@ -14,16 +14,49 @@ export function sanitizeWordFilename(value: string): string {
   return clean || 'Untitled document';
 }
 
+function imageTypeFromSource(src: string): string {
+  const dataMatch = src.match(/^data:image\/([a-zA-Z0-9+.-]+);/);
+  const raw = (dataMatch?.[1] || src.split('?')[0].split('.').pop() || 'png').toLowerCase();
+  if (raw === 'jpeg') return 'jpg';
+  if (['png', 'jpg', 'gif', 'bmp', 'svg'].includes(raw)) return raw;
+  return 'png';
+}
+
+async function imageBytes(src: string): Promise<Uint8Array | null> {
+  try {
+    if (src.startsWith('data:')) {
+      const comma = src.indexOf(',');
+      if (comma < 0) return null;
+      const meta = src.slice(0, comma);
+      const payload = src.slice(comma + 1);
+      if (meta.includes(';base64')) {
+        const binary = atob(payload);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+        return bytes;
+      }
+      return new TextEncoder().encode(decodeURIComponent(payload));
+    }
+
+    const response = await fetch(src);
+    if (!response.ok) return null;
+    return new Uint8Array(await response.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
 export async function exportWordDocumentDocx(root: HTMLElement, title: string): Promise<void> {
   const docx = await import('docx');
   const blocks: any[] = [];
 
-  const runsFromNode = (node: Node, inherited: Record<string, unknown> = {}): any[] => {
+  const runsFromNode = async (node: Node, inherited: Record<string, unknown> = {}): Promise<any[]> => {
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent ?? '';
       return text ? [new docx.TextRun({ text, ...inherited })] : [];
     }
     if (!(node instanceof HTMLElement)) return [];
+    if (node.hasAttribute('data-fwo-page-break')) return [];
 
     const style: Record<string, unknown> = { ...inherited };
     const tag = node.tagName;
@@ -44,7 +77,32 @@ export async function exportWordDocumentDocx(root: HTMLElement, title: string): 
     if (size.endsWith('pt')) style.size = Math.round(parseFloat(size) * 2);
     if (tag === 'BR') return [new docx.TextRun({ break: 1 })];
 
-    return Array.from(node.childNodes).flatMap((child) => runsFromNode(child, style));
+    if (tag === 'IMG') {
+      const src = node.getAttribute('src') || '';
+      const data = src ? await imageBytes(src) : null;
+      if (!data) return [];
+      const image = node as HTMLImageElement;
+      const naturalWidth = image.naturalWidth || Number(image.getAttribute('width')) || 480;
+      const naturalHeight = image.naturalHeight || Number(image.getAttribute('height')) || 320;
+      const maxWidth = 600;
+      const ratio = naturalWidth > maxWidth ? maxWidth / naturalWidth : 1;
+      const width = Math.max(24, Math.round(naturalWidth * ratio));
+      const height = Math.max(24, Math.round(naturalHeight * ratio));
+      return [new docx.ImageRun({
+        data,
+        type: imageTypeFromSource(src),
+        transformation: { width, height },
+      } as any)];
+    }
+
+    if (tag === 'A') {
+      const href = node.getAttribute('href') || '';
+      const childRuns = (await Promise.all(Array.from(node.childNodes).map((child) => runsFromNode(child, style)))).flat();
+      if (!href) return childRuns;
+      return [new docx.ExternalHyperlink({ children: childRuns, link: href } as any)];
+    }
+
+    return (await Promise.all(Array.from(node.childNodes).map((child) => runsFromNode(child, style)))).flat();
   };
 
   const alignmentFrom = (element: HTMLElement) => {
@@ -55,44 +113,90 @@ export async function exportWordDocumentDocx(root: HTMLElement, title: string): 
     return docx.AlignmentType.LEFT;
   };
 
-  Array.from(root.children).forEach((node) => {
-    if (!(node instanceof HTMLElement)) return;
-    const tag = node.tagName;
+  const paragraphOptions = async (node: HTMLElement) => {
     const options: Record<string, unknown> = {
-      children: runsFromNode(node),
+      children: await runsFromNode(node),
       alignment: alignmentFrom(node),
       spacing: { after: 120 },
     };
 
-    if (tag === 'H1') options.heading = docx.HeadingLevel.HEADING_1;
-    if (tag === 'H2') options.heading = docx.HeadingLevel.HEADING_2;
-    if (tag === 'H3') options.heading = docx.HeadingLevel.HEADING_3;
-    if (tag === 'LI') options.bullet = { level: 0 };
+    const lineHeight = parseFloat(node.style.lineHeight);
+    if (Number.isFinite(lineHeight) && lineHeight > 0) {
+      options.spacing = { after: 120, line: Math.round(240 * lineHeight) };
+    }
 
+    if (node.tagName === 'H1') options.heading = docx.HeadingLevel.HEADING_1;
+    if (node.tagName === 'H2') options.heading = docx.HeadingLevel.HEADING_2;
+    if (node.tagName === 'H3') options.heading = docx.HeadingLevel.HEADING_3;
+    if (node.tagName === 'LI') options.bullet = { level: 0 };
+    return options;
+  };
+
+  const headerNode = root.querySelector<HTMLElement>(':scope > [data-fwo-header]');
+  const footerNode = root.querySelector<HTMLElement>(':scope > [data-fwo-footer]');
+
+  for (const child of Array.from(root.children)) {
+    if (!(child instanceof HTMLElement)) continue;
+    if (child === headerNode || child === footerNode) continue;
+
+    if (child.hasAttribute('data-fwo-page-break')) {
+      blocks.push(new docx.Paragraph({ children: [new docx.PageBreak()] }));
+      continue;
+    }
+
+    const tag = child.tagName;
     if (tag === 'HR') {
       blocks.push(new docx.Paragraph({ text: '────────────────────────', alignment: docx.AlignmentType.CENTER }));
-      return;
+      continue;
     }
 
     if (tag === 'TABLE') {
-      const rows = Array.from(node.querySelectorAll('tr')).map((row) =>
-        new docx.TableRow({
-          children: Array.from(row.querySelectorAll(':scope > td, :scope > th')).map((cell) =>
-            new docx.TableCell({ children: [new docx.Paragraph({ children: runsFromNode(cell) })] }),
-          ),
-        }),
-      );
-      if (rows.length) {
-        blocks.push(new docx.Table({ rows, width: { size: 100, type: docx.WidthType.PERCENTAGE } }));
+      const rows = [] as any[];
+      for (const row of Array.from(child.querySelectorAll('tr'))) {
+        const cells = [] as any[];
+        for (const cell of Array.from(row.querySelectorAll(':scope > td, :scope > th'))) {
+          cells.push(new docx.TableCell({
+            children: [new docx.Paragraph({ children: await runsFromNode(cell) })],
+          }));
+        }
+        rows.push(new docx.TableRow({ children: cells }));
       }
-      return;
+      if (rows.length) blocks.push(new docx.Table({ rows, width: { size: 100, type: docx.WidthType.PERCENTAGE } }));
+      continue;
     }
 
-    blocks.push(new docx.Paragraph(options as any));
-  });
+    if (tag === 'UL' || tag === 'OL') {
+      const items = Array.from(child.querySelectorAll<HTMLElement>(':scope > li'));
+      for (const item of items) {
+        const options = await paragraphOptions(item);
+        options.bullet = { level: 0 };
+        blocks.push(new docx.Paragraph(options as any));
+      }
+      continue;
+    }
+
+    blocks.push(new docx.Paragraph((await paragraphOptions(child)) as any));
+  }
 
   if (!blocks.length) blocks.push(new docx.Paragraph(''));
-  const output = new docx.Document({ sections: [{ properties: {}, children: blocks }] });
+
+  const section: any = { properties: {}, children: blocks };
+  if (headerNode) {
+    section.headers = {
+      default: new docx.Header({
+        children: [new docx.Paragraph({ children: await runsFromNode(headerNode), alignment: alignmentFrom(headerNode) })],
+      } as any),
+    };
+  }
+  if (footerNode) {
+    section.footers = {
+      default: new docx.Footer({
+        children: [new docx.Paragraph({ children: await runsFromNode(footerNode), alignment: alignmentFrom(footerNode) })],
+      } as any),
+    };
+  }
+
+  const output = new docx.Document({ sections: [section] });
   const blob = await docx.Packer.toBlob(output);
   downloadBlob(blob, `${sanitizeWordFilename(title)}.docx`);
 }
