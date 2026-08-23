@@ -166,7 +166,7 @@ export async function exportWordDocumentDocx(root: HTMLElement, title: string): 
     }
 
     if (tag === 'UL' || tag === 'OL') {
-      const items = Array.from(child.querySelectorAll(':scope > li'));
+      const items = Array.from(child.querySelectorAll<HTMLElement>(':scope > li'));
       for (const item of items) {
         const options = await paragraphOptions(item);
         options.bullet = { level: 0 };
