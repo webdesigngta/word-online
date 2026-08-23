@@ -49,7 +49,7 @@ import {
   Video,
 } from 'lucide-react';
 import { ChangeEvent, ReactNode, useEffect, useRef, useState } from 'react';
-import type { WordRuntime } from '@/tools/word/runtime';
+import type { EditorRuntime } from '@/tools/word/editor/EditorRuntime';
 
 const defaultDocument = '<p><br></p>';
 
@@ -60,7 +60,7 @@ function runCommand(command: string, value?: string) {
   document.execCommand(command, false, value);
 }
 
-export function WordEditor({ runtime }: { runtime: WordRuntime }) {
+export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +86,7 @@ export function WordEditor({ runtime }: { runtime: WordRuntime }) {
         setTitle(draft.title);
         if (editorRef.current) editorRef.current.innerHTML = draft.html;
       } else if (editorRef.current) {
-        editorRef.current.innerHTML = defaultDocument;
+        editorRef.current.innerHTML = runtime.getInitialContent() || defaultDocument;
       }
       refreshCounts();
     });
@@ -550,19 +550,14 @@ export function WordEditor({ runtime }: { runtime: WordRuntime }) {
   );
 }
 
-function ToolbarDivider() {
-  return <span className="docs-toolbar-divider" aria-hidden="true" />;
+function ToolbarButton({ label, children, onClick, className = '' }: { label: string; children: ReactNode; onClick: () => void; className?: string }) {
+  return (
+    <button className={`docs-toolbar-button ${className}`} type="button" title={label} aria-label={label} onMouseDown={(event) => event.preventDefault()} onClick={onClick}>
+      {children}
+    </button>
+  );
 }
 
-function ToolbarButton({ children, label, onClick, className = '' }: { children: ReactNode; label: string; onClick: () => void; className?: string }) {
-  return (
-    <button
-      className={`docs-toolbar-icon ${className}`.trim()}
-      type="button"
-      title={label}
-      aria-label={label}
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={onClick}
-    >{children}</button>
-  );
+function ToolbarDivider() {
+  return <span className="docs-toolbar-divider" aria-hidden="true" />;
 }
