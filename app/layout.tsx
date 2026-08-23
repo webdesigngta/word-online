@@ -10,20 +10,6 @@ const criticalEditorCss = `
   html:not(.fwo-ui-ready) .editor-route .word-app.docs-word-app {
     visibility: hidden !important;
   }
-
-  .editor-route .docs-menu-row,
-  .editor-route .docs-pdf-button,
-  .editor-route .docs-right > .docs-top-icon,
-  .editor-route .docs-right > .docs-share-button,
-  .editor-route .docs-right > .docs-upgrade-button,
-  .editor-route .docs-right > .docs-gem,
-  .editor-route .docs-right > .docs-avatar,
-  .editor-route .docs-title-icon[aria-label='Star document'],
-  .editor-route .fwo-top-actions {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
 `;
 
 export const metadata: Metadata = {
