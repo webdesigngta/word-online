@@ -1,0 +1,89 @@
+name: Word Compatibility Gate
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/qa/word-compatibility/**'
+      - 'components/WordCompatibilityQa.tsx'
+      - 'tools/word/import/**'
+      - 'tools/word/export/**'
+      - 'qa/run-word-compatibility.mjs'
+      - '.github/workflows/word-compatibility.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/qa/word-compatibility/**'
+      - 'components/WordCompatibilityQa.tsx'
+      - 'tools/word/import/**'
+      - 'tools/word/export/**'
+      - 'qa/run-word-compatibility.mjs'
+      - '.github/workflows/word-compatibility.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_BASE_PATH: /word-online
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+
+      - name: Install Playwright for QA
+        run: |
+          npm install --no-save --legacy-peer-deps playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build static export
+        run: npm run build
+
+      - name: Serve exported site
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/fwo-qa-site
+          mkdir -p /tmp/fwo-qa-site/word-online
+          cp -R out/. /tmp/fwo-qa-site/word-online/
+          npx --yes serve@14 /tmp/fwo-qa-site -l 4173 >/tmp/fwo-qa-server.log 2>&1 &
+          echo $! > /tmp/fwo-qa-server.pid
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/word-online/qa/word-compatibility/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/fwo-qa-server.log
+          exit 1
+
+      - name: Run 20-case Word compatibility gate
+        run: node qa/run-word-compatibility.mjs
+
+      - name: Stop QA server
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/fwo-qa-server.pid ]; then
+            kill "$(cat /tmp/fwo-qa-server.pid)" || true
+          fi
