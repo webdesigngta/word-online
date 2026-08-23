@@ -93,7 +93,7 @@ export function DocumentOutline() {
 
       <style jsx global>{`
         .fwo-outline {
-          position: fixed;
+          position: absolute;
           top: 94px;
           left: 0;
           bottom: 0;
