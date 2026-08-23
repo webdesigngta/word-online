@@ -1,1 +1,0 @@
-Temporary internal trigger for read-only HostGator deployment verification.
