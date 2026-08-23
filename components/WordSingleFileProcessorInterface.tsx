@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, FileOutput, FileUp, RefreshCw } from 'lucide-react';
 import {
   docxCompressProcessor,
+  docxRemoveMetadataProcessor,
   docxRepairProcessor,
   docxToHtmlProcessor,
   docxToOdtProcessor,
@@ -25,7 +26,8 @@ type ProcessorId =
   | 'docx-to-odt'
   | 'odt-to-docx'
   | 'compress-docx'
-  | 'repair-docx';
+  | 'repair-docx'
+  | 'remove-word-metadata';
 
 type GenericResult = {
   success: boolean;
@@ -50,6 +52,7 @@ const processors: Record<ProcessorId, GenericProcessor> = {
   'odt-to-docx': odtToDocxProcessor as unknown as GenericProcessor,
   'compress-docx': docxCompressProcessor as unknown as GenericProcessor,
   'repair-docx': docxRepairProcessor as unknown as GenericProcessor,
+  'remove-word-metadata': docxRemoveMetadataProcessor as unknown as GenericProcessor,
 };
 
 function formatBytes(value: number) {
