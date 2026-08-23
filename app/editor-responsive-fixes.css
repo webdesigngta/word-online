@@ -46,7 +46,7 @@
   max-width: 52vw;
 }
 
-/* Word-like toolbar: groups stay inside the viewport. */
+/* Classic Microsoft Word ribbon-style toolbar */
 .docs-toolbar {
   width: calc(100% - 28px);
   max-width: calc(100% - 28px);
@@ -56,24 +56,64 @@
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
   scrollbar-width: none;
-  gap: 3px;
-  padding: 4px 8px;
-  background: #fff;
-  border: 1px solid #dadce0;
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  background: linear-gradient(#fafafa, #e9e9e9);
+  border: 1px solid #c5c5c5;
+  border-radius: 2px;
 }
 
-.docs-toolbar::-webkit-scrollbar {
-  display: none;
+.docs-toolbar::-webkit-scrollbar { display: none; }
+.docs-toolbar > * { flex-shrink: 0; }
+
+/* Office style controls */
+.docs-toolbar-icon,
+.docs-toolbar-split,
+.docs-color-tool {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #b8b8b8;
+  border-radius: 2px;
+  background: linear-gradient(#ffffff, #e7e7e7);
+  box-shadow: inset 0 1px 0 #fff;
+  transition: background .12s ease, border-color .12s ease;
 }
 
-.docs-toolbar > * {
-  flex-shrink: 0;
+.docs-toolbar-icon:hover,
+.docs-toolbar-split:hover,
+.docs-color-tool:hover {
+  border-color: #7fa7d8;
+  background: linear-gradient(#ffffff, #dceafa);
 }
 
-/* Real document workspace. */
+.docs-toolbar-icon:active,
+.docs-toolbar-split:active,
+.docs-color-tool:active {
+  background: #cfe0f7;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.15);
+}
+
+.docs-toolbar-select {
+  height: 26px;
+  border: 1px solid #b8b8b8;
+  border-radius: 2px;
+  background: linear-gradient(#fff,#ededed);
+  font-family: Segoe UI, Arial, sans-serif;
+  font-size: 12px;
+  color: #333;
+}
+
+.docs-toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: #c8c8c8;
+  margin-inline: 5px;
+}
+
+/* Center document page */
 .docs-editor-workspace .paper-stage {
   justify-content: center;
   padding-left: 24px;
@@ -86,46 +126,6 @@
   box-shadow: 0 1px 4px rgba(60,64,67,.18), 0 2px 8px rgba(60,64,67,.12);
 }
 
-/* Remove dashboard-like icon boxes. */
-.docs-toolbar-icon,
-.docs-toolbar-split,
-.docs-color-tool {
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  transition: background .15s ease;
-}
-
-.docs-toolbar-icon:hover,
-.docs-toolbar-split:hover,
-.docs-color-tool:hover {
-  background: #edf3ff;
-}
-
-.docs-toolbar-icon:active,
-.docs-toolbar-split:active {
-  background: #dbe8ff;
-}
-
-.docs-toolbar-select {
-  border-radius: 4px;
-  height: 32px;
-  border: 1px solid transparent;
-  background: transparent;
-}
-
-.docs-toolbar-select:hover {
-  border-color: #dadce0;
-  background: #f8f9fa;
-}
-
-.docs-toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: #dadce0;
-  opacity: 1;
-}
-
 .docs-action-pill,
 .docs-share-button,
 .docs-upgrade-button {
@@ -134,72 +134,25 @@
 }
 
 @media (max-width: 1120px) {
-  .docs-editor-workspace .paper-stage {
-    justify-content: center;
-    padding-left: 18px !important;
-    padding-right: 18px !important;
-  }
-
-  .docs-style-select {
-    width: 102px;
-  }
-
-  .docs-font-select {
-    width: 96px;
-  }
+  .docs-style-select { width: 102px; }
+  .docs-font-select { width: 96px; }
 }
 
 @media (max-width: 820px) {
-  .docs-topbar {
-    padding-left: 8px;
-    padding-right: 6px;
-  }
-
-  .docs-document-title {
-    width: min(150px, 34vw);
-    max-width: 34vw;
-    font-size: 16px;
-  }
-
-  .docs-right {
-    gap: 2px;
-    padding-left: 4px;
-    max-width: 44vw;
-  }
-
   .docs-toolbar {
     width: calc(100% - 16px);
     max-width: calc(100% - 16px);
     margin-inline: 8px;
-    padding-inline: 5px;
   }
 
-  .docs-toolbar-icon {
-    width: 32px;
-    height: 32px;
-  }
-}
-
-@media (max-width: 620px) {
-  .docs-document-title {
-    width: min(124px, 38vw);
-    max-width: 38vw;
-    font-size: 15px;
-  }
-
-  .docs-toolbar {
-    border-radius: 6px;
-  }
-
-  .docs-toolbar-select {
-    padding-left: 6px;
-    padding-right: 20px;
-    font-size: 13px;
+  .docs-toolbar-icon,
+  .docs-toolbar-split,
+  .docs-color-tool {
+    width: 26px;
+    height: 26px;
   }
 }
 
 @media print {
-  .docs-editor-workspace::before {
-    display: none !important;
-  }
+  .docs-editor-workspace::before { display: none !important; }
 }
