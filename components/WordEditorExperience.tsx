@@ -19,6 +19,10 @@ export function WordEditorExperience({
       <ToolViewAnalytics toolId={interfaceId} editor />
       <main className="editor-route" data-word-interface={interfaceId}>
         <style>{`
+          .editor-route {
+            position: relative;
+          }
+
           html:not(.fwo-ui-ready) .editor-route .word-app.docs-word-app {
             visibility: hidden !important;
           }
