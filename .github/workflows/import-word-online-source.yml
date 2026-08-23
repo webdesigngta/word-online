@@ -1,0 +1,70 @@
+name: Import Word Online source
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/import-word-online-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+group: word-online-source-migration
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout new repository
+        uses: actions/checkout@v4
+
+      - name: Download migration archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          urls=(
+            'https://ddh.ynz.temporary.site/website_cac167d1/migration/word-online-source.tar.gz'
+            'https://kushaldesai.com/website_cac167d1/migration/word-online-source.tar.gz'
+          )
+
+          found=''
+          for attempt in $(seq 1 60); do
+            for url in "${urls[@]}"; do
+              echo "Attempt $attempt: $url"
+              if curl -fL --connect-timeout 10 --max-time 45 "$url" -o /tmp/word-online-source.tar.gz; then
+                if tar -tzf /tmp/word-online-source.tar.gz >/dev/null 2>&1; then
+                  found="$url"
+                  break 2
+                fi
+              fi
+            done
+            sleep 10
+          done
+
+          if [ -z "$found" ]; then
+            echo 'Migration archive was not available.' >&2
+            exit 1
+          fi
+          echo "Using $found"
+
+      - name: Import complete Word Online source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/word-online-source.tar.gz -C .
+          rm -f .github/workflows/import-word-online-source.yml
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo 'Source is already imported.'
+            exit 0
+          fi
+
+          git commit -m 'Migrate Word Online into standalone repository'
+          git push origin HEAD:main
