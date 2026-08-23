@@ -1,7 +1,16 @@
 import type { PlatformTool, ToolCategory } from '@/core/tool-system/toolTypes';
-import { wordTool } from './word/config';
+import { wordInterfaces } from './word/interfaces/config';
 
-export const platformTools = [wordTool] satisfies readonly PlatformTool[];
+const wordInterfaceTools = wordInterfaces.map((tool) => ({
+  id: tool.id,
+  name: tool.name,
+  route: tool.route,
+  category: tool.kind === 'converter' ? 'converter' : 'document',
+  description: tool.description,
+  enabled: true,
+})) satisfies readonly PlatformTool[];
+
+export const platformTools = wordInterfaceTools;
 
 export function getPlatformTools(category?: ToolCategory): readonly PlatformTool[] {
   return category
