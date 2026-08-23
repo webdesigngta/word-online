@@ -80,6 +80,35 @@ jobs:
           bye
           EOF
 
+      - name: Verify HostGator deployment
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.FTP_SERVER != '' && env.FTP_USERNAME != '' && env.FTP_PASSWORD != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          FTP_PATH="${FTP_PATH:-./word-online/}"
+          REMOTE_PATH="${FTP_PATH%/}/build.txt"
+          rm -f /tmp/hostgator-build.txt
+
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+          set ftp:passive-mode true
+          set ssl:verify-certificate no
+          set net:max-retries 2
+          set net:timeout 30
+          get "$REMOTE_PATH" -o /tmp/hostgator-build.txt
+          bye
+          EOF
+
+          test -f /tmp/hostgator-build.txt
+          expected="${GITHUB_SHA::12}"
+          deployed="$(tr -d '\r\n' < /tmp/hostgator-build.txt)"
+
+          if [ "$deployed" != "$expected" ]; then
+            echo "HostGator verification failed: expected $expected, found $deployed"
+            exit 1
+          fi
+
+          echo "Verified HostGator deployment: $deployed"
+
       - name: Deployment not configured yet
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && (env.FTP_SERVER == '' || env.FTP_USERNAME == '' || env.FTP_PASSWORD == '') }}
         run: echo "Build succeeded. Add the HostGator repository secrets to enable automatic deployment."
