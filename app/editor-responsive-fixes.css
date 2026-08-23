@@ -23,7 +23,6 @@
 .editor-route {
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
   overflow-x: clip;
 }
 
@@ -48,8 +47,7 @@
   max-width: 52vw;
 }
 
-/* Toolbar stays inside the viewport. Extra controls scroll inside the bar,
-   instead of increasing the width of the whole page. */
+/* Toolbar stays inside viewport like modern office apps. */
 .docs-toolbar {
   width: calc(100% - 28px);
   max-width: calc(100% - 28px);
@@ -60,14 +58,61 @@
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
+  scrollbar-width: none;
+}
+
+.docs-toolbar::-webkit-scrollbar {
+  display: none;
 }
 
 .docs-toolbar > * {
   flex-shrink: 0;
 }
 
-/* The real DocumentOutline is hidden at 1120px, so remove its reserved
-   workspace gap at the same breakpoint. */
+/* Center the white document canvas after removing the fake sidebar. */
+.docs-editor-workspace .paper-stage {
+  justify-content: center;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.docs-editor-workspace .editor-page {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* More Google Docs / Word Online style toolbar language: consistent pills. */
+.docs-toolbar-icon,
+.docs-toolbar-split,
+.docs-color-tool {
+  border-radius: 8px;
+  transition: background .15s ease, transform .12s ease;
+}
+
+.docs-toolbar-icon:hover,
+.docs-toolbar-split:hover,
+.docs-color-tool:hover {
+  background: #e8edf5;
+}
+
+.docs-toolbar-select {
+  border-radius: 8px;
+  height: 34px;
+  font-weight: 400;
+}
+
+.docs-toolbar-divider {
+  height: 20px;
+  opacity: .7;
+}
+
+.docs-action-pill,
+.docs-share-button,
+.docs-upgrade-button {
+  border-radius: 18px;
+  height: 38px;
+}
+
 @media (max-width: 1120px) {
   .docs-editor-workspace .paper-stage {
     justify-content: center;
@@ -98,10 +143,6 @@
     padding-right: 6px;
   }
 
-  .docs-file-link {
-    margin-right: 5px;
-  }
-
   .docs-document-title {
     width: min(150px, 34vw);
     max-width: 34vw;
@@ -125,41 +166,13 @@
     width: 30px;
     flex-basis: 30px;
   }
-
-  .docs-toolbar-divider {
-    margin-inline: 3px;
-  }
-
-  .docs-zoom-select {
-    width: 68px;
-  }
-
-  .docs-style-select {
-    width: 94px;
-  }
-
-  .docs-font-select {
-    width: 88px;
-  }
 }
 
 @media (max-width: 620px) {
-  .docs-title-line {
-    gap: 0;
-  }
-
   .docs-document-title {
     width: min(124px, 38vw);
     max-width: 38vw;
     font-size: 15px;
-  }
-
-  .docs-title-icon {
-    width: 26px;
-  }
-
-  .docs-right {
-    max-width: 38vw;
   }
 
   .docs-toolbar {
@@ -170,10 +183,6 @@
     padding-left: 6px;
     padding-right: 20px;
     font-size: 13px;
-  }
-
-  .docs-toolbar-divider {
-    margin-inline: 2px;
   }
 }
 
