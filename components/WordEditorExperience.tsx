@@ -1,3 +1,4 @@
+import type { EditorIntentMode } from '@/components/EditorIntentPrompt';
 import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
 import { WordEditorClientLoader } from '@/components/WordEditorClientLoader';
 import type { SerializableEditorRuntimeOptions } from '@/components/WordEditorClientRuntime';
@@ -6,10 +7,12 @@ export function WordEditorExperience({
   interfaceId,
   heading,
   runtimeOptions = {},
+  intentPrompt,
 }: {
   interfaceId: string;
   heading: string;
   runtimeOptions?: SerializableEditorRuntimeOptions;
+  intentPrompt?: EditorIntentMode;
 }) {
   return (
     <>
@@ -89,7 +92,7 @@ export function WordEditorExperience({
           }
         `}</style>
         <h1 className="sr-only">{heading}</h1>
-        <WordEditorClientLoader runtimeOptions={runtimeOptions} />
+        <WordEditorClientLoader runtimeOptions={runtimeOptions} intentPrompt={intentPrompt} />
       </main>
     </>
   );
