@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 import './docs-editor.css';
 import './docs-body.css';
+import './editor-responsive-fixes.css';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
 
 const criticalEditorCss = `
