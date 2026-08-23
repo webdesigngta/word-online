@@ -1,28 +1,6 @@
-import { WordEditorTool } from '@/tools/word/editor';
-import type { EditorRuntimeOptions } from '@/tools/word/editor/EditorRuntime';
-import { DocumentOutline } from '@/components/DocumentOutline';
-import { GracefulEditorDialogs } from '@/components/GracefulEditorDialogs';
-import { FontMenuEnhancer } from '@/components/FontMenuEnhancer';
-import { CompactStyleMenu } from '@/components/CompactStyleMenu';
-import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
-import { NoLoginToolbarFeatures } from '@/components/NoLoginToolbarFeatures';
-import { LocalUndoManager } from '@/components/LocalUndoManager';
-import { LocalVersionHistory } from '@/components/LocalVersionHistory';
-import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
-import { PageStructureFeatures } from '@/components/PageStructureFeatures';
-import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles';
-import { DelayedTooltips } from '@/components/DelayedTooltips';
-import { SpellingContextMenu } from '@/components/SpellingContextMenu';
-import { EditorContextMenu } from '@/components/EditorContextMenu';
-import { ChromeStatusAndZoom } from '@/components/ChromeStatusAndZoom';
-import { FunctionalMainMenus } from '@/components/FunctionalMainMenus';
-import { ChecklistVisibilityFix } from '@/components/ChecklistVisibilityFix';
-import { LegacyDocDownload } from '@/components/LegacyDocDownload';
-import { HeaderDownloadMenu } from '@/components/HeaderDownloadMenu';
-import { RemoveQuickActionRow } from '@/components/RemoveQuickActionRow';
-import { RemoveLegacyDesign } from '@/components/RemoveLegacyDesign';
-import { HydrationReady } from '@/components/HydrationReady';
 import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
+import { WordEditorClientLoader } from '@/components/WordEditorClientLoader';
+import type { SerializableEditorRuntimeOptions } from '@/components/WordEditorClientRuntime';
 
 export function WordEditorExperience({
   interfaceId,
@@ -31,7 +9,7 @@ export function WordEditorExperience({
 }: {
   interfaceId: string;
   heading: string;
-  runtimeOptions?: EditorRuntimeOptions;
+  runtimeOptions?: SerializableEditorRuntimeOptions;
 }) {
   return (
     <>
@@ -77,31 +55,41 @@ export function WordEditorExperience({
           .editor-route .fwo-outline-tree {
             border-left: 0 !important;
           }
+
+          .fwo-editor-loading {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: #f8f9fa;
+            font-family: Arial, Helvetica, sans-serif;
+          }
+
+          .fwo-editor-loading-card {
+            width: min(420px, 100%);
+            border: 1px solid #e0e3e7;
+            border-radius: 16px;
+            background: #fff;
+            padding: 22px;
+            text-align: center;
+            box-shadow: 0 10px 28px rgba(60, 64, 67, .08);
+          }
+
+          .fwo-editor-loading-card strong,
+          .fwo-editor-loading-card span {
+            display: block;
+          }
+
+          .fwo-editor-loading-card span {
+            color: #5f6368;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 7px;
+          }
         `}</style>
         <h1 className="sr-only">{heading}</h1>
-        <WordEditorTool {...runtimeOptions} />
-        <DocumentOutline />
-        <GracefulEditorDialogs />
-        <FontMenuEnhancer />
-        <CompactStyleMenu />
-        <ToolbarGalleryMenus />
-        <NoLoginToolbarFeatures />
-        <LocalUndoManager />
-        <LocalVersionHistory />
-        <VersionHistoryToolbarButton />
-        <PageStructureFeatures />
-        <ResponsiveDropdownStyles />
-        <DelayedTooltips />
-        <SpellingContextMenu />
-        <EditorContextMenu />
-        <ChromeStatusAndZoom />
-        <FunctionalMainMenus />
-        <ChecklistVisibilityFix />
-        <LegacyDocDownload />
-        <HeaderDownloadMenu />
-        <RemoveQuickActionRow />
-        <RemoveLegacyDesign />
-        <HydrationReady />
+        <WordEditorClientLoader runtimeOptions={runtimeOptions} />
       </main>
     </>
   );
