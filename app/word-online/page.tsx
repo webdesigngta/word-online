@@ -9,6 +9,7 @@ import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { NoLoginToolbarFeatures } from '@/components/NoLoginToolbarFeatures';
 import { LocalUndoManager } from '@/components/LocalUndoManager';
 import { LocalVersionHistory } from '@/components/LocalVersionHistory';
+import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
 import { PageStructureFeatures } from '@/components/PageStructureFeatures';
 import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles';
 import { DelayedTooltips } from '@/components/DelayedTooltips';
@@ -81,6 +82,7 @@ export default function WordOnlinePage() {
         <NoLoginToolbarFeatures />
         <LocalUndoManager />
         <LocalVersionHistory />
+        <VersionHistoryToolbarButton />
         <PageStructureFeatures />
         <ResponsiveDropdownStyles />
         <DelayedTooltips />
