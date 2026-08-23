@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { pageMetadata } from '@/lib/seo';
+import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SoftwareJsonLd } from '@/components/JsonLd';
 import { wordInterfaces } from '@/tools/word/interfaces/config';
@@ -53,6 +54,7 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+      <SiteFooter />
       <SoftwareJsonLd />
     </>
   );

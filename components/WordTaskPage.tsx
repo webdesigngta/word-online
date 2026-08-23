@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { FaqJsonLd } from '@/components/JsonLd';
 import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
@@ -33,9 +35,9 @@ export function WordTaskPage({
       <SiteHeader />
       <main className="word-task-page">
         <style>{`
-          .word-task-page { background:#f8fafd; color:#202124; min-height:100vh; padding:44px 20px 72px; font-family:Arial,Helvetica,sans-serif; }
+          .word-task-page { background:#f8fafd; color:#202124; min-height:100vh; padding:30px 20px 72px; font-family:Arial,Helvetica,sans-serif; }
           .word-task-wrap { width:min(1120px,100%); margin:0 auto; }
-          .word-task-hero { text-align:center; max-width:820px; margin:0 auto 28px; }
+          .word-task-hero { text-align:center; max-width:820px; margin:22px auto 28px; }
           .word-task-eyebrow { margin:0 0 10px; color:#0b57d0; font-size:12px; font-weight:700; letter-spacing:.08em; }
           .word-task-hero h1 { margin:0; color:#202124; font-size:clamp(32px,5vw,52px); line-height:1.08; letter-spacing:-.035em; }
           .word-task-lead { margin:16px auto 0; color:#5f6368; font-size:17px; line-height:1.65; max-width:740px; }
@@ -57,9 +59,10 @@ export function WordTaskPage({
           .word-task-faq details { background:#fff; border:1px solid #e0e3e7; border-radius:14px; padding:0 18px; margin:10px 0; }
           .word-task-faq summary { cursor:pointer; padding:16px 0; font-weight:600; }
           .word-task-faq p { color:#5f6368; line-height:1.6; margin:0 0 16px; }
-          @media(max-width:760px){ .word-task-page{padding:28px 12px 56px}.word-task-card{padding:14px}.word-task-grid,.word-task-related-grid{grid-template-columns:1fr}.word-task-hero h1{font-size:34px} }
+          @media(max-width:760px){ .word-task-page{padding:24px 12px 56px}.word-task-card{padding:14px}.word-task-grid,.word-task-related-grid{grid-template-columns:1fr}.word-task-hero h1{font-size:34px} }
         `}</style>
         <div className="word-task-wrap">
+          <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools', href: '/tools' }, { label: current?.name ?? title }]} />
           <section className="word-task-hero">
             <p className="word-task-eyebrow">{eyebrow}</p>
             <h1>{title}</h1>
@@ -99,6 +102,7 @@ export function WordTaskPage({
           </section>
         </div>
       </main>
+      <SiteFooter />
       <FaqJsonLd items={faq} />
     </>
   );

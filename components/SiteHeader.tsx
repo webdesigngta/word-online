@@ -1,5 +1,13 @@
 import Link from 'next/link';
 
+const navLinks = [
+  ['Tools', '/tools'],
+  ['Edit', '/edit'],
+  ['View', '/view'],
+  ['Convert', '/convert'],
+  ['Create', '/create'],
+] as const;
+
 export function SiteHeader() {
   return (
     <header className="site-header">
@@ -8,9 +16,7 @@ export function SiteHeader() {
         <span>Free Word Online</span>
       </Link>
       <nav className="site-nav" aria-label="Main navigation">
-        <Link href="/word-online">Editor</Link>
-        <Link href="/docx-editor-online">DOCX Editor</Link>
-        <Link href="/free-word-editor">Free Word Editor</Link>
+        {navLinks.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
       </nav>
     </header>
   );
