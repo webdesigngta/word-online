@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 concurrency:
   group: word-online-source-migration
@@ -53,12 +52,17 @@ jobs:
           fi
           echo "Using $found"
 
-      - name: Import complete Word Online source
+      - name: Import Word Online application source
         shell: bash
         run: |
           set -euo pipefail
           tar -xzf /tmp/word-online-source.tar.gz -C .
+
+          # Workflow files are managed separately by the connected GitHub app.
           rm -f .github/workflows/import-word-online-source.yml
+          rm -f .github/workflows/deploy-hostgator.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
