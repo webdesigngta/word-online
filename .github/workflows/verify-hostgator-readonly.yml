@@ -37,15 +37,7 @@ jobs:
 
           for attempt in $(seq 1 30); do
             rm -f /tmp/build.txt
-            if lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
-          set ftp:passive-mode true
-          set ssl:verify-certificate no
-          set net:max-retries 2
-          set net:timeout 30
-          get "${FTP_PATH%/}/build.txt" -o /tmp/build.txt
-          bye
-EOF
-            then
+            if lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" -e "set ftp:passive-mode true; set ssl:verify-certificate no; set net:max-retries 2; set net:timeout 30; get ${FTP_PATH%/}/build.txt -o /tmp/build.txt; bye"; then
               if [ -f /tmp/build.txt ]; then
                 REMOTE="$(tr -d '\r\n' < /tmp/build.txt)"
                 echo "Attempt $attempt — expected: $EXPECTED, remote: $REMOTE"
