@@ -142,6 +142,41 @@ export const wordInterfaces = [
     eyebrow: 'REPAIR DOCX', primaryIntent: 'Repair a DOCX document', processor: 'docxRepairProcessor',
     input: ['docx'], output: ['docx'], indexable: true,
   },
+  {
+    id: 'compare-word-documents', route: '/compare-word-documents', kind: 'utility', name: 'Compare Word Documents',
+    title: 'Compare Word Documents Online – Compare DOCX Files',
+    description: 'Compare two DOCX Word documents online and review paragraph-level additions, removals and changed content.',
+    eyebrow: 'COMPARE WORD DOCUMENTS', primaryIntent: 'Compare two DOCX files for content differences', processor: 'docxCompareProcessor',
+    input: ['docx', 'docx'], output: ['comparison'], indexable: true,
+  },
+  {
+    id: 'split-word-document', route: '/split-word-document', kind: 'utility', name: 'Split Word Document',
+    title: 'Split Word Document Online – Split DOCX by Headings',
+    description: 'Split a DOCX Word document into separate DOCX files using heading boundaries and download each section.',
+    eyebrow: 'SPLIT WORD DOCUMENT', primaryIntent: 'Split a DOCX document into multiple Word files', processor: 'docxSplitProcessor',
+    input: ['docx'], output: ['docx+'], indexable: true,
+  },
+  {
+    id: 'extract-docx-images', route: '/extract-docx-images', kind: 'utility', name: 'Extract DOCX Images',
+    title: 'Extract Images from DOCX – Download Word Images Online',
+    description: 'Extract embedded images from a DOCX Word document and download the original image files from the document package.',
+    eyebrow: 'EXTRACT DOCX IMAGES', primaryIntent: 'Extract embedded images from a DOCX file', processor: 'docxExtractImagesProcessor',
+    input: ['docx'], output: ['images'], indexable: true,
+  },
+  {
+    id: 'word-document-info', route: '/word-document-info', kind: 'analyzer', name: 'Word Document Info',
+    title: 'Word Document Info – Inspect DOCX Metadata & Statistics',
+    description: 'Inspect a DOCX file for document statistics and stored metadata including author, title, dates, headings, tables and images.',
+    eyebrow: 'WORD DOCUMENT INFO', primaryIntent: 'Inspect DOCX document metadata and statistics', processor: 'wordDocumentInfoProcessor',
+    input: ['docx'], output: ['metadata', 'json'], indexable: true,
+  },
+  {
+    id: 'remove-word-metadata', route: '/remove-word-metadata', kind: 'utility', name: 'Remove Word Metadata',
+    title: 'Remove Word Metadata – Clean DOCX Properties Online',
+    description: 'Remove common document properties and custom metadata from a DOCX file, then download a cleaned Word document.',
+    eyebrow: 'REMOVE WORD METADATA', primaryIntent: 'Remove stored metadata from a DOCX file', processor: 'docxRemoveMetadataProcessor',
+    input: ['docx'], output: ['docx'], indexable: true,
+  },
 ] as const satisfies readonly WordInterfaceDefinition[];
 
 export type WordInterfaceId = (typeof wordInterfaces)[number]['id'];
