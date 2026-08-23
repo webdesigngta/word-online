@@ -14,6 +14,19 @@ type ProcessorId =
   | 'compress-docx'
   | 'repair-docx';
 
+const processorNames: Record<ProcessorId, string> = {
+  'docx-to-html': 'DOCX-to-HTML processor',
+  'html-to-docx': 'HTML-to-DOCX processor',
+  'docx-to-txt': 'DOCX-to-TXT processor',
+  'txt-to-docx': 'TXT-to-DOCX processor',
+  'docx-to-rtf': 'DOCX-to-RTF processor',
+  'rtf-to-docx': 'RTF-to-DOCX processor',
+  'docx-to-odt': 'DOCX-to-ODT processor',
+  'odt-to-docx': 'ODT-to-DOCX processor',
+  'compress-docx': 'DOCX compression processor',
+  'repair-docx': 'DOCX repair processor',
+};
+
 export function WordSingleProcessorPage({
   id,
   processorId,
@@ -34,6 +47,7 @@ export function WordSingleProcessorPage({
   notes?: { fidelity?: string; output?: string };
 }) {
   const tool = getWordInterface(id);
+  const processorName = processorNames[processorId];
   const fidelity = notes?.fidelity || 'The processor focuses on common document content. Very advanced format-specific features may be simplified during conversion.';
   const output = notes?.output || `When processing succeeds, download the generated ${tool.output.join('/').toUpperCase()} file directly from the browser.`;
   const faq = [
@@ -51,7 +65,7 @@ export function WordSingleProcessorPage({
         <WordSingleFileProcessorInterface
           processorId={processorId}
           title={tool.name}
-          description={`Choose ${inputLabel} to start. This interface calls the shared ${tool.processor || 'document'} processor rather than a separate conversion app.`}
+          description={`Choose ${inputLabel} to start. This interface calls the shared ${processorName} rather than a separate conversion app.`}
           accept={accept}
           inputLabel={inputLabel}
           actionLabel={actionLabel}
@@ -60,7 +74,7 @@ export function WordSingleProcessorPage({
       }
       details={[
         { title: 'Task-specific input', text: `This route is configured specifically for ${tool.primaryIntent.toLowerCase()}.` },
-        { title: 'Shared document engine', text: `The interface reuses ${tool.processor || 'the Word engine'}, keeping validation and processing logic centralized.` },
+        { title: 'Shared document engine', text: `The interface reuses the ${processorName}, keeping validation and processing logic centralized.` },
         { title: 'Download the result', text: output },
       ]}
       faq={faq}
