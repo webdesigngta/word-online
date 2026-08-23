@@ -1,1 +1,2 @@
 Temporary PR trigger for read-only HostGator verification.
+Retry after verifier YAML fix.
