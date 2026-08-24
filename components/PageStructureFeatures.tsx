@@ -3,6 +3,7 @@
 import { FileText, LayoutTemplate, Plus, Settings2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { GoogleMaterialIcon } from '@/components/GoogleMaterialIcon';
 
 type Panel = 'menu' | 'pageSetup' | 'templates' | null;
 type Anchor = { left: number; top: number };
@@ -290,7 +291,7 @@ export function PageStructureFeatures() {
         setPanel((current) => current === 'menu' ? null : 'menu');
       }}
     >
-      <FileText />
+      <GoogleMaterialIcon name="description" />
       <span className="fwo-page-count-badge">{pageCount}</span>
     </button>
   );

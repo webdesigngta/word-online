@@ -46,72 +46,15 @@
   max-width: 52vw;
 }
 
-/* Classic Microsoft Word ribbon-style toolbar */
+/* Keep the Google-style toolbar responsive without restyling its controls. */
 .docs-toolbar {
   width: calc(100% - 28px);
   max-width: calc(100% - 28px);
-  min-width: 0;
-  margin-inline: 14px;
-  overflow-x: auto;
-  overflow-y: hidden;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 5px 8px;
-  background: linear-gradient(#fafafa, #e9e9e9);
-  border: 1px solid #c5c5c5;
-  border-radius: 2px;
 }
 
-.docs-toolbar::-webkit-scrollbar { display: none; }
 .docs-toolbar > * { flex-shrink: 0; }
-
-/* Office style controls */
-.docs-toolbar-icon,
-.docs-toolbar-split,
-.docs-color-tool {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #b8b8b8;
-  border-radius: 2px;
-  background: linear-gradient(#ffffff, #e7e7e7);
-  box-shadow: inset 0 1px 0 #fff;
-  transition: background .12s ease, border-color .12s ease;
-}
-
-.docs-toolbar-icon:hover,
-.docs-toolbar-split:hover,
-.docs-color-tool:hover {
-  border-color: #7fa7d8;
-  background: linear-gradient(#ffffff, #dceafa);
-}
-
-.docs-toolbar-icon:active,
-.docs-toolbar-split:active,
-.docs-color-tool:active {
-  background: #cfe0f7;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,.15);
-}
-
-.docs-toolbar-select {
-  height: 26px;
-  border: 1px solid #b8b8b8;
-  border-radius: 2px;
-  background: linear-gradient(#fff,#ededed);
-  font-family: Segoe UI, Arial, sans-serif;
-  font-size: 12px;
-  color: #333;
-}
-
-.docs-toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: #c8c8c8;
-  margin-inline: 5px;
-}
 
 /* Center document page */
 .docs-editor-workspace .paper-stage {
@@ -145,12 +88,6 @@
     margin-inline: 8px;
   }
 
-  .docs-toolbar-icon,
-  .docs-toolbar-split,
-  .docs-color-tool {
-    width: 26px;
-    height: 26px;
-  }
 }
 
 @media print {
