@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -37,4 +38,4 @@ jobs:
           server: ${{ secrets.HOSTGATOR_FTP_SERVER }}
           username: ${{ secrets.HOSTGATOR_FTP_USERNAME }}
           password: ${{ secrets.HOSTGATOR_FTP_PASSWORD }}
-          server-dir: ${{ secrets.HOSTGATOR_PATH }}
+          server-dir: ${{ secrets.HOSTGATOR_FTP_PATH || secrets.HOSTGATOR_PATH }}
