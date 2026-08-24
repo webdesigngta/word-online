@@ -52,7 +52,7 @@ export function WordEditorExperience({
             min-height: 100vh !important;
             height: 100dvh !important;
             min-height: 100dvh !important;
-            grid-template-rows: 94px minmax(0, 1fr) !important;
+            grid-template-rows: 100px minmax(0, 1fr) !important;
           }
 
           .editor-route .docs-statusbar {

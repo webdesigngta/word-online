@@ -7,7 +7,7 @@
   min-height: 720px;
   height: min(90vh, 980px);
   display: grid;
-  grid-template-rows: 94px minmax(0, 1fr) 28px;
+  grid-template-rows: 100px minmax(0, 1fr) 28px;
   background: #f8fafd;
   border: 0;
   color: #444746;
@@ -15,7 +15,8 @@
 }
 
 .docs-chrome {
-  height: 94px;
+  /* The 56px top bar plus the toolbar's 4px top margin and 40px height. */
+  height: 100px;
   background: #f8fafd;
   position: relative;
   z-index: 30;
@@ -624,7 +625,7 @@
 @media (max-width: 650px) {
   .word-app.docs-word-app {
     min-height: 650px;
-    grid-template-rows: 94px minmax(0, 1fr) 28px;
+    grid-template-rows: 100px minmax(0, 1fr) 28px;
   }
   .docs-topbar {
     padding-left: 8px;
