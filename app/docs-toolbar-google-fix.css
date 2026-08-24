@@ -1,64 +1,66 @@
-/* Final Google Docs toolbar override. Loaded after editor chrome styles. */
-.docs-toolbar,
-.ribbon {
-  height: 40px;
-  margin: 0 14px;
-  padding: 0 8px;
-  border-radius: 20px;
-  background: #f1f3f4;
-  border: 0;
-  box-shadow: none;
-  display: flex;
-  align-items: center;
-}
-
-.docs-toolbar button,
-.docs-toolbar-icon,
-.icon-button,
-.ribbon-button,
-.docs-toolbar-split {
+/* Strong Google Docs toolbar override - final layer */
+.word-app.docs-word-app .docs-toolbar,
+.word-app.docs-word-app .ribbon {
+  height: 40px !important;
+  margin: 0 14px !important;
+  padding: 0 8px !important;
+  border-radius: 20px !important;
+  background: #f1f3f4 !important;
   border: 0 !important;
-  background: transparent !important;
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
-.docs-toolbar button:hover,
-.docs-toolbar-icon:hover,
-.icon-button:hover,
-.ribbon-button:hover {
+.word-app.docs-word-app .docs-toolbar-icon,
+.word-app.docs-word-app .docs-toolbar button,
+.word-app.docs-word-app .icon-button,
+.word-app.docs-word-app .ribbon-button {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.word-app.docs-word-app .docs-toolbar-icon:hover,
+.word-app.docs-word-app .docs-toolbar button:hover,
+.word-app.docs-word-app .icon-button:hover,
+.word-app.docs-word-app .ribbon-button:hover {
   background: #e8eaed !important;
 }
 
-.docs-toolbar-divider,
-.ribbon-divider {
-  height: 22px;
-  width: 1px;
-  background: #dadce0;
-  margin: 0 6px;
+.word-app.docs-word-app .docs-toolbar-divider,
+.word-app.docs-word-app .ribbon-divider {
+  height: 22px !important;
+  width: 1px !important;
+  background: #dadce0 !important;
+  margin: 0 6px !important;
 }
 
-.docs-toolbar-select,
-.select-box,
-.style-chip {
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  height: 32px;
-  font-size: 14px;
+.word-app.docs-word-app .docs-toolbar-select,
+.word-app.docs-word-app .select-box,
+.word-app.docs-word-app .style-chip {
+  height: 32px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-.docs-toolbar-select:hover,
-.select-box:hover,
-.style-chip:hover {
-  background: #e8eaed;
+.word-app.docs-word-app .docs-toolbar-select:hover,
+.word-app.docs-word-app .select-box:hover,
+.word-app.docs-word-app .style-chip:hover {
+  background: #e8eaed !important;
 }
 
-.docs-font-size-input,
-.size-box input {
-  height: 28px;
-  border: 1px solid #dadce0;
-  border-radius: 4px;
-  background: #fff;
+.word-app.docs-word-app .docs-font-size-input,
+.word-app.docs-word-app .size-box input {
+  height: 28px !important;
+  border: 1px solid #dadce0 !important;
+  border-radius: 4px !important;
+  background: #fff !important;
 }
