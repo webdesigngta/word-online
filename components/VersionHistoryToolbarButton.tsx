@@ -1,8 +1,8 @@
 'use client';
 
-import { History } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { GoogleMaterialIcon } from '@/components/GoogleMaterialIcon';
 
 export function VersionHistoryToolbarButton() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
@@ -24,7 +24,7 @@ export function VersionHistoryToolbarButton() {
       aria-label="Version history"
       title="Version history"
     >
-      <History />
+      <GoogleMaterialIcon name="history" />
     </button>,
     target,
   );
