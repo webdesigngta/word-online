@@ -7,7 +7,16 @@
   --google-background: #f8f9fa;
   --google-radius: 8px;
   --google-shadow: 0 1px 2px rgba(60,64,67,.15);
+  --google-hover: #f1f3f4;
+  --google-focus: 0 0 0 2px rgba(26,115,232,.2);
+  --google-spacing: 8px;
   font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 button,
@@ -21,4 +30,30 @@ textarea {
   background: var(--google-surface);
   border: 1px solid var(--google-border);
   border-radius: var(--google-radius);
+}
+
+.google-button {
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: var(--google-radius);
+  border: 1px solid transparent;
+  background: var(--google-blue);
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.google-button:hover {
+  filter: brightness(.96);
+}
+
+.google-input {
+  border: 1px solid var(--google-border);
+  border-radius: var(--google-radius);
+  background: #fff;
+}
+
+.google-input:focus {
+  outline: none;
+  box-shadow: var(--google-focus);
 }
