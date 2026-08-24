@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import './google-style.css';
 import './docs-editor.css';
 import './docs-body.css';
 import './editor-responsive-fixes.css';
@@ -21,25 +22,13 @@ export const metadata: Metadata = {
   description: site.description,
   applicationName: site.name,
   category: 'productivity',
-  keywords: [
-    'word online',
-    'free word editor',
-    'docx editor online',
-    'edit docx online',
-    'word document editor',
-    'online document editor',
-  ],
+  keywords: ['word online','free word editor','docx editor online','edit docx online','word document editor','online document editor'],
   authors: [{ name: 'Free Word Online' }],
   creator: 'Free Word Online',
   publisher: 'Free Word Online',
   referrer: 'origin-when-cross-origin',
-  robots: allowIndexing
-    ? { index: true, follow: true }
-    : { index: false, follow: false, noarchive: true },
-  icons: {
-    icon: absoluteUrl('/favicon.svg'),
-    apple: absoluteUrl('/app-icon.svg'),
-  },
+  robots: allowIndexing ? { index: true, follow: true } : { index: false, follow: false, noarchive: true },
+  icons: { icon: absoluteUrl('/favicon.svg'), apple: absoluteUrl('/app-icon.svg') },
   manifest: absoluteUrl('/manifest.webmanifest'),
 };
 
