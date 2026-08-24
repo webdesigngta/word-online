@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 import './google-style.css';
 import './docs-editor.css';
+import './docs-toolbar-google-fix.css';
 import './docs-body.css';
 import './editor-responsive-fixes.css';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
@@ -15,10 +16,7 @@ const criticalEditorCss = `
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: {
-    default: 'Free Word Online – Edit DOCX Files Free',
-    template: '%s | Free Word Online',
-  },
+  title: { default: 'Free Word Online – Edit DOCX Files Free', template: '%s | Free Word Online' },
   description: site.description,
   applicationName: site.name,
   category: 'productivity',
@@ -35,7 +33,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#f8f9fa',
+  themeColor: '#f8fafd',
   colorScheme: 'light',
 };
 
