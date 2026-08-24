@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 type PopupType = 'align' | 'spacing' | 'mode' | 'image' | 'grammar' | 'comments' | null;
 type EditorMode = 'editing' | 'suggesting' | 'viewing';
 type AnchorPoint = { left: number; top: number };
-type GrammarIssue = { id: string; label: string; match: string };
+type GrammarIssue = { id: string; label: string; match: string; replacement: string };
 type LocalComment = { id: string; quote: string; text: string; createdAt: string };
 type PaintStyle = {
   fontFamily: string;
@@ -63,15 +63,15 @@ function selectedBlocks(editor: HTMLElement, range: Range | null) {
 
 function findGrammarIssues(text: string): GrammarIssue[] {
   const issues: GrammarIssue[] = [];
-  const add = (label: string, match: string) => {
+  const add = (label: string, match: string, replacement: string) => {
     const key = `${label}:${match}`;
-    if (!issues.some((issue) => issue.id === key)) issues.push({ id: key, label, match });
+    if (!issues.some((issue) => issue.id === key)) issues.push({ id: key, label, match, replacement });
   };
 
-  for (const match of text.matchAll(/\b([A-Za-z]+)\s+\1\b/gi)) add('Repeated word', match[0]);
-  for (const match of text.matchAll(/\s+[,.!?;:]/g)) add('Remove the space before punctuation', match[0].trim() || match[0]);
-  for (const match of text.matchAll(/ {2,}/g)) add('Use a single space', match[0]);
-  for (const match of text.matchAll(/\bi\b/g)) add('Capitalize the pronoun “I”', match[0]);
+  for (const match of text.matchAll(/\b([A-Za-z]+)\s+\1\b/gi)) add('Remove repeated word', match[0], match[1]);
+  for (const match of text.matchAll(/\s+[,.!?;:]/g)) add('Remove the space before punctuation', match[0], match[0].trim());
+  for (const match of text.matchAll(/ {2,}/g)) add('Use a single space', match[0], ' ');
+  for (const match of text.matchAll(/\bi\b/g)) add('Capitalize the pronoun “I”', match[0], 'I');
 
   const commonTypos: Record<string, string> = {
     teh: 'Possible spelling: “the”',
@@ -82,7 +82,7 @@ function findGrammarIssues(text: string): GrammarIssue[] {
   };
   for (const word of Object.keys(commonTypos)) {
     const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    for (const match of text.matchAll(regex)) add(commonTypos[word], match[0]);
+    for (const match of text.matchAll(regex)) add(commonTypos[word], match[0], commonTypos[word].match(/“(.+)”/)?.[1] || match[0]);
   }
 
   return issues.slice(0, 50);
@@ -470,6 +470,23 @@ export function NoLoginToolbarFeatures() {
     closePopup();
   }
 
+  function applyGrammarSuggestion(issue: GrammarIssue) {
+    const editor = getEditor();
+    if (!editor) return;
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+    let node: Node | null;
+    while ((node = walker.nextNode())) {
+      const text = node.textContent || '';
+      const index = text.indexOf(issue.match);
+      if (index < 0) continue;
+      node.textContent = `${text.slice(0, index)}${issue.replacement}${text.slice(index + issue.match.length)}`;
+      dispatchEditorInput(editor);
+      setGrammarIssues(findGrammarIssues(editor.innerText || ''));
+      showToast('Suggestion applied');
+      return;
+    }
+  }
+
   function applySpacing(lineHeight?: string, marginBefore?: string, marginAfter?: string) {
     const editor = getEditor();
     if (!editor || mode === 'viewing') return;
@@ -615,8 +632,8 @@ export function NoLoginToolbarFeatures() {
           <div className="fwo-panel-title"><strong>Spelling & grammar</strong><button type="button" onClick={closePopup}>×</button></div>
           <p className="fwo-panel-note">Browser spellcheck is on. Grammar checks run locally in this browser.</p>
           {grammarIssues.length ? grammarIssues.map((issue) => (
-            <button className="fwo-issue" type="button" key={issue.id} onClick={() => jumpToText(issue.match)}>
-              <strong>{issue.label}</strong><span>{issue.match}</span>
+            <button className="fwo-issue" type="button" key={issue.id} onClick={() => applyGrammarSuggestion(issue)} title="Apply suggestion">
+              <strong>{issue.label}</strong><span>{issue.match} → {issue.replacement}</span>
             </button>
           )) : <div className="fwo-empty-state">No local grammar issues found.</div>}
         </div>

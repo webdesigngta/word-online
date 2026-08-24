@@ -311,7 +311,8 @@ export function FunctionalMainMenus() {
     ],
     Help: [
       { label: 'Keyboard shortcuts', action: () => window.alert('⌘Z Undo\n⌘Y Redo\n⌘B Bold\n⌘I Italic\n⌘U Underline\n⌘A Select all\n⌘P Print') },
-      { label: 'About Free Word Online', separatorBefore: true, action: () => window.alert('Free Word Online\nNo login required. Documents autosave locally in your browser.') },
+      { label: 'Editor information', separatorBefore: true, action: () => window.alert('Free Word Online\n\nA private, browser-based document editor. No login is required, and documents autosave locally in your browser. Use File → Download to keep a DOCX, PDF, HTML, or plain-text copy.') },
+      { label: 'About Free Word Online', action: () => window.alert('Free Word Online\nVersion 1.0\n\nCreate and edit Word documents without installing software.') },
     ],
   };
 

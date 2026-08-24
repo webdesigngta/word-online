@@ -59,15 +59,33 @@
 /* Center document page */
 .docs-editor-workspace .paper-stage {
   justify-content: center;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding: 28px 24px 120px 260px;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .docs-editor-workspace .editor-page {
+  /* 210mm x 297mm at 96 CSS pixels per inch: one correctly proportioned A4 sheet. */
+  --paper-width: 794px;
+  --paper-height: 1123px;
+  --paper-padding-inline: 76px;
+  --paper-padding-block: 84px;
+  box-sizing: border-box;
+  width: var(--paper-width);
+  min-width: var(--paper-width);
+  min-height: var(--paper-height);
+  height: auto;
+  padding: var(--paper-padding-block) var(--paper-padding-inline);
+  overflow: visible;
   margin-left: auto;
   margin-right: auto;
   box-shadow: 0 1px 4px rgba(60,64,67,.18), 0 2px 8px rgba(60,64,67,.12);
 }
+
+/* Marketing copy belongs in Help, not beneath the distraction-free editor. */
+body:has(.editor-route) .word-editor-info,
+body:has(.editor-route) .intent-cluster-links,
+body:has(.editor-route) .fwo-site-footer { display: none !important; }
 
 .docs-action-pill,
 .docs-share-button,
@@ -88,8 +106,11 @@
     margin-inline: 8px;
   }
 
+  .docs-editor-workspace .paper-stage { padding-left: 16px; padding-right: 16px; justify-content: flex-start; }
+
 }
 
 @media print {
   .docs-editor-workspace::before { display: none !important; }
+  .docs-editor-workspace .editor-page { width: 210mm; min-width: 210mm; min-height: 297mm; padding: 22mm 20mm; }
 }

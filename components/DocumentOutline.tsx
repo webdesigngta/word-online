@@ -1,6 +1,5 @@
 'use client';
 
-import { FileText, MoreVertical, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type OutlineItem = {
@@ -12,6 +11,7 @@ type OutlineItem = {
 export function DocumentOutline() {
   const [title, setTitle] = useState('Untitled document');
   const [items, setItems] = useState<OutlineItem[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     const editor = document.querySelector<HTMLElement>('.editor-page');
@@ -49,29 +49,39 @@ export function DocumentOutline() {
     const onTitleInput = () => setTitle(titleInput?.value.trim() || 'Untitled document');
     titleInput?.addEventListener('input', onTitleInput);
 
+    const workspace = document.querySelector<HTMLElement>('.docs-editor-workspace');
+    const updateActive = () => {
+      const headings = Array.from(editor.querySelectorAll<HTMLElement>('[data-fwo-outline-id]'));
+      const anchor = (workspace?.getBoundingClientRect().top || 0) + 120;
+      const current = headings.reduce<HTMLElement | null>((closest, heading) =>
+        heading.getBoundingClientRect().top <= anchor ? heading : closest, headings[0] || null);
+      setActiveId(current?.dataset.fwoOutlineId || null);
+    };
+    workspace?.addEventListener('scroll', updateActive, { passive: true });
+    updateActive();
+
     return () => {
       observer.disconnect();
       titleInput?.removeEventListener('input', onTitleInput);
+      workspace?.removeEventListener('scroll', updateActive);
     };
   }, []);
 
   function jumpToHeading(id: string) {
     const heading = document.querySelector<HTMLElement>(`[data-fwo-outline-id="${id}"]`);
     if (!heading) return;
+    setActiveId(id);
     heading.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   return (
     <aside className="fwo-outline" aria-label="Document outline">
       <div className="fwo-outline-heading">
-        <span>Document tabs</span>
-        <button type="button" aria-label="Add document tab" title="Add document tab"><Plus /></button>
+        <span>Document outline</span>
       </div>
 
       <div className="fwo-outline-tab" title={title}>
-        <FileText aria-hidden="true" />
         <span>{title}</span>
-        <MoreVertical aria-hidden="true" />
       </div>
 
       <div className="fwo-outline-tree">
@@ -79,8 +89,8 @@ export function DocumentOutline() {
           <button
             key={item.id}
             type="button"
-            className="fwo-outline-item"
-            style={{ paddingLeft: `${12 + Math.max(0, item.level) * 12}px` }}
+            className={`fwo-outline-item${activeId === item.id ? ' is-active' : ''}`}
+            style={{ '--outline-level': Math.max(0, item.level - 1) } as React.CSSProperties}
             onClick={() => jumpToHeading(item.id)}
             title={item.text}
           >
@@ -112,40 +122,20 @@ export function DocumentOutline() {
           padding: 0 8px 0 10px;
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          font-size: 14px;
-        }
-
-        .fwo-outline-heading button {
-          width: 28px;
-          height: 28px;
-          border: 0;
-          border-radius: 14px;
-          background: transparent;
-          color: #444746;
-          display: grid;
-          place-items: center;
-          cursor: pointer;
-        }
-
-        .fwo-outline-heading button:hover {
-          background: #e9eef6;
-        }
-
-        .fwo-outline-heading svg {
-          width: 17px;
-          height: 17px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #5f6368;
         }
 
         .fwo-outline-tab {
           min-height: 40px;
           margin-top: 4px;
-          padding: 0 10px 0 14px;
-          border-radius: 20px;
-          background: #d3e3fd;
-          color: #174ea6;
-          display: grid;
-          grid-template-columns: 18px minmax(0, 1fr) 18px;
+          padding: 0 12px;
+          border-radius: 6px;
+          background: #e8f0fe;
+          color: #185abc;
+          display: block;
+          line-height: 40px;
           align-items: center;
           gap: 10px;
           font-size: 14px;
@@ -157,15 +147,10 @@ export function DocumentOutline() {
           white-space: nowrap;
         }
 
-        .fwo-outline-tab svg {
-          width: 17px;
-          height: 17px;
-        }
-
         .fwo-outline-tree {
           position: relative;
-          margin: 10px 0 0 31px;
-          padding: 0 0 8px 12px;
+          margin: 12px 0 0;
+          padding: 0 0 8px;
           border: 0 !important;
         }
 
@@ -175,6 +160,7 @@ export function DocumentOutline() {
           border: 0;
           background: transparent;
           color: #4a4d51;
+          padding-left: calc(14px + var(--outline-level) * 16px);
           padding-top: 5px;
           padding-right: 6px;
           padding-bottom: 5px;
@@ -186,6 +172,13 @@ export function DocumentOutline() {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        .fwo-outline-item.is-active {
+          color: #0b57d0;
+          font-weight: 500;
+          background: #e8f0fe;
+          box-shadow: inset 3px 0 #0b57d0;
         }
 
         .fwo-outline-item:hover {
