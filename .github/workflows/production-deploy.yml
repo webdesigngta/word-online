@@ -1,5 +1,7 @@
 name: Word Online Production Deploy
 
+# Production pipeline: GitHub → Build → HostGator
+
 on:
   push:
     branches:
