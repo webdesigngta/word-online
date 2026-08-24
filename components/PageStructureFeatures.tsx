@@ -192,13 +192,34 @@ export function PageStructureFeatures() {
     marker.setAttribute('aria-label', 'Page break');
     marker.innerHTML = '<span>Page break</span>';
 
-    const after = document.createElement('p');
-    after.innerHTML = '<br>';
-
+    // A block element inserted directly into a paragraph produces invalid HTML and
+    // lets the browser paint the caret/selection through the page gutter. Split the
+    // top-level block at the caret instead, so both pages keep valid editable blocks.
     range.deleteContents();
-    range.insertNode(after);
-    range.insertNode(marker);
-    range.setStart(after, 0);
+    const startElement = range.startContainer instanceof Element
+      ? range.startContainer
+      : range.startContainer.parentElement;
+    const block = startElement?.closest<HTMLElement>('.editor-page > *');
+    let after: HTMLElement;
+
+    if (block && block.parentElement === root && !block.hasAttribute('data-fwo-page-break')) {
+      after = block.cloneNode(false) as HTMLElement;
+      after.removeAttribute('id');
+      const tail = document.createRange();
+      tail.setStart(range.startContainer, range.startOffset);
+      tail.setEnd(block, block.childNodes.length);
+      after.appendChild(tail.extractContents());
+      if (!block.textContent && !block.querySelector('img,table,hr,br')) block.appendChild(document.createElement('br'));
+      if (!after.textContent && !after.querySelector('img,table,hr,br')) after.appendChild(document.createElement('br'));
+      block.after(marker, after);
+    } else {
+      after = document.createElement('p');
+      after.appendChild(document.createElement('br'));
+      range.insertNode(marker);
+      marker.after(after);
+    }
+
+    range.selectNodeContents(after);
     range.collapse(true);
     const selection = window.getSelection();
     selection?.removeAllRanges();
@@ -345,8 +366,9 @@ export function PageStructureFeatures() {
         .editor-page [data-fwo-header],.editor-page [data-fwo-footer] { color:#5f6368; font-size:10pt; line-height:1.35; cursor:default; user-select:none; }
         .editor-page [data-fwo-header] { min-height:34px; margin:-42px 0 28px; padding:0 0 10px; border-bottom:1px dashed #dadce0; }
         .editor-page [data-fwo-footer] { min-height:34px; margin:34px 0 -42px; padding:10px 0 0; border-top:1px dashed #dadce0; }
-        .editor-page [data-fwo-page-break] { position:relative; height:46px; margin:54px -73px; border-top:1px solid #c7c7c7; border-bottom:1px solid #c7c7c7; background:#f8fafd; break-after:page; page-break-after:always; cursor:default; user-select:none; }
-        .editor-page [data-fwo-page-break] span { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:2px 8px; border-radius:9px; background:#fff; color:#80868b; font:10px/16px Arial,sans-serif; box-shadow:0 0 0 1px #e0e3e7; }
+        .editor-page [data-fwo-page-break] { position:relative; box-sizing:border-box; display:block; height:28px; margin:56px calc(-1 * var(--paper-padding)) 56px; border:0; border-top:1px solid #dadce0; border-bottom:1px solid #dadce0; background:#eef0f3; break-after:page; page-break-after:always; cursor:default; user-select:none; pointer-events:none; caret-color:transparent; }
+        .editor-page [data-fwo-page-break] span { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:0 7px; background:#eef0f3; color:#80868b; font:9px/18px Arial,sans-serif; letter-spacing:.01em; white-space:nowrap; }
+        .editor-page > p,.editor-page > h1,.editor-page > h2,.editor-page > h3,.editor-page > blockquote,.editor-page > ul,.editor-page > ol,.editor-page > table { orphans:2; widows:2; break-inside:avoid-page; page-break-inside:avoid; }
         .fwo-phase4-backdrop { position:fixed; inset:0; z-index:7200; display:grid; place-items:center; padding:20px; background:rgba(32,33,36,.30); font-family:Arial,Helvetica,sans-serif; }
         .fwo-phase4-dialog { width:min(560px,94vw); max-height:90vh; overflow:auto; padding:20px; border-radius:16px; background:#fff; box-shadow:0 14px 40px rgba(60,64,67,.28); color:#202124; }
         .fwo-phase4-dialog-head { display:flex; justify-content:space-between; gap:16px; margin-bottom:18px; }
