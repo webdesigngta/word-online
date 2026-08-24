@@ -345,7 +345,7 @@ export function PageStructureFeatures() {
         .editor-page [data-fwo-header],.editor-page [data-fwo-footer] { color:#5f6368; font-size:10pt; line-height:1.35; cursor:default; user-select:none; }
         .editor-page [data-fwo-header] { min-height:34px; margin:-42px 0 28px; padding:0 0 10px; border-bottom:1px dashed #dadce0; }
         .editor-page [data-fwo-footer] { min-height:34px; margin:34px 0 -42px; padding:10px 0 0; border-top:1px dashed #dadce0; }
-        .editor-page [data-fwo-page-break] { position:relative; height:46px; margin:54px -73px; border-top:1px solid #c7c7c7; border-bottom:1px solid #c7c7c7; background:#f8fafd; break-after:page; page-break-after:always; cursor:default; user-select:none; }
+        .editor-page [data-fwo-page-break] { position:relative; box-sizing:border-box; height:48px; margin:54px calc(-1 * var(--paper-padding)); border-top:1px solid #c7c7c7; border-bottom:1px solid #c7c7c7; background:#f8fafd; break-after:page; page-break-after:always; cursor:default; user-select:none; }
         .editor-page [data-fwo-page-break] span { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:2px 8px; border-radius:9px; background:#fff; color:#80868b; font:10px/16px Arial,sans-serif; box-shadow:0 0 0 1px #e0e3e7; }
         .fwo-phase4-backdrop { position:fixed; inset:0; z-index:7200; display:grid; place-items:center; padding:20px; background:rgba(32,33,36,.30); font-family:Arial,Helvetica,sans-serif; }
         .fwo-phase4-dialog { width:min(560px,94vw); max-height:90vh; overflow:auto; padding:20px; border-radius:16px; background:#fff; box-shadow:0 14px 40px rgba(60,64,67,.28); color:#202124; }
@@ -372,7 +372,7 @@ export function PageStructureFeatures() {
         .fwo-template-grid strong { align-self:end; font-size:13px; font-weight:500; }
         .fwo-template-grid small { align-self:start; margin-top:3px; color:#5f6368; font-size:11px; line-height:1.35; }
         .fwo-phase4-toast { position:fixed; z-index:7600; left:50%; bottom:28px; transform:translateX(-50%); max-width:min(420px,90vw); padding:9px 14px; border-radius:8px; background:#303134; color:#fff; font:12px/1.4 Arial,sans-serif; box-shadow:0 4px 14px rgba(0,0,0,.22); }
-        @media print { .editor-page [data-fwo-page-break] { height:0; margin:0; border:0; background:transparent; } .editor-page [data-fwo-page-break] span { display:none; } }
+        @media print { @page { size:A4 portrait; margin:0; } .editor-page [data-fwo-page-break] { display:block; height:0; margin:0; border:0; background:transparent; break-after:page; page-break-after:always; } .editor-page [data-fwo-page-break] span { display:none; } }
         @media(max-width:600px) { .fwo-template-grid { grid-template-columns:1fr; } .fwo-phase4-dialog { padding:16px; } }
       `}</style>
     </>
