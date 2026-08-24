@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
 import './google-style.css';
+import './material-icons.css';
 import './docs-editor.css';
 import './docs-toolbar-google-fix.css';
 import './docs-body.css';
