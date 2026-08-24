@@ -1,28 +1,6 @@
 'use client';
 
-import { ChecklistVisibilityFix } from '@/components/ChecklistVisibilityFix';
-import { ChromeStatusAndZoom } from '@/components/ChromeStatusAndZoom';
-import { CompactStyleMenu } from '@/components/CompactStyleMenu';
-import { DelayedTooltips } from '@/components/DelayedTooltips';
-import { DocumentOutline } from '@/components/DocumentOutline';
-import { EditorContextMenu } from '@/components/EditorContextMenu';
-import { EditorIntentPrompt, type EditorIntentMode } from '@/components/EditorIntentPrompt';
-import { FontMenuEnhancer } from '@/components/FontMenuEnhancer';
-import { FunctionalMainMenus } from '@/components/FunctionalMainMenus';
-import { GracefulEditorDialogs } from '@/components/GracefulEditorDialogs';
-import { HeaderDownloadMenu } from '@/components/HeaderDownloadMenu';
-import { LegacyDocDownload } from '@/components/LegacyDocDownload';
-import { LocalUndoManager } from '@/components/LocalUndoManager';
-import { LocalVersionHistory } from '@/components/LocalVersionHistory';
-import { NoLoginToolbarFeatures } from '@/components/NoLoginToolbarFeatures';
-import { PageStructureFeatures } from '@/components/PageStructureFeatures';
-import { RemoveLegacyDesign } from '@/components/RemoveLegacyDesign';
-import { RemoveQuickActionRow } from '@/components/RemoveQuickActionRow';
-import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles';
-import { SpellingContextMenu } from '@/components/SpellingContextMenu';
-import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
-import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
-import { HydrationReady } from '@/components/HydrationReady';
+import type { EditorIntentMode } from '@/components/EditorIntentPrompt';
 import { WordEditorTool } from '@/tools/word/editor';
 
 export type SerializableEditorRuntimeOptions = {
@@ -30,39 +8,9 @@ export type SerializableEditorRuntimeOptions = {
   initialContent?: string;
 };
 
-export function WordEditorClientRuntime({
-  runtimeOptions = {},
-  intentPrompt,
-}: {
+export function WordEditorClientRuntime({ runtimeOptions = {} }: {
   runtimeOptions?: SerializableEditorRuntimeOptions;
   intentPrompt?: EditorIntentMode;
 }) {
-  return (
-    <>
-      <WordEditorTool {...runtimeOptions} />
-      <DocumentOutline />
-      <GracefulEditorDialogs />
-      <FontMenuEnhancer />
-      <CompactStyleMenu />
-      <ToolbarGalleryMenus />
-      <NoLoginToolbarFeatures />
-      <LocalUndoManager />
-      <LocalVersionHistory />
-      <VersionHistoryToolbarButton />
-      <PageStructureFeatures />
-      {intentPrompt ? <EditorIntentPrompt mode={intentPrompt} /> : null}
-      <ResponsiveDropdownStyles />
-      <DelayedTooltips />
-      <SpellingContextMenu />
-      <EditorContextMenu />
-      <ChromeStatusAndZoom />
-      <FunctionalMainMenus />
-      <ChecklistVisibilityFix />
-      <LegacyDocDownload />
-      <HeaderDownloadMenu />
-      <RemoveQuickActionRow />
-      <RemoveLegacyDesign />
-      <HydrationReady />
-    </>
-  );
+  return <WordEditorTool {...runtimeOptions} />;
 }

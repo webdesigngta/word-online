@@ -1,19 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
-import './google-style.css';
 import './material-icons.css';
 import './docs-editor.css';
-import './docs-toolbar-google-fix.css';
-import './docs-body.css';
-import './editor-responsive-fixes.css';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
-
-const criticalEditorCss = `
-  html:not(.fwo-ui-ready) .editor-route .word-app.docs-word-app {
-    visibility: hidden !important;
-  }
-`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -45,7 +35,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,0" rel="stylesheet" />
-        <style dangerouslySetInnerHTML={{ __html: criticalEditorCss }} />
       </head>
       <body>{children}</body>
     </html>
