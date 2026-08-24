@@ -4,7 +4,6 @@ import {
   Bold,
   Check,
   ChevronDown,
-  CloudCheck,
   Copy,
   Download,
   FilePlus2,
@@ -26,7 +25,6 @@ import {
   Search,
   Sparkles,
   SpellCheck2,
-  Star,
   Table as TableIcon,
   Underline,
   Undo2,
@@ -353,8 +351,8 @@ export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
                     onEditorInput(event.target.value);
                   }}
                 />
-                <button className="docs-title-icon" type="button" title="Star" aria-label="Star document" onClick={() => setNotice('Starred')}><Star /></button>
-                <button className="docs-title-icon" type="button" title="Move" aria-label="Move document" onClick={() => setNotice('Saved locally in this browser')}><FolderOpen /></button>
+                <button className="docs-title-icon" type="button" title="Star" aria-label="Star document" onClick={() => setNotice('Starred')}><GoogleMaterialIcon name="star" /></button>
+                <button className="docs-title-icon" type="button" title="Move" aria-label="Move document" onClick={() => setNotice('Saved locally in this browser')}><GoogleMaterialIcon name="drive_file_move" /></button>
                 <button
                   className="docs-title-icon docs-save-cloud"
                   data-saving={savedState === 'Saving…'}
@@ -362,7 +360,7 @@ export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
                   title={savedState}
                   aria-label={savedState}
                   onClick={() => setNotice(savedState)}
-                ><CloudCheck /></button>
+                ><GoogleMaterialIcon name="cloud_done" /></button>
               </div>
 
               <nav className="docs-menu-row" aria-label="Document menus">

@@ -28,20 +28,20 @@
   align-items: stretch;
   justify-content: space-between;
   min-width: 0;
-  padding: 0 10px 0 14px;
+  padding: 0 8px;
 }
 
 .docs-left {
   min-width: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   flex: 1 1 auto;
 }
 
 .docs-file-link {
-  width: 32px;
+  width: 36px;
   height: 40px;
-  margin: 5px 10px 0 0;
+  margin-right: 4px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -101,7 +101,7 @@
   height: 26px;
   border: 1px solid transparent;
   border-radius: 4px;
-  padding: 1px 3px;
+  padding: 1px 2px;
   background: transparent;
   color: #444746;
   font-size: 18px;
@@ -135,9 +135,10 @@
 }
 
 .docs-title-icon {
-  width: 30px;
-  height: 26px;
-  border-radius: 13px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex: 0 0 28px;
 }
 
 .docs-title-icon:hover,

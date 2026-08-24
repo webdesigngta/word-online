@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 
 export function ChromeStatusAndZoom() {
   useEffect(() => {
-    const starButton = document.querySelector<HTMLButtonElement>('button[aria-label="Star document"]');
     const folderButton = document.querySelector<HTMLButtonElement>('button[aria-label="Move document"]');
     const saveButton = document.querySelector<HTMLButtonElement>('.docs-save-cloud');
     const fileInput = document.querySelector<HTMLInputElement>('input.hidden-input[type="file"][accept*=".docx"]');
@@ -12,8 +11,6 @@ export function ChromeStatusAndZoom() {
     const editor = document.querySelector<HTMLElement>('.editor-page');
 
     if (!folderButton || !saveButton || !zoomSelect) return;
-
-    if (starButton) starButton.style.display = 'none';
 
     folderButton.setAttribute('aria-label', 'Open document');
     folderButton.setAttribute('title', 'Open document');
@@ -189,36 +186,19 @@ export function ChromeStatusAndZoom() {
       }
 
       .docs-title-line .fwo-save-status {
-        width: auto !important;
-        min-width: 68px;
-        height: 26px;
-        padding: 0 7px !important;
-        border-radius: 13px;
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        flex: 0 0 auto;
+        display: inline-grid !important;
         color: #5f6368;
-        font: 500 12px/1 Arial, Helvetica, sans-serif;
       }
 
-      .docs-title-line .fwo-save-status::after {
-        content: attr(data-fwo-status);
-        white-space: nowrap;
-      }
-
-      .docs-title-line .fwo-save-status svg {
-        width: 16px;
-        height: 16px;
-        stroke-width: 1.8;
+      .docs-title-line .fwo-save-status .material-symbols-rounded {
+        font-size: 18px;
       }
 
       .docs-title-line .fwo-save-status[data-saving='true']:not([data-offline='true']) {
         color: #0b57d0;
       }
 
-      .docs-title-line .fwo-save-status[data-saving='true']:not([data-offline='true']) svg {
+      .docs-title-line .fwo-save-status[data-saving='true']:not([data-offline='true']) .material-symbols-rounded {
         animation: fwo-save-pulse 850ms ease-in-out infinite alternate;
       }
 
@@ -333,11 +313,6 @@ export function ChromeStatusAndZoom() {
       }
 
       @media (max-width: 650px) {
-        .docs-title-line .fwo-save-status {
-          min-width: 60px;
-          padding: 0 5px !important;
-          font-size: 11px;
-        }
         .fwo-zoom-trigger {
           min-width: 64px;
           padding-left: 8px;
@@ -351,7 +326,6 @@ export function ChromeStatusAndZoom() {
     document.head.appendChild(style);
 
     return () => {
-      if (starButton) starButton.style.display = '';
       folderButton.removeEventListener('click', onFolderClick, true);
       folderButton.classList.remove('fwo-open-document');
       saveButton.classList.remove('fwo-save-status');

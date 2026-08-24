@@ -10,7 +10,6 @@ const REMOVABLE_SELECTORS = [
   '.docs-right > .docs-upgrade-button',
   '.docs-right > .docs-gem',
   '.docs-right > .docs-avatar',
-  '.docs-title-icon[aria-label="Star document"]',
   '.fwo-top-actions',
 ];
 
