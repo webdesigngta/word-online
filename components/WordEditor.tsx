@@ -407,16 +407,18 @@ export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
         </div>
 
         <div className="docs-toolbar" aria-label="Formatting toolbar">
-          <ToolbarButton label="Search menus" className="docs-toolbar-search" onClick={findText}><GoogleMaterialIcon name="search" /></ToolbarButton>
-          <ToolbarButton label="Undo" onClick={() => command('undo')}><GoogleMaterialIcon name="undo" /></ToolbarButton>
-          <ToolbarButton label="Redo" onClick={() => command('redo')}><GoogleMaterialIcon name="redo" /></ToolbarButton>
-          <ToolbarButton label="Print" onClick={printDocument}><GoogleMaterialIcon name="print" /></ToolbarButton>
-          <ToolbarButton label={spellCheckEnabled ? 'Spelling on' : 'Spelling off'} onClick={() => setSpellCheckEnabled((value) => !value)}><GoogleMaterialIcon name="spellcheck" /></ToolbarButton>
-          <ToolbarButton label="Paint format" onClick={() => setNotice('Paint format is coming soon')}><GoogleMaterialIcon name="format_paint" /></ToolbarButton>
+          <div className="docs-toolbar-group docs-toolbar-history-group">
+            <ToolbarButton label="Search menus" className="docs-toolbar-search" onClick={findText}><GoogleMaterialIcon name="search" /></ToolbarButton>
+            <ToolbarButton label="Undo" onClick={() => command('undo')}><GoogleMaterialIcon name="undo" /></ToolbarButton>
+            <ToolbarButton label="Redo" onClick={() => command('redo')}><GoogleMaterialIcon name="redo" /></ToolbarButton>
+            <ToolbarButton label="Print" onClick={printDocument}><GoogleMaterialIcon name="print" /></ToolbarButton>
+            <ToolbarButton label={spellCheckEnabled ? 'Spelling on' : 'Spelling off'} onClick={() => setSpellCheckEnabled((value) => !value)}><GoogleMaterialIcon name="spellcheck" /></ToolbarButton>
+            <ToolbarButton label="Paint format" onClick={() => setNotice('Paint format is coming soon')}><GoogleMaterialIcon name="format_paint" /></ToolbarButton>
+          </div>
 
           <ToolbarDivider />
 
-          <select className="docs-toolbar-select docs-zoom-select" aria-label="Zoom" value={zoom} onChange={(event) => setZoomLevel(Number(event.target.value))}>
+          <div className="docs-toolbar-group docs-toolbar-zoom-group"><select className="docs-toolbar-select docs-zoom-select" aria-label="Zoom" value={zoom} onChange={(event) => setZoomLevel(Number(event.target.value))}>
             <option value={50}>50%</option>
             <option value={75}>75%</option>
             <option value={90}>90%</option>
@@ -424,31 +426,31 @@ export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
             <option value={125}>125%</option>
             <option value={150}>150%</option>
             <option value={200}>200%</option>
-          </select>
+          </select></div>
 
           <ToolbarDivider />
 
-          <select className="docs-toolbar-select docs-style-select" aria-label="Paragraph style" defaultValue="p" onMouseDown={() => saveSelection()} onChange={(event) => command('formatBlock', event.target.value)}>
+          <div className="docs-toolbar-group docs-toolbar-style-group"><select className="docs-toolbar-select docs-style-select" aria-label="Paragraph style" defaultValue="p" onMouseDown={() => saveSelection()} onChange={(event) => command('formatBlock', event.target.value)}>
             <option value="p">Normal text</option>
             <option value="h1">Title</option>
             <option value="h2">Heading 1</option>
             <option value="h3">Heading 2</option>
-          </select>
+          </select></div>
 
           <ToolbarDivider />
 
-          <select className="docs-toolbar-select docs-font-select" aria-label="Font family" value={fontFamily} onMouseDown={() => saveSelection()} onChange={(event) => applyFont(event.target.value)}>
+          <div className="docs-toolbar-group docs-toolbar-font-group"><select className="docs-toolbar-select docs-font-select" aria-label="Font family" value={fontFamily} onMouseDown={() => saveSelection()} onChange={(event) => applyFont(event.target.value)}>
             <option>Arial</option>
             <option>Calibri</option>
             <option>Georgia</option>
             <option>Times New Roman</option>
             <option>Verdana</option>
             <option>Courier New</option>
-          </select>
+          </select></div>
 
           <ToolbarDivider />
 
-          <div className="docs-font-size-control">
+          <div className="docs-toolbar-group"><div className="docs-font-size-control">
             <button className="docs-toolbar-split" type="button" title="Decrease font size" aria-label="Decrease font size" onMouseDown={(event) => event.preventDefault()} onClick={() => applyFontSize(String(Number(fontSize) - 1))}><GoogleMaterialIcon name="remove" /></button>
             <input
               className="docs-font-size-input"
@@ -460,29 +462,29 @@ export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
               onKeyDown={(event) => { if (event.key === 'Enter') applyFontSize(fontSize); }}
             />
             <button className="docs-toolbar-split" type="button" title="Increase font size" aria-label="Increase font size" onMouseDown={(event) => event.preventDefault()} onClick={() => applyFontSize(String(Number(fontSize) + 1))}><GoogleMaterialIcon name="add" /></button>
-          </div>
+          </div></div>
 
           <ToolbarDivider />
 
-          <ToolbarButton label="Bold" onClick={() => command('bold')}><GoogleMaterialIcon name="format_bold" /></ToolbarButton>
+          <div className="docs-toolbar-group docs-toolbar-format-group"><ToolbarButton label="Bold" onClick={() => command('bold')}><GoogleMaterialIcon name="format_bold" /></ToolbarButton>
           <ToolbarButton label="Italic" onClick={() => command('italic')}><GoogleMaterialIcon name="format_italic" /></ToolbarButton>
           <ToolbarButton label="Underline" onClick={() => command('underline')}><GoogleMaterialIcon name="format_underlined" /></ToolbarButton>
 
           <label className="docs-color-tool" title="Text color" onMouseDown={() => saveSelection()}><GoogleMaterialIcon name="format_color_text" /><input aria-label="Text color" type="color" onChange={(event) => command('foreColor', event.target.value)} /></label>
-          <label className="docs-color-tool highlight" title="Highlight color" onMouseDown={() => saveSelection()}><GoogleMaterialIcon name="ink_highlighter" /><input aria-label="Highlight color" type="color" defaultValue="#fdd663" onChange={(event) => command('hiliteColor', event.target.value)} /></label>
+          <label className="docs-color-tool highlight" title="Highlight color" onMouseDown={() => saveSelection()}><GoogleMaterialIcon name="ink_highlighter" /><input aria-label="Highlight color" type="color" defaultValue="#fdd663" onChange={(event) => command('hiliteColor', event.target.value)} /></label></div>
 
           <ToolbarDivider />
 
-          <ToolbarButton label="Insert link" onClick={insertLink}><GoogleMaterialIcon name="link" /></ToolbarButton>
+          <div className="docs-toolbar-group"><ToolbarButton label="Insert link" onClick={insertLink}><GoogleMaterialIcon name="link" /></ToolbarButton>
           <ToolbarButton label="Add comment" onClick={() => setNotice('Comments are coming soon')}><GoogleMaterialIcon name="add_comment" /></ToolbarButton>
           <div className="docs-toolbar-combo">
             <ToolbarButton label="Insert image" onClick={() => imageInputRef.current?.click()}><GoogleMaterialIcon name="image" /></ToolbarButton>
             <button className="docs-toolbar-split" type="button" title="Image options" aria-label="Image options" onClick={() => setNotice('Choose an image from your device')}><GoogleMaterialIcon name="arrow_drop_down" /></button>
-          </div>
+          </div></div>
 
           <ToolbarDivider />
 
-          <div className="docs-toolbar-combo">
+          <div className="docs-toolbar-group docs-toolbar-paragraph-group"><div className="docs-toolbar-combo">
             <ToolbarButton label="Align left" onClick={() => command('justifyLeft')}><GoogleMaterialIcon name="format_align_left" /></ToolbarButton>
             <button className="docs-toolbar-split" type="button" title="Alignment options" aria-label="Alignment options" onClick={() => setNotice('Use Format for more alignment options')}><GoogleMaterialIcon name="arrow_drop_down" /></button>
           </div>
@@ -495,14 +497,14 @@ export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
           <ToolbarButton label="Numbered list" onClick={() => command('insertOrderedList')}><GoogleMaterialIcon name="format_list_numbered" /></ToolbarButton>
           <ToolbarButton label="Decrease indent" onClick={() => command('outdent')}><GoogleMaterialIcon name="format_indent_decrease" /></ToolbarButton>
           <ToolbarButton label="Increase indent" onClick={() => command('indent')}><GoogleMaterialIcon name="format_indent_increase" /></ToolbarButton>
-          <ToolbarButton label="Clear formatting" onClick={() => command('removeFormat')}><GoogleMaterialIcon name="format_clear" /></ToolbarButton>
+          <ToolbarButton label="Clear formatting" onClick={() => command('removeFormat')}><GoogleMaterialIcon name="format_clear" /></ToolbarButton></div>
 
           <ToolbarDivider />
 
-          <div className="docs-toolbar-combo">
+          <div className="docs-toolbar-group docs-toolbar-mode-group"><div className="docs-toolbar-combo">
             <ToolbarButton label="Editing mode" onClick={() => setNotice('Editing mode')}><GoogleMaterialIcon name="edit" /></ToolbarButton>
             <button className="docs-toolbar-split" type="button" title="Editing mode options" aria-label="Editing mode options"><GoogleMaterialIcon name="arrow_drop_down" /></button>
-          </div>
+          </div></div>
           <span className="docs-toolbar-right-spacer" />
           <ToolbarButton label="Hide toolbar" onClick={() => setNotice('Toolbar pinned')}><GoogleMaterialIcon name="keyboard_arrow_up" /></ToolbarButton>
         </div>
