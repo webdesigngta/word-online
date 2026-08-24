@@ -24,7 +24,37 @@
   border-radius: 16px !important;
   background: transparent !important;
   box-shadow: none !important;
+  position: relative;
 }
+
+/* Google Material Symbols style toolbar icons */
+.word-app.docs-word-app .docs-toolbar svg,
+.word-app.docs-word-app .ribbon svg,
+.word-app.docs-word-app .icon-button svg {
+  display: none !important;
+}
+
+.word-app.docs-word-app .docs-toolbar button::before,
+.word-app.docs-word-app .ribbon button::before,
+.word-app.docs-word-app .icon-button::before {
+  font-family: 'Material Symbols Rounded';
+  font-size: 20px;
+  line-height: 1;
+  color: #444746;
+}
+
+.word-app.docs-word-app button[aria-label*='Undo']::before { content: 'undo'; }
+.word-app.docs-word-app button[aria-label*='Redo']::before { content: 'redo'; }
+.word-app.docs-word-app button[aria-label*='Bold']::before { content: 'format_bold'; }
+.word-app.docs-word-app button[aria-label*='Italic']::before { content: 'format_italic'; }
+.word-app.docs-word-app button[aria-label*='Underline']::before { content: 'format_underlined'; }
+.word-app.docs-word-app button[aria-label*='Link']::before { content: 'link'; }
+.word-app.docs-word-app button[aria-label*='Image']::before { content: 'image'; }
+.word-app.docs-word-app button[aria-label*='Print']::before { content: 'print'; }
+.word-app.docs-word-app button[aria-label*='Search']::before { content: 'search'; }
+.word-app.docs-word-app button[aria-label*='Align']::before { content: 'format_align_left'; }
+.word-app.docs-word-app button[aria-label*='List']::before { content: 'format_list_bulleted'; }
+.word-app.docs-word-app button[aria-label*='Check']::before { content: 'checklist'; }
 
 .word-app.docs-word-app .docs-toolbar-icon:hover,
 .word-app.docs-word-app .docs-toolbar button:hover,
