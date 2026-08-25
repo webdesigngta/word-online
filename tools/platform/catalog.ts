@@ -83,7 +83,7 @@ const liveWordTools: PlatformToolDefinition[] = wordInterfaces.map((tool) => ({
   secondaryKeywords: keywordMap[tool.route] ?? [],
   input: tool.input,
   output: tool.output,
-  processor: tool.processor,
+  processor: 'processor' in tool ? tool.processor : undefined,
   launchState: 'live',
   indexable: tool.indexable,
 }));
