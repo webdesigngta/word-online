@@ -5,7 +5,7 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { FaqJsonLd } from '@/components/JsonLd';
 import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
-import { getPlatformToolByRoute, livePlatformTools } from '@/tools/platform/catalog';
+import { allLivePlatformTools, getAllPlatformToolByRoute } from '@/tools/platform/allTools';
 
 const priorityRank = { P0: 0, P1: 1, P2: 2, P3: 3 } as const;
 
@@ -24,8 +24,8 @@ export function PlatformTaskPage({
   details: Array<{ title: string; text: string }>;
   faq: Array<{ question: string; answer: string }>;
 }) {
-  const current = getPlatformToolByRoute(route);
-  const relatedTools = livePlatformTools
+  const current = getAllPlatformToolByRoute(route);
+  const relatedTools = allLivePlatformTools
     .filter((item) => item.route !== current?.route)
     .sort((left, right) => {
       const leftSameCluster = Number(left.cluster === current?.cluster);
