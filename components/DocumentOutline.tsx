@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, MoreVertical, Plus } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type OutlineItem = {
@@ -64,14 +64,12 @@ export function DocumentOutline() {
   return (
     <aside className="fwo-outline" aria-label="Document outline">
       <div className="fwo-outline-heading">
-        <span>Document tabs</span>
-        <button type="button" aria-label="Add document tab" title="Add document tab"><Plus /></button>
+        <span>Document</span>
       </div>
 
       <div className="fwo-outline-tab" title={title}>
         <FileText aria-hidden="true" />
         <span>{title}</span>
-        <MoreVertical aria-hidden="true" />
       </div>
 
       <div className="fwo-outline-tree">
@@ -87,7 +85,7 @@ export function DocumentOutline() {
             {item.text}
           </button>
         )) : (
-          <p className="fwo-outline-empty">Headings you add to the document will appear here.</p>
+          <p className="fwo-outline-empty">Add headings to your document<br />to build an outline.</p>
         )}
       </div>
 
@@ -116,27 +114,6 @@ export function DocumentOutline() {
           font-size: 14px;
         }
 
-        .fwo-outline-heading button {
-          width: 28px;
-          height: 28px;
-          border: 0;
-          border-radius: 14px;
-          background: transparent;
-          color: #444746;
-          display: grid;
-          place-items: center;
-          cursor: pointer;
-        }
-
-        .fwo-outline-heading button:hover {
-          background: #e9eef6;
-        }
-
-        .fwo-outline-heading svg {
-          width: 17px;
-          height: 17px;
-        }
-
         .fwo-outline-tab {
           min-height: 40px;
           margin-top: 4px;
@@ -145,7 +122,7 @@ export function DocumentOutline() {
           background: #d3e3fd;
           color: #174ea6;
           display: grid;
-          grid-template-columns: 18px minmax(0, 1fr) 18px;
+          grid-template-columns: 18px minmax(0, 1fr);
           align-items: center;
           gap: 10px;
           font-size: 14px;
@@ -168,6 +145,8 @@ export function DocumentOutline() {
           padding: 0 0 8px 12px;
           border: 0 !important;
         }
+
+        .fwo-outline-tree::before { content: 'Outline'; display:block; margin:0 0 8px -26px; color:#3c4043; font-size:12px; font-weight:600; }
 
         .fwo-outline-item {
           width: 100%;
@@ -197,7 +176,6 @@ export function DocumentOutline() {
           margin: 8px 8px 0 -26px;
           color: #5f6368;
           font-size: 12px;
-          font-style: italic;
           line-height: 1.35;
         }
 

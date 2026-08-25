@@ -310,6 +310,7 @@ export function FunctionalMainMenus() {
       { label: 'Review suggested edits', separatorBefore: true, action: reviewSuggestions },
     ],
     Help: [
+      { label: 'Info', action: () => { window.location.href = `${window.location.pathname.replace(/\/?$/, '/').replace(/info\/$/, '')}info/`; } },
       { label: 'Keyboard shortcuts', action: () => window.alert('⌘Z Undo\n⌘Y Redo\n⌘B Bold\n⌘I Italic\n⌘U Underline\n⌘A Select all\n⌘P Print') },
       { label: 'About Free Word Online', separatorBefore: true, action: () => window.alert('Free Word Online\nNo login required. Documents autosave locally in your browser.') },
     ],

@@ -35,6 +35,7 @@ import {
 import { ChangeEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { GoogleMaterialIcon } from '@/components/GoogleMaterialIcon';
 import type { EditorRuntime } from '@/tools/word/editor/EditorRuntime';
+import { serializableEditorHtml } from '@/components/A4Pagination';
 
 const defaultDocument = '<p><br></p>';
 
@@ -112,7 +113,7 @@ export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
     (window as typeof window & { __fwoSaveTimer?: number }).__fwoSaveTimer = window.setTimeout(() => {
       try {
         if (!editorRef.current) return;
-        void runtime.draft.save({ title: documentTitle, html: editorRef.current.innerHTML })
+        void runtime.draft.save({ title: documentTitle, html: serializableEditorHtml(editorRef.current) })
           .then(() => setSavedState('Saved'))
           .catch(() => {
             setSavedState('Saved');
@@ -201,7 +202,7 @@ export function WordEditor({ runtime }: { runtime: EditorRuntime }) {
   }
 
   function downloadHtml() {
-    runtime.files.exportHtml(editorRef.current?.innerHTML ?? '', title);
+    runtime.files.exportHtml(editorRef.current ? serializableEditorHtml(editorRef.current) : '', title);
     setNotice('HTML downloaded');
   }
 

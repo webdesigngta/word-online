@@ -438,11 +438,15 @@
 .docs-editor-workspace .paper-stage { min-height: 100%; display: flex; justify-content: center; align-items: flex-start; padding: 16px 24px 96px; background: #f8fafd; }
 .docs-editor-workspace .editor-page {
   --paper-width: 210mm; --paper-height: 297mm; --paper-padding: 19.05mm;
-  box-sizing: border-box; position: relative; width: var(--paper-width); min-width: var(--paper-width); min-height: var(--paper-height);
-  margin-inline: auto; padding: var(--paper-padding); background: #fff; border: 1px solid #c7c7c7;
-  box-shadow: 0 1px 4px rgba(60,64,67,.18), 0 2px 8px rgba(60,64,67,.12); color: #202124; line-height: 1.55; outline: none;
+  box-sizing: border-box; position: relative; width: var(--paper-width); min-width: var(--paper-width);
+  margin-inline: auto; padding: 0; background: transparent; color: #202124; line-height: 1.55; outline: none;
 }
-.docs-editor-workspace .editor-page:focus { box-shadow: 0 2px 6px rgba(60,64,67,.2); }
+.docs-editor-workspace .fwo-page-sheet {
+  box-sizing: border-box; width: 210mm; height: 297mm; padding: 19.05mm; overflow: hidden;
+  background: #fff; border: 1px solid #c7c7c7; box-shadow: 0 1px 4px rgba(60,64,67,.18), 0 2px 8px rgba(60,64,67,.12);
+}
+.docs-editor-workspace .fwo-page-sheet + .fwo-page-sheet { margin-top: 24px; }
+.docs-editor-workspace .editor-page:focus .fwo-page-sheet { box-shadow: 0 2px 6px rgba(60,64,67,.2); }
 
 .docs-statusbar {
   height: 28px;
@@ -475,15 +479,19 @@
 }
 
 /* Compact title/header spacing for the editor-only layout. */
-.editor-route .docs-topbar { height: 50px; align-items: center; }
+.editor-route .docs-topbar { height: 56px; align-items: center; }
 .editor-route .docs-left { align-items: center; }
 .editor-route .docs-file-link { margin-top: 0; }
-.editor-route .docs-title-stack { grid-template-rows: 32px; align-content: center; }
-.editor-route .docs-title-line { height: 32px; padding-top: 0; }
+.editor-route .docs-left { min-width: 0; flex: 1 1 auto; }
+.editor-route .docs-title-stack { position: relative; min-width: 0; grid-template-rows: 28px 28px; align-content: center; }
+.editor-route .docs-title-line { height: 28px; padding-top: 0; min-width: 0; }
+.editor-route .docs-document-title { min-width: 80px; max-width: min(280px, 34vw); }
+.editor-route .fwo-main-menu-row { position: static !important; min-width: 0; overflow: hidden; }
 
 @media (max-width: 820px) {
   .docs-toolbar { padding-inline: 8px; }
   .docs-editor-workspace .paper-stage { justify-content: flex-start; padding: 12px 12px 72px; }
+  .docs-editor-workspace .editor-page { zoom: calc((100vw - 24px) / 794); }
 }
 
 @media (max-width: 1180px) {
@@ -580,5 +588,7 @@
   }
   .docs-editor-workspace { overflow: visible; background: white; }
   .docs-editor-workspace .paper-stage { display: block; padding: 0; background: white; }
-  .docs-editor-workspace .editor-page { width: 210mm; min-width: 210mm; min-height: 297mm; margin: 0; padding: 19.05mm; border: 0; box-shadow: none; transform: none !important; }
+  .docs-editor-workspace .editor-page { width: 210mm; min-width: 210mm; margin: 0; padding: 0; transform: none !important; }
+  .docs-editor-workspace .fwo-page-sheet { width:210mm; height:297mm; padding:19.05mm; border:0; box-shadow:none; break-after:page; page-break-after:always; overflow:hidden; }
+  .docs-editor-workspace .fwo-page-sheet + .fwo-page-sheet { margin-top:0; }
 }

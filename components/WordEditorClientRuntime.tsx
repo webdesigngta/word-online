@@ -24,6 +24,7 @@ import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
 import { HydrationReady } from '@/components/HydrationReady';
 import { WordEditorTool } from '@/tools/word/editor';
+import { A4Pagination } from '@/components/A4Pagination';
 
 export type SerializableEditorRuntimeOptions = {
   documentId?: string;
@@ -40,6 +41,7 @@ export function WordEditorClientRuntime({
   return (
     <>
       <WordEditorTool {...runtimeOptions} />
+      <A4Pagination />
       <DocumentOutline />
       <GracefulEditorDialogs />
       <FontMenuEnhancer />
