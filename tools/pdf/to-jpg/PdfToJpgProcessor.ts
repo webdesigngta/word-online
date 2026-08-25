@@ -124,7 +124,7 @@ export class PdfToJpgProcessor implements DocumentProcessor<PdfToJpgResult> {
         if (!context) throw new Error('Could not create an image rendering canvas');
         context.fillStyle = '#ffffff';
         context.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: context, viewport }).promise;
+        await page.render({ canvas, canvasContext: context, viewport }).promise;
         const blob = await canvasToJpeg(canvas, quality);
         outputs.push({
           name: outputName(file.name, pageNumber, pdf.numPages),
