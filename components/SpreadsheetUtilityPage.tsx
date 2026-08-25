@@ -51,6 +51,42 @@ const content: Record<SpreadsheetUtilityMode, { details: Array<{ title: string; 
       { question: 'Will Excel formatting be preserved?', answer: 'No. CSV stores plain tabular values, not workbook formatting, charts, or multiple worksheets.' },
     ],
   },
+  'xlsx-editor': {
+    details: [
+      { title: 'Edit workbook values', text: 'Open the first worksheet in a spreadsheet-style grid, change cell values, and add rows or columns.' },
+      { title: 'Clear preservation limits', text: 'This lightweight editor rebuilds a value-focused workbook. Complex formulas, macros, charts, styles, and additional worksheets are not preserved.' },
+      { title: 'Download XLSX or CSV', text: 'Export the edited table as a fresh XLSX workbook or a CSV file.' },
+    ],
+    faq: [
+      { question: 'Can I edit an XLSX file online?', answer: 'Yes. This tool lets you edit displayed cell values from the first worksheet directly in the browser.' },
+      { question: 'Will formulas and formatting stay intact?', answer: 'No. The editor is designed for simple value editing and rebuilds the output from the displayed table.' },
+      { question: 'What happens to other worksheets?', answer: 'The current editor works with the first worksheet only. Additional sheets are not included in the rebuilt download.' },
+    ],
+  },
+  'xlsx-viewer': {
+    details: [
+      { title: 'Read XLSX without editing', text: 'Open the first worksheet in a clean read-only browser grid without changing the original workbook.' },
+      { title: 'Values-first preview', text: 'The viewer focuses on displayed cell values and does not attempt to reproduce Excel charts or complex workbook layout.' },
+      { title: 'Responsive table view', text: 'Preview up to 1,000 rows and 100 columns with horizontal and vertical scrolling.' },
+    ],
+    faq: [
+      { question: 'Can I view an XLSX file without Excel?', answer: 'Yes. Choose an XLSX workbook and the first worksheet appears as a read-only table.' },
+      { question: 'Does the viewer change my workbook?', answer: 'No. The XLSX Viewer does not edit or overwrite your original file.' },
+      { question: 'Can I see every worksheet?', answer: 'The current viewer displays the first worksheet only.' },
+    ],
+  },
+  'xlsx-to-html': {
+    details: [
+      { title: 'Standalone HTML table', text: 'Convert the first worksheet into a portable HTML document containing a clean table of displayed values.' },
+      { title: 'Safe text output', text: 'Cell values are HTML-escaped before export so spreadsheet text is not treated as executable markup.' },
+      { title: 'Value-focused conversion', text: 'The HTML output does not reproduce Excel formulas, charts, macros, workbook styling, or additional sheets.' },
+    ],
+    faq: [
+      { question: 'Can I convert Excel to HTML?', answer: 'Yes. The tool converts the first XLSX worksheet into a standalone HTML table you can download.' },
+      { question: 'Will Excel formatting be preserved?', answer: 'No. The current converter creates a clean table from displayed cell values rather than reproducing workbook styling.' },
+      { question: 'Are spreadsheet cells safely escaped?', answer: 'Yes. Cell text is escaped before it is written into the HTML document.' },
+    ],
+  },
 };
 
 export function SpreadsheetUtilityPage({ route, mode }: { route: string; mode: SpreadsheetUtilityMode }) {
