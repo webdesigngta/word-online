@@ -24,6 +24,11 @@ export {
   registerPdfToWordProcessor,
 } from './to-word';
 export {
+  PdfToJpgProcessor,
+  pdfToJpgProcessor,
+  registerPdfToJpgProcessor,
+} from './to-jpg';
+export {
   PdfEditorProcessor,
   pdfEditorProcessor,
   pdfEditorTool,
@@ -55,6 +60,12 @@ export type {
   PdfToWordSource,
   PdfToWordWarning,
 } from './to-word';
+export type {
+  PdfToJpgError,
+  PdfToJpgOptions,
+  PdfToJpgOutput,
+  PdfToJpgResult,
+} from './to-jpg';
 export type {
   PdfEditorColor,
   PdfEditorError,
