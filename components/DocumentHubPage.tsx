@@ -2,7 +2,14 @@ import Link from 'next/link';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
-import type { WordInterfaceDefinition } from '@/tools/word/interfaces/config';
+
+type HubTool = {
+  id: string;
+  route: string;
+  eyebrow: string;
+  name: string;
+  primaryIntent: string;
+};
 
 export function DocumentHubPage({
   eyebrow,
@@ -13,7 +20,7 @@ export function DocumentHubPage({
   eyebrow: string;
   title: string;
   description: string;
-  tools: readonly WordInterfaceDefinition[];
+  tools: readonly HubTool[];
 }) {
   return (
     <>
