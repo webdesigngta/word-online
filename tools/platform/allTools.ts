@@ -12,6 +12,7 @@ import { livePdfMarkupTools } from './pdfMarkupCatalog';
 import { livePdfPageTools } from './pdfPageCatalog';
 import { livePdfSecurityTools } from './pdfSecurityCatalog';
 import { livePdfStampTools } from './pdfStampCatalog';
+import { liveRemainingRoadmapTools } from './remainingRoadmapCatalog';
 import { liveScanTools } from './scanCatalog';
 import { liveSpreadsheetTools } from './spreadsheetCatalog';
 import { liveUniversalConverterTools } from './universalConverterCatalog';
@@ -38,6 +39,7 @@ export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...liveOfficeExpansionTools,
   ...liveWordFinishTools,
   ...liveFinalRoadmapTools,
+  ...liveRemainingRoadmapTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
