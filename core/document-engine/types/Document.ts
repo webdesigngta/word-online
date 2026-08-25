@@ -1,4 +1,4 @@
-export type DocumentType = 'docx' | 'pdf' | 'xlsx' | 'html' | 'image' | 'txt' | 'rtf' | 'odt';
+export type DocumentType = 'docx' | 'pdf' | 'xlsx' | 'csv' | 'html' | 'image' | 'txt' | 'rtf' | 'odt';
 
 import type { DocumentMetadata } from './Metadata';
 
