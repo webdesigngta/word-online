@@ -25,6 +25,24 @@ const spreadsheetTools: readonly PlatformToolDefinition[] = [
     eyebrow: 'SPREADSHEET CONVERTER', primaryIntent: 'Convert XLSX to CSV', kind: 'converter', cluster: 'Spreadsheet', priority: 'P1', stage: 'Spreadsheet expansion',
     secondaryKeywords: ['excel to csv', 'xlsx to csv converter', 'convert excel to csv'], input: ['XLSX'], output: ['CSV'], processor: 'shared-xlsx-tabular', launchState: 'live', indexable: true,
   },
+  {
+    id: 'xlsx-editor', route: '/xlsx-editor', name: 'XLSX Editor', title: 'XLSX Editor Online',
+    description: 'Edit displayed values from the first worksheet of an XLSX file in a browser grid, then download a rebuilt XLSX or CSV file.',
+    eyebrow: 'SPREADSHEET TOOL', primaryIntent: 'Edit XLSX files online', kind: 'editor', cluster: 'Spreadsheet', priority: 'P1', stage: 'Spreadsheet expansion',
+    secondaryKeywords: ['excel editor online', 'edit xlsx online', 'online excel editor'], input: ['XLSX'], output: ['XLSX', 'CSV'], processor: 'shared-xlsx-tabular', launchState: 'live', indexable: true,
+  },
+  {
+    id: 'xlsx-viewer', route: '/xlsx-viewer', name: 'XLSX Viewer', title: 'XLSX Viewer Online',
+    description: 'Open the first worksheet of an XLSX workbook in a clean read-only browser table without changing the source file.',
+    eyebrow: 'SPREADSHEET TOOL', primaryIntent: 'View XLSX files online', kind: 'viewer', cluster: 'Spreadsheet', priority: 'P1', stage: 'Spreadsheet expansion',
+    secondaryKeywords: ['excel viewer online', 'view xlsx online', 'xlsx reader online'], input: ['XLSX'], output: ['Preview'], processor: 'shared-xlsx-tabular', launchState: 'live', indexable: true,
+  },
+  {
+    id: 'xlsx-to-html', route: '/xlsx-to-html', name: 'XLSX to HTML', title: 'Convert XLSX to HTML Online',
+    description: 'Convert displayed values from the first XLSX worksheet into a standalone HTML table directly in your browser.',
+    eyebrow: 'SPREADSHEET CONVERTER', primaryIntent: 'Convert XLSX to HTML', kind: 'converter', cluster: 'Spreadsheet', priority: 'P2', stage: 'Spreadsheet expansion',
+    secondaryKeywords: ['excel to html', 'xlsx to html converter', 'convert excel to html'], input: ['XLSX'], output: ['HTML'], processor: 'shared-xlsx-tabular', launchState: 'live', indexable: true,
+  },
 ];
 
 export const liveSpreadsheetTools = spreadsheetTools.filter((tool) => tool.launchState === 'live');
