@@ -18,6 +18,14 @@ export const liveFormatTools: readonly PlatformToolDefinition[] = [
     input: ['png'], output: ['pdf'], processor: 'pngToPdfProcessor', launchState: 'live', indexable: true,
   },
   {
+    id: 'scan-to-pdf', route: '/scan-to-pdf', name: 'Scan to PDF',
+    title: 'Scan to PDF – Convert Scans to PDF Online',
+    description: 'Combine JPG, JPEG, and PNG scans into one ordered PDF in your browser with configurable page size, orientation, and image fitting.',
+    eyebrow: 'SCAN TO PDF', primaryIntent: 'Convert scanned images to PDF', kind: 'converter', cluster: 'PDF', priority: 'P2', stage: 'PDF Expansion',
+    secondaryKeywords: ['scan to pdf online', 'convert scan to pdf', 'scanned images to pdf', 'photos to pdf'],
+    input: ['jpg', 'jpeg', 'png'], output: ['pdf'], processor: 'scanToPdfProcessor', launchState: 'live', indexable: true,
+  },
+  {
     id: 'html-to-pdf', route: '/html-to-pdf', name: 'HTML to PDF',
     title: 'HTML to PDF – Convert HTML to PDF Online',
     description: 'Convert an HTML file or pasted HTML markup to PDF in your browser. Unsafe scripts, embeds, forms, and remote resources are removed before rendering.',
@@ -32,5 +40,13 @@ export const liveFormatTools: readonly PlatformToolDefinition[] = [
     eyebrow: 'EXCEL TO PDF', primaryIntent: 'Convert an XLSX Excel workbook to PDF', kind: 'converter', cluster: 'Spreadsheet', priority: 'P1', stage: 'PDF Expansion',
     secondaryKeywords: ['convert excel to pdf', 'xlsx to pdf', 'excel pdf converter'],
     input: ['xlsx'], output: ['pdf'], processor: 'excelToPdfProcessor', launchState: 'live', indexable: true,
+  },
+  {
+    id: 'csv-to-pdf', route: '/csv-to-pdf', name: 'CSV to PDF',
+    title: 'CSV to PDF – Convert CSV to PDF Online',
+    description: 'Convert a CSV table into a paginated PDF in your browser with A4 or Letter page size and portrait or landscape orientation.',
+    eyebrow: 'CSV TO PDF', primaryIntent: 'Convert CSV table to PDF', kind: 'converter', cluster: 'Spreadsheet', priority: 'P3', stage: 'Future Platform',
+    secondaryKeywords: ['convert csv to pdf', 'csv file to pdf', 'csv to pdf converter'],
+    input: ['csv'], output: ['pdf'], processor: 'csvToPdfProcessor', launchState: 'live', indexable: true,
   },
 ];
