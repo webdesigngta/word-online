@@ -44,6 +44,11 @@ function safeMargin(value: number | undefined): number {
   return value;
 }
 
+function hasSelection(value: PdfFormValue): boolean {
+  if (Array.isArray(value)) return value.some((item) => String(item).length > 0);
+  return String(value).length > 0;
+}
+
 export class PdfDocumentUtilityProcessor implements DocumentProcessor<PdfDocumentUtilityResult> {
   type = 'pdf' as const;
 
@@ -74,13 +79,13 @@ export class PdfDocumentUtilityProcessor implements DocumentProcessor<PdfDocumen
         const pages = selectedPages(options.pages, pageCount);
         for (const pageNumber of pages) {
           const page = pdf.getPage(pageNumber - 1);
-          const { width, height } = page.getSize();
-          const croppedWidth = width - margins.left - margins.right;
-          const croppedHeight = height - margins.top - margins.bottom;
+          const box = page.getCropBox();
+          const croppedWidth = box.width - margins.left - margins.right;
+          const croppedHeight = box.height - margins.top - margins.bottom;
           if (croppedWidth < 36 || croppedHeight < 36) {
             throw new Error(`Crop margins are too large for page ${pageNumber}`);
           }
-          page.setCropBox(margins.left, margins.bottom, croppedWidth, croppedHeight);
+          page.setCropBox(box.x + margins.left, box.y + margins.bottom, croppedWidth, croppedHeight);
         }
         return { success: true, data: await pdf.save(), pageCount, fieldCount: 0, changedFields: 0, errors: [] };
       }
@@ -106,10 +111,13 @@ export class PdfDocumentUtilityProcessor implements DocumentProcessor<PdfDocumen
           const checked = value === true || String(value).toLowerCase() === 'true' || String(value) === '1' || String(value).toLowerCase() === 'yes';
           if (checked) field.check(); else field.uncheck();
         } else if (field instanceof pdfLib.PDFRadioGroup) {
+          if (!hasSelection(value)) continue;
           field.select(String(value));
         } else if (field instanceof pdfLib.PDFDropdown) {
+          if (!hasSelection(value)) continue;
           field.select(String(value));
         } else if (field instanceof pdfLib.PDFOptionList) {
+          if (!hasSelection(value)) continue;
           field.select(Array.isArray(value) ? value.map(String) : [String(value)]);
         } else {
           continue;
