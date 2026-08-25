@@ -1,4 +1,5 @@
 import { livePlatformTools, type PlatformToolDefinition } from './catalog';
+import { liveCreatorTools } from './creatorCatalog';
 import { liveDocumentFormatTools } from './documentFormatCatalog';
 import { liveDocumentSuiteTools } from './documentSuiteCatalog';
 import { liveFormatTools } from './formatCatalog';
@@ -30,6 +31,7 @@ export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...liveDocumentFormatTools,
   ...liveSpreadsheetTools,
   ...liveDocumentSuiteTools,
+  ...liveCreatorTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
