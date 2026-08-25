@@ -24,9 +24,7 @@ async function pdfPageCount(blob: Blob): Promise<number | null> {
   try {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const pdf = await pdfjs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
-    const count = pdf.numPages;
-    await pdf.destroy();
-    return count;
+    return pdf.numPages;
   } catch { return null; }
 }
 
