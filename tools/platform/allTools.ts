@@ -8,6 +8,7 @@ import { livePdfPageTools } from './pdfPageCatalog';
 import { livePdfSecurityTools } from './pdfSecurityCatalog';
 import { livePdfStampTools } from './pdfStampCatalog';
 import { liveScanTools } from './scanCatalog';
+import { liveUniversalConverterTools } from './universalConverterCatalog';
 import { liveWordImageTools } from './wordImageCatalog';
 
 export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
@@ -22,6 +23,7 @@ export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...livePdfMarkupTools,
   ...livePdfDocumentTools,
   ...liveWordImageTools,
+  ...liveUniversalConverterTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
