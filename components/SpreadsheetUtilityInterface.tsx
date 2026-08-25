@@ -11,18 +11,24 @@ export type SpreadsheetUtilityMode =
   | 'xlsx-to-csv'
   | 'xlsx-editor'
   | 'xlsx-viewer'
-  | 'xlsx-to-html';
+  | 'xlsx-to-html'
+  | 'xls-viewer'
+  | 'spreadsheet-online';
 
 const maxRows = 1000;
 const maxColumns = 100;
 
 function baseName(name: string) {
-  return name.replace(/\.(?:csv|xlsx)$/i, '') || 'spreadsheet';
+  return name.replace(/\.(?:csv|xlsx|xls)$/i, '') || 'spreadsheet';
 }
 
 function normalizedRows(rows: string[][]) {
   const width = Math.min(maxColumns, Math.max(1, ...rows.map((row) => row.length)));
   return rows.slice(0, maxRows).map((row) => Array.from({ length: width }, (_, index) => row[index] ?? ''));
+}
+
+function blankRows() {
+  return Array.from({ length: 20 }, () => Array(10).fill('')) as string[][];
 }
 
 function columnLabel(index: number) {
@@ -37,7 +43,7 @@ function columnLabel(index: number) {
 }
 
 function isXlsxMode(mode: SpreadsheetUtilityMode) {
-  return mode === 'xlsx-to-csv' || mode === 'xlsx-editor' || mode === 'xlsx-viewer' || mode === 'xlsx-to-html';
+  return mode === 'xlsx-to-csv' || mode === 'xlsx-editor' || mode === 'xlsx-viewer' || mode === 'xlsx-to-html' || mode === 'xls-viewer';
 }
 
 function modeCopy(mode: SpreadsheetUtilityMode) {
@@ -46,29 +52,38 @@ function modeCopy(mode: SpreadsheetUtilityMode) {
   if (mode === 'csv-to-xlsx') return { label: 'CSV to XLSX', accept: '.csv,text/csv', action: 'Choose CSV' };
   if (mode === 'xlsx-editor') return { label: 'XLSX editor', accept: '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', action: 'Open XLSX' };
   if (mode === 'xlsx-viewer') return { label: 'XLSX viewer', accept: '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', action: 'Open XLSX' };
+  if (mode === 'xls-viewer') return { label: 'XLS viewer', accept: '.xls,application/vnd.ms-excel', action: 'Open XLS' };
   if (mode === 'xlsx-to-html') return { label: 'XLSX to HTML', accept: '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', action: 'Choose XLSX' };
+  if (mode === 'spreadsheet-online') return { label: 'Spreadsheet Online', accept: '.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', action: 'Open CSV/XLSX' };
   return { label: 'XLSX to CSV', accept: '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', action: 'Choose XLSX' };
 }
 
 export function SpreadsheetUtilityInterface({ mode }: { mode: SpreadsheetUtilityMode }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [rows, setRows] = useState<string[][]>([]);
-  const [fileName, setFileName] = useState('');
+  const startsBlank = mode === 'spreadsheet-online';
+  const [rows, setRows] = useState<string[][]>(() => startsBlank ? blankRows() : []);
+  const [fileName, setFileName] = useState(startsBlank ? 'Untitled spreadsheet' : '');
   const [sheetName, setSheetName] = useState('Sheet1');
-  const [status, setStatus] = useState('Choose a file to begin.');
+  const [status, setStatus] = useState(startsBlank ? 'Start typing in the grid or open a CSV/XLSX file.' : 'Choose a file to begin.');
   const [busy, setBusy] = useState(false);
   const copy = modeCopy(mode);
-  const editable = mode === 'csv-editor' || mode === 'xlsx-editor';
-  const tableMode = editable || mode === 'csv-viewer' || mode === 'xlsx-viewer';
+  const editable = mode === 'csv-editor' || mode === 'xlsx-editor' || mode === 'spreadsheet-online';
+  const tableMode = editable || mode === 'csv-viewer' || mode === 'xlsx-viewer' || mode === 'xls-viewer';
 
   async function open(file?: File) {
     if (!file) return;
     setBusy(true);
     setStatus(`Opening ${file.name}…`);
     try {
-      const xlsx = isXlsxMode(mode);
-      if (xlsx && !/\.xlsx$/i.test(file.name)) throw new Error('Choose an XLSX file.');
-      if (!xlsx && !/\.csv$/i.test(file.name)) throw new Error('Choose a CSV file.');
+      let xlsx = isXlsxMode(mode);
+      if (mode === 'spreadsheet-online') {
+        if (/\.csv$/i.test(file.name)) xlsx = false;
+        else if (/\.xlsx$/i.test(file.name)) xlsx = true;
+        else throw new Error('Choose a CSV or XLSX file.');
+      } else if (mode === 'xls-viewer') {
+        if (!/\.xls$/i.test(file.name)) throw new Error('Choose an XLS file.');
+      } else if (xlsx && !/\.xlsx$/i.test(file.name)) throw new Error('Choose an XLSX file.');
+      else if (!xlsx && !/\.csv$/i.test(file.name)) throw new Error('Choose a CSV file.');
       if (file.size <= 0 || file.size > 20 * 1024 * 1024) throw new Error('Files must be between 1 byte and 20 MB.');
       const data = xlsx ? await readXlsx(file) : await readCsv(file);
       const next = normalizedRows(data.rows);
@@ -78,8 +93,10 @@ export function SpreadsheetUtilityInterface({ mode }: { mode: SpreadsheetUtility
       const baseStatus = `${next.length || 1} row${next.length === 1 ? '' : 's'} loaded`;
       setStatus(xlsx ? `${baseStatus} from ${data.sheetName || 'the first worksheet'}.` : `${baseStatus}.`);
     } catch (error) {
-      setRows([]);
-      setFileName('');
+      if (!startsBlank) {
+        setRows([]);
+        setFileName('');
+      }
       setStatus(error instanceof Error ? error.message : 'Could not open this file.');
     } finally {
       setBusy(false);
@@ -126,6 +143,13 @@ export function SpreadsheetUtilityInterface({ mode }: { mode: SpreadsheetUtility
     else if (mode === 'xlsx-to-html') downloadHtml();
   }
 
+  function resetBlank() {
+    setRows(blankRows());
+    setFileName('Untitled spreadsheet');
+    setSheetName('Sheet1');
+    setStatus('Blank spreadsheet ready.');
+  }
+
   const columnCount = rows[0]?.length || 0;
   const convertLabel = mode === 'csv-to-xlsx' ? 'Download XLSX' : mode === 'xlsx-to-html' ? 'Download HTML' : 'Download CSV';
 
@@ -142,7 +166,8 @@ export function SpreadsheetUtilityInterface({ mode }: { mode: SpreadsheetUtility
         </div>
         <div className="fwo-sheet-actions">
           {editable && rows.length ? <><button className="fwo-sheet-btn" type="button" onClick={addRow}><Plus />Row</button><button className="fwo-sheet-btn" type="button" onClick={addColumn}><Plus />Column</button></> : null}
-          <button className="fwo-sheet-btn primary" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? <RefreshCw /> : <FolderOpen />}{busy ? 'Opening…' : fileName ? 'Open another' : copy.action}</button>
+          {mode === 'spreadsheet-online' ? <button className="fwo-sheet-btn" type="button" onClick={resetBlank} disabled={busy}>New blank</button> : null}
+          <button className="fwo-sheet-btn primary" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? <RefreshCw /> : <FolderOpen />}{busy ? 'Opening…' : fileName && mode !== 'spreadsheet-online' ? 'Open another' : copy.action}</button>
         </div>
       </div>
 
@@ -151,6 +176,7 @@ export function SpreadsheetUtilityInterface({ mode }: { mode: SpreadsheetUtility
       ) : tableMode ? (
         <>
           {mode === 'xlsx-editor' ? <div className="fwo-sheet-warning">This lightweight editor works with displayed values from the first worksheet. Complex formulas, charts, workbook styling, macros, and additional sheets are not preserved in the rebuilt download.</div> : null}
+          {mode === 'spreadsheet-online' ? <div className="fwo-sheet-warning">This lightweight spreadsheet focuses on cell values. It does not provide Excel formulas, charts, macros, or advanced workbook formatting.</div> : null}
           <div className="fwo-sheet-wrap">
             <table className="fwo-sheet-table">
               <thead><tr><th>#</th>{Array.from({ length: columnCount }, (_, index) => <th key={index}>{columnLabel(index)}</th>)}</tr></thead>

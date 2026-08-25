@@ -4,6 +4,7 @@ import { liveDocumentFormatTools } from './documentFormatCatalog';
 import { liveDocumentSuiteTools } from './documentSuiteCatalog';
 import { liveFormatTools } from './formatCatalog';
 import { liveImageWordTools } from './imageWordCatalog';
+import { liveOfficeExpansionTools } from './officeExpansionCatalog';
 import { livePdfTools } from './pdfCatalog';
 import { livePdfDocumentTools } from './pdfDocumentCatalog';
 import { livePdfMarkupTools } from './pdfMarkupCatalog';
@@ -32,6 +33,7 @@ export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...liveSpreadsheetTools,
   ...liveDocumentSuiteTools,
   ...liveCreatorTools,
+  ...liveOfficeExpansionTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
