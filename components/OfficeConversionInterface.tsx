@@ -104,7 +104,7 @@ async function convertPdfToExcel(file: File) {
     const output = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
     return { blob: new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), pageCount: pdf.numPages };
   } finally {
-    await pdf.destroy?.();
+    await (pdf as any).destroy?.();
   }
 }
 
@@ -128,12 +128,12 @@ async function convertPdfToPpt(file: File) {
       if (!context) throw new Error('Could not create a page canvas.');
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: context, viewport }).promise;
+      await page.render({ canvas, canvasContext: context, viewport }).promise;
       slides.push({ png: await canvasPngBytes(canvas) });
     }
     return { blob: await buildSimplePptx(slides, safeBase(file.name)), pageCount: pdf.numPages };
   } finally {
-    await pdf.destroy?.();
+    await (pdf as any).destroy?.();
   }
 }
 
