@@ -6,7 +6,7 @@ import {
   MessageSquare, Printer, Redo2, RemoveFormatting, Search, SpellCheck2, Type, Underline,
   Undo2, X,
 } from 'lucide-react';
-import { ComponentType, useEffect, useState } from 'react';
+import { ComponentType, CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
@@ -159,6 +159,8 @@ export function FunctionalMainMenus() {
   const [ruler, setRuler] = useState(true);
   const [marks, setMarks] = useState(false);
   const [printLayout, setPrintLayout] = useState(true);
+  const [menuPosition, setMenuPosition] = useState<CSSProperties>({});
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   useEffect(() => {
     setTarget(document.querySelector<HTMLElement>('.docs-title-stack'));
@@ -169,7 +171,7 @@ export function FunctionalMainMenus() {
 
     const closeOutside = (event: MouseEvent) => {
       const row = document.querySelector<HTMLElement>('.fwo-main-menu-row');
-      if (row?.contains(event.target as Node)) return;
+      if (row?.contains(event.target as Node) || (event.target as Element).closest?.('.fwo-menu-layer')) return;
       setOpen(null);
       setSub(null);
     };
@@ -192,6 +194,22 @@ export function FunctionalMainMenus() {
       document.removeEventListener('contextmenu', closeOutside, true);
       window.removeEventListener('keydown', closeOnEscape);
       window.removeEventListener('blur', closeOnBlur);
+    };
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const align = () => {
+      const rect = triggerRefs.current[open]?.getBoundingClientRect();
+      if (!rect) return;
+      setMenuPosition({ top: rect.bottom + 2, left: Math.max(8, Math.min(rect.left, window.innerWidth - 302)) });
+    };
+    align();
+    window.addEventListener('resize', align);
+    window.addEventListener('scroll', align, true);
+    return () => {
+      window.removeEventListener('resize', align);
+      window.removeEventListener('scroll', align, true);
     };
   }, [open]);
 
@@ -323,6 +341,7 @@ export function FunctionalMainMenus() {
       {Object.keys(menus).map((name) => (
         <div className="fwo-main-menu-wrap" key={name}>
           <button
+            ref={(element) => { triggerRefs.current[name] = element; }}
             type="button"
             className="fwo-main-menu-trigger"
             aria-expanded={open === name}
@@ -339,7 +358,6 @@ export function FunctionalMainMenus() {
           >
             {name}
           </button>
-          {open === name && <MenuPanel entries={menus[name]} sub={sub} setSub={setSub} run={run} />}
         </div>
       ))}
       <style jsx global>{`
@@ -349,7 +367,8 @@ export function FunctionalMainMenus() {
         .fwo-main-menu-wrap { position:relative; }
         .fwo-main-menu-trigger { height:28px; padding:0 7px; border:0; border-radius:4px; background:transparent; color:#444746; font-size:14px; cursor:pointer; }
         .fwo-main-menu-trigger:hover,.fwo-main-menu-trigger[aria-expanded='true'] { background:#e9eef6; }
-        .fwo-main-menu-panel { position:absolute; top:28px; left:0; z-index:6200; width:286px; padding:6px; overflow:visible; border:1px solid #e0e3e7; border-radius:9px; background:#fff; box-shadow:0 8px 26px rgba(60,64,67,.22); }
+        .fwo-menu-layer { position:fixed; z-index:1000; font-family:Arial,Helvetica,sans-serif; }
+        .fwo-main-menu-panel { width:286px; padding:6px; overflow:visible; border:1px solid #e0e3e7; border-radius:9px; background:#fff; box-shadow:0 8px 26px rgba(60,64,67,.22); }
         .fwo-main-menu-item-wrap { position:relative; }
         .fwo-main-menu-item { width:100%; min-height:34px; border:0; border-radius:5px; background:transparent; color:#303134; padding:6px 10px; display:grid; grid-template-columns:20px minmax(0,1fr) auto; align-items:center; gap:8px; text-align:left; cursor:pointer; font-size:13px; }
         .fwo-main-menu-item:hover,.fwo-main-menu-item[aria-expanded='true'] { background:#f1f3f4; }
@@ -366,15 +385,19 @@ export function FunctionalMainMenus() {
         .editor-page.fwo-show-marks p::after,.editor-page.fwo-show-marks h1::after,.editor-page.fwo-show-marks h2::after,.editor-page.fwo-show-marks h3::after { content:' ¶'; color:#9aa0a6; font-weight:400; }
         @media(max-width:720px) {
           .fwo-main-menu-trigger { padding:0 5px; font-size:13px; }
-          .fwo-main-menu-row .fwo-main-menu-wrap:nth-child(n+6) { display:none; }
-          .fwo-main-menu-panel { position:fixed; left:8px!important; right:8px; width:auto; top:86px; max-height:calc(100vh - 100px); overflow:auto; }
+          .fwo-menu-layer { left:8px!important; right:8px; }
+          .fwo-main-menu-panel { width:auto; max-height:calc(100vh - 100px); overflow:auto; }
           .fwo-submenu { position:static; width:auto; max-height:42vh; margin:3px 0 3px 24px; box-shadow:none; border-color:#e8eaed; }
         }
       `}</style>
     </nav>
   );
 
-  return createPortal(nav, target);
+  return <>{createPortal(nav, target)}{open && createPortal(
+    <div className="fwo-menu-layer" style={menuPosition}>
+      <MenuPanel entries={menus[open]} sub={sub} setSub={setSub} run={run} />
+    </div>, document.body
+  )}</>;
 }
 
 function MenuPanel({ entries, sub, setSub, run }: { entries: MenuEntry[]; sub: string | null; setSub: (value: string | null) => void; run: (action?: () => void) => void }) {
