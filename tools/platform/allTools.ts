@@ -2,6 +2,7 @@ import { livePlatformTools, type PlatformToolDefinition } from './catalog';
 import { liveCreatorTools } from './creatorCatalog';
 import { liveDocumentFormatTools } from './documentFormatCatalog';
 import { liveDocumentSuiteTools } from './documentSuiteCatalog';
+import { liveFinalRoadmapTools } from './finalRoadmapCatalog';
 import { liveFormatTools } from './formatCatalog';
 import { liveImageWordTools } from './imageWordCatalog';
 import { liveOfficeExpansionTools } from './officeExpansionCatalog';
@@ -36,6 +37,7 @@ export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...liveCreatorTools,
   ...liveOfficeExpansionTools,
   ...liveWordFinishTools,
+  ...liveFinalRoadmapTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
