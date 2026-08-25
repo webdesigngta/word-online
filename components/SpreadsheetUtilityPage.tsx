@@ -87,6 +87,30 @@ const content: Record<SpreadsheetUtilityMode, { details: Array<{ title: string; 
       { question: 'Are spreadsheet cells safely escaped?', answer: 'Yes. Cell text is escaped before it is written into the HTML document.' },
     ],
   },
+  'xls-viewer': {
+    details: [
+      { title: 'Legacy Excel viewing', text: 'Open older XLS workbooks in a read-only browser grid using the same proven spreadsheet parser as the XLSX tools.' },
+      { title: 'First worksheet preview', text: 'The viewer displays values from the first worksheet and leaves the original XLS file untouched.' },
+      { title: 'Clear scope', text: 'Charts, macros, complex formatting, and additional worksheets are not reproduced in this lightweight preview.' },
+    ],
+    faq: [
+      { question: 'Can I open an XLS file without Excel?', answer: 'Yes. Choose an XLS workbook and the first worksheet is shown as a read-only table.' },
+      { question: 'Does the XLS viewer convert my file?', answer: 'No. It only reads the workbook for preview and does not overwrite the source file.' },
+      { question: 'Will charts and formatting look exactly like Excel?', answer: 'No. The viewer focuses on cell values rather than reproducing the full desktop Excel layout.' },
+    ],
+  },
+  'spreadsheet-online': {
+    details: [
+      { title: 'Start with a blank grid', text: 'Create a lightweight spreadsheet directly in the browser without uploading a file first.' },
+      { title: 'Open CSV or XLSX', text: 'You can also load an existing CSV or XLSX file into the editable values grid.' },
+      { title: 'Export CSV or XLSX', text: 'Download the current table in either common spreadsheet format when you are finished.' },
+    ],
+    faq: [
+      { question: 'Can I make a spreadsheet online for free?', answer: 'Yes. The tool opens with a blank editable grid and can export the values as CSV or XLSX.' },
+      { question: 'Can I open an existing spreadsheet?', answer: 'Yes. The current version can load CSV and XLSX files into the value-focused editor.' },
+      { question: 'Does it support formulas and charts?', answer: 'Not yet. This lightweight spreadsheet focuses on entering and editing cell values.' },
+    ],
+  },
 };
 
 export function SpreadsheetUtilityPage({ route, mode }: { route: string; mode: SpreadsheetUtilityMode }) {
