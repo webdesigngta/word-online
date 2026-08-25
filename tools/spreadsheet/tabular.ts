@@ -8,6 +8,10 @@ function normalize(value: unknown) {
   return String(value);
 }
 
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] ?? char));
+}
+
 export async function readCsv(file: File): Promise<TabularData> {
   const text = await file.text();
   const workbook = XLSX.read(text, { type: 'string', raw: false });
@@ -36,6 +40,14 @@ export function rowsToXlsx(rows: string[][], sheetName = 'Sheet1') {
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), sheetName.slice(0, 31) || 'Sheet1');
   const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
   return new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+export function rowsToHtml(rows: string[][], title = 'Spreadsheet') {
+  const safeTitle = escapeHtml(title || 'Spreadsheet');
+  const body = rows
+    .map((row, rowIndex) => `<tr>${row.map((cell) => `<${rowIndex === 0 ? 'th' : 'td'}>${escapeHtml(cell)}</${rowIndex === 0 ? 'th' : 'td'}>`).join('')}</tr>`)
+    .join('');
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safeTitle}</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#202124}table{border-collapse:collapse;width:100%;max-width:100%;overflow:auto}th,td{border:1px solid #dadce0;padding:8px 10px;text-align:left;vertical-align:top}th{background:#f1f3f4;font-weight:600}</style></head><body><table>${body}</table></body></html>`;
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
