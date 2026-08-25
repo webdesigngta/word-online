@@ -78,7 +78,7 @@ export class WordToImageProcessor {
           canvas.height = 0;
         }
       } finally {
-        await pdf.destroy();
+        await (pdf as unknown as { destroy?: () => Promise<void> }).destroy?.();
       }
 
       return { success: true, outputs, pageCount: outputs.length, warnings: pdfResult.warnings.map((item) => item.message), errors: [] };
