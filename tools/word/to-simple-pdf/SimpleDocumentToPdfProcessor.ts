@@ -58,7 +58,7 @@ async function pageCount(blob: Blob): Promise<number | null> {
 }
 
 export class SimpleDocumentToPdfProcessor implements DocumentProcessor<SimpleDocumentToPdfResult> {
-  type = 'text' as const;
+  type = 'txt' as const;
 
   async process(input: File | readonly File[], rawOptions: Record<string, unknown> = {}): Promise<SimpleDocumentToPdfResult> {
     if (!('size' in input)) {
