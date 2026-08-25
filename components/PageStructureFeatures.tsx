@@ -119,7 +119,7 @@ function upsertRegion(type: 'header' | 'footer', value: string) {
 function currentPageCount() {
   const root = editor();
   if (!root) return 1;
-  return Math.max(1, root.querySelectorAll('[data-fwo-page-break]').length + 1);
+  return Math.max(1, Number(root.dataset.pageCount) || root.querySelectorAll('[data-fwo-page]').length || root.querySelectorAll('[data-fwo-page-break]').length + 1);
 }
 
 function documentHasContent(root: HTMLElement) {
@@ -249,10 +249,12 @@ export function PageStructureFeatures() {
     refreshPageCount();
     const observer = new MutationObserver(refreshPageCount);
     observer.observe(root, { childList: true, subtree: true });
+    root.addEventListener('fwo:pages', refreshPageCount);
     const onSelection = () => rememberSelection();
     document.addEventListener('selectionchange', onSelection);
     return () => {
       observer.disconnect();
+      root.removeEventListener('fwo:pages', refreshPageCount);
       document.removeEventListener('selectionchange', onSelection);
     };
   }, [toolbarTarget]);
