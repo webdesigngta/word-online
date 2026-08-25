@@ -40,6 +40,10 @@ export {
   pdfOcrTool,
   registerPdfOcrProcessor,
 } from './ocr';
+export {
+  PdfSecurityProcessor,
+  pdfSecurityProcessor,
+} from './security';
 export type {
   PdfCompressionError,
   PdfCompressionOptions,
@@ -88,6 +92,12 @@ export type {
   PdfOcrWarning,
 } from './ocr';
 export type { PdfOcrWord } from './ocr';
+export type {
+  PdfSecurityError,
+  PdfSecurityMode,
+  PdfSecurityOptions,
+  PdfSecurityResult,
+} from './security';
 export {
   MAX_PDF_FILE_SIZE,
   validatePdfFile,
