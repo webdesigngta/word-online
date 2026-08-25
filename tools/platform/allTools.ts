@@ -14,6 +14,7 @@ import { livePdfStampTools } from './pdfStampCatalog';
 import { liveScanTools } from './scanCatalog';
 import { liveSpreadsheetTools } from './spreadsheetCatalog';
 import { liveUniversalConverterTools } from './universalConverterCatalog';
+import { liveWordFinishTools } from './wordFinishCatalog';
 import { liveWordImageTools } from './wordImageCatalog';
 
 export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
@@ -34,6 +35,7 @@ export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...liveDocumentSuiteTools,
   ...liveCreatorTools,
   ...liveOfficeExpansionTools,
+  ...liveWordFinishTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
