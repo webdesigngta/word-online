@@ -1,9 +1,11 @@
 import { livePlatformTools, type PlatformToolDefinition } from './catalog';
+import { liveFormatTools } from './formatCatalog';
 import { livePdfTools } from './pdfCatalog';
 
 export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...livePlatformTools,
   ...livePdfTools,
+  ...liveFormatTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
