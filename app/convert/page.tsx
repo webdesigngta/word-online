@@ -1,15 +1,15 @@
 import { DocumentHubPage } from '@/components/DocumentHubPage';
 import { pageMetadata } from '@/lib/seo';
-import { wordInterfaces } from '@/tools/word/interfaces/config';
+import { allLivePlatformTools } from '@/tools/platform/allTools';
 
 export const metadata = pageMetadata({
-  title: 'Convert Documents Online – Free Word Converters',
-  description: 'Browse browser-based Word and document conversion tools for DOCX, PDF, HTML, TXT, RTF and ODT workflows.',
+  title: 'Convert Documents Online – PDF, Word, Excel & More',
+  description: 'Browse live converters for PDF, Word, DOCX, images, spreadsheets, presentations, HTML, text and other document formats.',
   path: '/convert',
 });
 
-const tools = wordInterfaces.filter((tool) => tool.indexable && tool.kind === 'converter');
+const tools = allLivePlatformTools.filter((tool) => tool.indexable && tool.kind === 'converter');
 
 export default function ConvertHubPage() {
-  return <DocumentHubPage eyebrow="CONVERT DOCUMENTS" title="Convert Documents" description="Choose a focused conversion workflow. The interfaces share validation and processing logic while keeping each input and output path task-specific." tools={tools} />;
+  return <DocumentHubPage eyebrow="CONVERT" title="Convert documents online" description="Choose an input and output format. Converter cards use both product colors so cross-format workflows are easy to recognize at a glance." tools={tools} />;
 }

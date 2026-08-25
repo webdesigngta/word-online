@@ -1,15 +1,15 @@
 import { DocumentHubPage } from '@/components/DocumentHubPage';
 import { pageMetadata } from '@/lib/seo';
-import { wordInterfaces } from '@/tools/word/interfaces/config';
+import { allLivePlatformTools } from '@/tools/platform/allTools';
 
 export const metadata = pageMetadata({
-  title: 'Edit Documents Online – Free Word Editors',
-  description: 'Choose a browser-based Word document editing workflow for DOCX files or start with the full Word Online editor.',
+  title: 'Edit Documents Online – Word, PDF, Spreadsheets & More',
+  description: 'Browse live document editors for Word, DOCX, PDF, spreadsheets, Markdown and other supported formats.',
   path: '/edit',
 });
 
-const tools = wordInterfaces.filter((tool) => tool.indexable && tool.kind === 'editor');
+const tools = allLivePlatformTools.filter((tool) => tool.indexable && tool.kind === 'editor');
 
 export default function EditHubPage() {
-  return <DocumentHubPage eyebrow="EDIT DOCUMENTS" title="Edit Documents" description="Open an existing DOCX file or start in the full browser editor. These editing interfaces share the same document engine while keeping each task focused." tools={tools} />;
+  return <DocumentHubPage eyebrow="EDIT" title="Edit documents online" description="Choose the editor that matches your file. Word, PDF, spreadsheet and text experiences use the same product design system while keeping file-specific controls focused." tools={tools} />;
 }
