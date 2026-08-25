@@ -2,6 +2,7 @@ import { livePlatformTools, type PlatformToolDefinition } from './catalog';
 import { liveFormatTools } from './formatCatalog';
 import { liveImageWordTools } from './imageWordCatalog';
 import { livePdfTools } from './pdfCatalog';
+import { livePdfMarkupTools } from './pdfMarkupCatalog';
 import { livePdfPageTools } from './pdfPageCatalog';
 import { livePdfSecurityTools } from './pdfSecurityCatalog';
 import { livePdfStampTools } from './pdfStampCatalog';
@@ -16,6 +17,7 @@ export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...liveScanTools,
   ...livePdfStampTools,
   ...livePdfSecurityTools,
+  ...livePdfMarkupTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
