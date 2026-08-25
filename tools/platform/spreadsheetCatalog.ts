@@ -43,6 +43,18 @@ const spreadsheetTools: readonly PlatformToolDefinition[] = [
     eyebrow: 'SPREADSHEET CONVERTER', primaryIntent: 'Convert XLSX to HTML', kind: 'converter', cluster: 'Spreadsheet', priority: 'P2', stage: 'Spreadsheet expansion',
     secondaryKeywords: ['excel to html', 'xlsx to html converter', 'convert excel to html'], input: ['XLSX'], output: ['HTML'], processor: 'shared-xlsx-tabular', launchState: 'live', indexable: true,
   },
+  {
+    id: 'xls-viewer', route: '/xls-viewer', name: 'XLS Viewer', title: 'XLS Viewer – View XLS Online',
+    description: 'Open the first worksheet of a legacy XLS workbook in a read-only browser grid without installing Excel.',
+    eyebrow: 'XLS VIEWER', primaryIntent: 'View XLS files online', kind: 'viewer', cluster: 'Spreadsheet', priority: 'P3', stage: 'Future Platform',
+    secondaryKeywords: ['view xls online', 'xls viewer online', 'open xls online'], input: ['XLS'], output: ['Preview'], processor: 'shared-xlsx-tabular', launchState: 'live', indexable: true,
+  },
+  {
+    id: 'spreadsheet-online', route: '/spreadsheet-online', name: 'Spreadsheet Online', title: 'Spreadsheet Online – Free Online Spreadsheet Editor',
+    description: 'Create a lightweight spreadsheet in your browser, or open CSV and XLSX tables for value editing, then export CSV or XLSX.',
+    eyebrow: 'SPREADSHEET ONLINE', primaryIntent: 'Create and edit a spreadsheet online', kind: 'editor', cluster: 'Spreadsheet', priority: 'P3', stage: 'Future Platform',
+    secondaryKeywords: ['edit spreadsheet online', 'online spreadsheet', 'spreadsheet editor online'], input: ['Blank', 'CSV', 'XLSX'], output: ['CSV', 'XLSX'], processor: 'shared-xlsx-tabular', launchState: 'live', indexable: true,
+  },
 ];
 
 export const liveSpreadsheetTools = spreadsheetTools.filter((tool) => tool.launchState === 'live');
