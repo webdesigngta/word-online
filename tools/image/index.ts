@@ -1,5 +1,6 @@
 export { jpgToPdfProcessor, JpgToPdfProcessor, registerJpgToPdfProcessor, jpgToPdfTool } from './jpg-to-pdf';
 export { pngToPdfProcessor, PngToPdfProcessor, registerPngToPdfProcessor, pngToPdfTool } from './png-to-pdf';
+export { scanToPdfProcessor, ScanToPdfProcessor, registerScanToPdfProcessor, type ScanToPdfResult } from './scan-to-pdf';
 export { imageToWordProcessor, ImageToWordProcessor, registerImageToWordProcessor } from './to-word';
 export type { JpgToPdfOptions, JpgToPdfResult } from './jpg-to-pdf';
 export type { PngToPdfOptions, PngToPdfResult } from './png-to-pdf';
