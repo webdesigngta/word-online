@@ -31,7 +31,15 @@ export default function Page() {
       route={route}
       title={tool.title}
       description={tool.description}
-      tool={<NotepadInterface toolId={tool.id} />}
+      tool={(
+        <>
+          <style>{`
+            .platform-task-card:has(> .notepad-is-shell){padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+            .platform-task-card:has(> .notepad-is-shell):before{display:none}
+          `}</style>
+          <NotepadInterface toolId={tool.id} />
+        </>
+      )}
       details={details}
       faq={faq}
     />
