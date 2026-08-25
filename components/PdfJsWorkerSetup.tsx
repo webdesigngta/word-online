@@ -1,12 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
+import { loadPdfJs } from '@/lib/pdfjs';
 
-const workerReady = import('pdfjs-dist/legacy/build/pdf.mjs').then((pdfjs) => {
-  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.worker.min.mjs';
-  }
-});
+const workerReady = loadPdfJs();
 
 export function PdfJsWorkerSetup() {
   useEffect(() => {
