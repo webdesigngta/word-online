@@ -3,6 +3,7 @@ import { liveFormatTools } from './formatCatalog';
 import { liveImageWordTools } from './imageWordCatalog';
 import { livePdfTools } from './pdfCatalog';
 import { livePdfPageTools } from './pdfPageCatalog';
+import { liveScanTools } from './scanCatalog';
 
 export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...livePlatformTools,
@@ -10,6 +11,7 @@ export const allLivePlatformTools: readonly PlatformToolDefinition[] = [
   ...liveFormatTools,
   ...livePdfPageTools,
   ...liveImageWordTools,
+  ...liveScanTools,
 ];
 
 export function getAllPlatformToolByRoute(route: string) {
