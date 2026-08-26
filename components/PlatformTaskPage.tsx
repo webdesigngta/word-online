@@ -4,10 +4,12 @@ import { ArrowRight, Check } from 'lucide-react';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
-import { FaqJsonLd } from '@/components/JsonLd';
+import { FaqJsonLd, HowToJsonLd } from '@/components/JsonLd';
 import { PdfJsWorkerSetup } from '@/components/PdfJsWorkerSetup';
 import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
 import { ToolVisual } from '@/components/ToolVisual';
+import { ToolSeoContent } from '@/components/ToolSeoContent';
+import { UploadButtonNormalizer } from '@/components/UploadButtonNormalizer';
 import { directoryGroupId, groupDefinition, relatedToolScore, toolPalette } from '@/lib/toolDesign';
 import type { PlatformToolDefinition } from '@/tools/platform/catalog';
 import { allLivePlatformTools, getAllPlatformToolByRoute } from '@/tools/platform/allTools';
@@ -31,7 +33,7 @@ function howToSteps(tool: PlatformToolDefinition) {
 
   if (tool.kind === 'converter') {
     return [
-      { title: `Add your ${inputLabel} file`, text: 'Choose a file from your device or use the drop area when available.' },
+      { title: `Add your ${inputLabel} file`, text: 'Choose Files from your device or use the drop area when available.' },
       { title: `Convert with ${tool.name}`, text: tool.primaryIntent },
       { title: `Download ${outputLabel}`, text: 'Review the result, then download it or continue with a related document tool.' },
     ];
@@ -39,7 +41,7 @@ function howToSteps(tool: PlatformToolDefinition) {
 
   if (tool.kind === 'editor') {
     return [
-      { title: 'Open or start your document', text: `Load ${inputLabel} or begin with a blank document when the tool supports it.` },
+      { title: 'Open or start your document', text: `Choose Files to load ${inputLabel}, or begin with a blank document when the tool supports it.` },
       { title: 'Make your changes', text: tool.primaryIntent },
       { title: 'Save your finished file', text: `Download or export the result in ${outputLabel}.` },
     ];
@@ -47,7 +49,7 @@ function howToSteps(tool: PlatformToolDefinition) {
 
   if (tool.kind === 'viewer') {
     return [
-      { title: `Choose your ${inputLabel} file`, text: 'Open the document directly in the browser workspace.' },
+      { title: `Choose your ${inputLabel} file`, text: 'Choose Files and open the document directly in the browser workspace.' },
       { title: 'Review the document', text: tool.primaryIntent },
       { title: 'Keep working if needed', text: 'Move into a related edit, convert, organize, or download workflow without hunting for the next tool.' },
     ];
@@ -70,7 +72,7 @@ function howToSteps(tool: PlatformToolDefinition) {
   }
 
   return [
-    { title: `Add ${inputLabel}`, text: 'Choose the file or content you want to work with.' },
+    { title: `Add ${inputLabel}`, text: 'Choose Files or add the content you want to work with.' },
     { title: `Run ${tool.name}`, text: tool.primaryIntent },
     { title: `Use ${outputLabel}`, text: 'Review the result, download it, or continue into a related workflow.' },
   ];
@@ -122,6 +124,7 @@ export function PlatformTaskPage({
     <>
       <ToolViewAnalytics toolId={toolId} route={current?.route ?? route} />
       {usesPdf ? <PdfJsWorkerSetup /> : null}
+      <UploadButtonNormalizer />
       <SiteHeader />
       <main className="platform-task-page" style={pageStyle}>
         <style>{`
@@ -135,16 +138,24 @@ export function PlatformTaskPage({
           .platform-task-assurances{display:flex;align-items:center;justify-content:center;gap:8px 15px;flex-wrap:wrap;margin:17px auto 0;color:#5f6368;font-size:12px}.platform-task-assurance{display:inline-flex;align-items:center;gap:6px}.platform-task-assurance svg{color:var(--tool-primary);stroke-width:2.3}
           .platform-task-family-link{display:inline-flex;align-items:center;gap:5px;margin-top:14px;color:var(--tool-ink);font-size:12px;font-weight:700;text-decoration:none}.platform-task-family-link:hover{text-decoration:underline}
           .platform-task-card{position:relative;border:1px solid #dde1e7;border-radius:24px;background:#fff;box-shadow:0 18px 55px rgba(31,35,41,.10),0 2px 7px rgba(31,35,41,.05);padding:24px;overflow:hidden;isolation:isolate}.platform-task-card:before{content:'';position:absolute;left:28px;right:28px;top:0;height:3px;border-radius:0 0 99px 99px;background:linear-gradient(90deg,var(--tool-primary),var(--tool-secondary));opacity:.9}.platform-task-card:after{content:'';position:absolute;z-index:-1;width:280px;height:280px;border-radius:50%;right:-140px;top:-180px;background:var(--tool-soft);opacity:.7;filter:blur(4px)}
+
+          /* One upload language and one upload style across every individual tool page. */
+          .platform-task-card [data-uniform-file-picker="true"]{min-height:48px!important;min-width:154px!important;padding:0 20px!important;border:1px solid var(--tool-primary)!important;border-radius:12px!important;background:var(--tool-primary)!important;color:#fff!important;box-shadow:0 5px 14px color-mix(in srgb,var(--tool-primary) 22%,transparent)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;font-size:0!important;font-weight:750!important;line-height:1!important;cursor:pointer!important;text-decoration:none!important;transition:transform .15s ease,filter .15s ease,box-shadow .15s ease!important}.platform-task-card [data-uniform-file-picker="true"]:after{content:'Choose Files';font-size:14px!important;line-height:1!important;color:#fff!important;white-space:nowrap}.platform-task-card [data-uniform-file-picker="true"] svg{width:18px!important;height:18px!important;color:#fff!important;stroke:currentColor!important;margin:0!important}.platform-task-card [data-uniform-file-picker="true"]:hover{transform:translateY(-1px);filter:brightness(.96);box-shadow:0 7px 18px color-mix(in srgb,var(--tool-primary) 28%,transparent)!important}.platform-task-card input[type="file"]::file-selector-button{min-height:42px;border:1px solid var(--tool-primary);border-radius:10px;background:var(--tool-primary);color:#fff;padding:0 14px;font-weight:700;cursor:pointer;margin-right:10px}
+
           .platform-task-section{margin:56px 0 0}.platform-task-section-head{text-align:center;max-width:760px;margin:0 auto 22px}.platform-task-section-kicker{display:block;color:var(--tool-ink);font-size:11px;font-weight:780;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}.platform-task-section-head h2{font-size:clamp(26px,3vw,34px);line-height:1.12;letter-spacing:-.035em;margin:0;color:#202124}.platform-task-section-head p{color:#5f6368;font-size:14px;line-height:1.6;margin:10px auto 0;max-width:650px}
           .platform-task-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.platform-task-detail{position:relative;background:#fff;border:1px solid #e0e3e7;border-radius:18px;padding:22px;box-shadow:0 2px 8px rgba(60,64,67,.04)}.platform-task-detail:before{content:'';display:block;width:34px;height:4px;border-radius:99px;background:linear-gradient(90deg,var(--tool-primary),var(--tool-secondary));margin-bottom:16px}.platform-task-detail h3{margin:0 0 8px;font-size:17px;letter-spacing:-.015em}.platform-task-detail p{margin:0;color:#5f6368;line-height:1.62;font-size:13px}
           .platform-task-how-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.platform-task-step{background:#fff;border:1px solid #e0e3e7;border-radius:18px;padding:22px;min-height:176px}.platform-task-step-num{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--tool-soft);color:var(--tool-ink);font-size:13px;font-weight:800;margin-bottom:18px}.platform-task-step h3{font-size:17px;line-height:1.28;letter-spacing:-.015em;margin:0 0 8px}.platform-task-step p{font-size:13px;line-height:1.62;color:#5f6368;margin:0}
           .platform-task-context{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:56px}.platform-task-context-card{border:1px solid #e0e3e7;border-radius:20px;background:#fff;padding:25px}.platform-task-context-card.is-accent{background:linear-gradient(145deg,#fff,var(--tool-soft));border-color:color-mix(in srgb,var(--tool-primary) 22%,#e0e3e7)}.platform-task-context-card h2{font-size:23px;letter-spacing:-.025em;margin:0 0 9px}.platform-task-context-card p{color:#5f6368;font-size:13px;line-height:1.65;margin:0}.platform-task-workflow{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.platform-task-chip{display:inline-flex;align-items:center;min-height:30px;border:1px solid #dfe3e8;background:#fff;border-radius:999px;padding:0 10px;font-size:10px;font-weight:750;color:#4f555d}.platform-task-chip.is-primary{background:var(--tool-soft);border-color:transparent;color:var(--tool-ink)}
+
+          /* Long-form page copy: readable editorial depth, not a wall of SEO text. */
+          .platform-task-seo{margin:60px auto 0;max-width:1040px;border-top:1px solid #e2e6eb;padding-top:52px}.platform-task-seo-intro{max-width:850px;margin:0 auto 27px;text-align:center}.platform-task-seo-intro h2{font-size:clamp(28px,3vw,38px);line-height:1.12;letter-spacing:-.035em;margin:0 0 14px;color:#202124}.platform-task-seo-intro p{font-size:15px;line-height:1.8;color:#4f555d;margin:0}.platform-task-seo-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.platform-task-seo-grid article,.platform-task-seo-workflow{background:#fff;border:1px solid #e0e3e7;border-radius:20px;padding:26px}.platform-task-seo-grid h3,.platform-task-seo-workflow h3{font-size:20px;line-height:1.3;letter-spacing:-.02em;margin:0 0 11px}.platform-task-seo-grid p,.platform-task-seo-workflow p{font-size:14px;line-height:1.78;color:#5f6368;margin:0 0 14px}.platform-task-seo-grid p:last-child,.platform-task-seo-workflow p:last-child{margin-bottom:0}.platform-task-seo-workflow{margin-top:16px;background:linear-gradient(145deg,#fff,var(--tool-soft))}.platform-task-seo a{color:var(--tool-ink);font-weight:700;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}.platform-task-seo a:hover{color:var(--tool-primary)}
+
           .platform-task-related{margin:56px 0 0}.platform-task-related-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:0 0 16px}.platform-task-related h2{font-size:28px;letter-spacing:-.03em;margin:0}.platform-task-related-head p{color:#5f6368;margin:6px 0 0;line-height:1.5;font-size:13px}.platform-task-related-all{display:inline-flex;align-items:center;gap:5px;color:#174ea6;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}.platform-task-related-all:hover{text-decoration:underline}
           .platform-task-related-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.platform-task-related-link{position:relative;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:11px;color:#202124;text-decoration:none;background:#fff;border:1px solid #dde1e7;border-radius:16px;padding:13px;min-height:86px;transition:transform .15s,border-color .15s,box-shadow .15s}.platform-task-related-link:hover{transform:translateY(-2px);border-color:#c8ccd2;box-shadow:0 7px 20px rgba(60,64,67,.09)}.platform-task-related-copy{min-width:0}.platform-task-related-link strong{display:block;font-size:13px;line-height:1.3;margin-bottom:4px}.platform-task-related-link small{display:block;color:#5f6368;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
           .platform-task-faq{margin:58px auto 0;max-width:920px}.platform-task-faq-head{text-align:center;margin-bottom:18px}.platform-task-faq h2{font-size:30px;letter-spacing:-.03em;margin:0}.platform-task-faq-head p{color:#5f6368;font-size:13px;margin:8px 0 0}.platform-task-faq details{background:#fff;border:1px solid #dde1e7;border-radius:15px;padding:0 19px;margin:10px 0;box-shadow:0 1px 3px rgba(60,64,67,.025)}.platform-task-faq summary{cursor:pointer;padding:17px 0;font-weight:700;font-size:14px}.platform-task-faq p{color:#5f6368;line-height:1.65;margin:0 0 17px;font-size:13px}
           .tool-visual{display:inline-flex;align-items:center;justify-content:center;gap:3px;color:#fff;font-weight:800;letter-spacing:-.02em;flex:0 0 auto}.tool-visual span{color:#fff!important;margin:0!important;line-height:1!important}
-          @media(max-width:900px){.platform-task-related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.platform-task-context{grid-template-columns:1fr}}
-          @media(max-width:760px){.platform-task-page{padding:20px 12px 60px;background:linear-gradient(180deg,#fff 0,#fff 470px,#f7f9fc 470px,#f7f9fc 100%)}.platform-task-card{padding:14px;border-radius:19px}.platform-task-grid,.platform-task-how-grid{grid-template-columns:1fr}.platform-task-hero{margin-top:22px}.platform-task-hero h1{font-size:37px}.platform-task-lead{font-size:15px}.platform-task-section{margin-top:44px}.platform-task-section-head{text-align:left;margin-left:2px}.platform-task-related-head{align-items:flex-start;flex-direction:column}.platform-task-related-all{align-self:flex-start}.platform-task-assurances{font-size:11px}.platform-task-context{margin-top:44px}}
+          @media(max-width:900px){.platform-task-related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.platform-task-context{grid-template-columns:1fr}.platform-task-seo-grid{grid-template-columns:1fr}}
+          @media(max-width:760px){.platform-task-page{padding:20px 12px 60px;background:linear-gradient(180deg,#fff 0,#fff 470px,#f7f9fc 470px,#f7f9fc 100%)}.platform-task-card{padding:14px;border-radius:19px}.platform-task-grid,.platform-task-how-grid{grid-template-columns:1fr}.platform-task-hero{margin-top:22px}.platform-task-hero h1{font-size:37px}.platform-task-lead{font-size:15px}.platform-task-section{margin-top:44px}.platform-task-section-head{text-align:left;margin-left:2px}.platform-task-related-head{align-items:flex-start;flex-direction:column}.platform-task-related-all{align-self:flex-start}.platform-task-assurances{font-size:11px}.platform-task-context{margin-top:44px}.platform-task-seo{margin-top:46px;padding-top:42px}.platform-task-seo-intro{text-align:left}.platform-task-seo-grid article,.platform-task-seo-workflow{padding:21px}.platform-task-card [data-uniform-file-picker="true"]{min-height:46px!important;min-width:146px!important;padding:0 17px!important}}
           @media(max-width:480px){.platform-task-related-grid{grid-template-columns:1fr}.platform-task-identity{gap:10px}.platform-task-hero h1{font-size:34px}.platform-task-card:before{left:18px;right:18px}.platform-task-context-card{padding:21px}}
         `}</style>
         <div className="platform-task-wrap">
@@ -223,6 +234,8 @@ export function PlatformTaskPage({
             </section>
           ) : null}
 
+          {current ? <ToolSeoContent tool={current} relatedTools={relatedTools} /> : null}
+
           {relatedTools.length ? (
             <section className="platform-task-related" aria-labelledby="related-platform-tools">
               <div className="platform-task-related-head">
@@ -253,6 +266,7 @@ export function PlatformTaskPage({
       </main>
       <SiteFooter />
       <FaqJsonLd items={faq} />
+      {current && steps.length ? <HowToJsonLd name={`How to use ${displayName}`} description={description} steps={steps} path={current.route} /> : null}
     </>
   );
 }
