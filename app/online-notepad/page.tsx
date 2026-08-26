@@ -52,6 +52,7 @@ export default function Page() {
             .notepad-is-shell .np-toolbar{padding:7px 10px;gap:5px;background:#fff;border-bottom-color:#dfe3e8;box-shadow:0 1px 3px rgba(32,33,36,.06)}
             .notepad-is-shell .np-btn{height:32px;min-width:32px;border-radius:7px}
             .notepad-is-shell .np-select{height:32px}
+            .notepad-is-shell .np-heading{width:118px;min-width:118px}
 
             /* The editor itself is the page: ruled lines plus a soft red notebook margin. */
             .notepad-is-shell .np-workspace{padding:0;min-height:650px;background:#fff;overflow:auto}
@@ -67,8 +68,9 @@ export default function Page() {
                 linear-gradient(to right,transparent 0,transparent 80px,rgba(232,83,83,.34) 80px,rgba(232,83,83,.34) 81px,transparent 81px),
                 repeating-linear-gradient(to bottom,transparent 0,transparent 27px,rgba(102,114,132,.18) 27px,rgba(102,114,132,.18) 28px);
               background-size:100% 100%,100% 28px;
-              background-position:0 0,0 0;
+              background-position:0 0,0 8px;
             }
+            .notepad-is-shell .np-editor p{margin:0;line-height:28px}
             .notepad-is-shell .np-editor:empty:before{color:#9aa0a6}
             .notepad-is-shell .np-statusbar{background:#fff;border-top-color:#dfe3e8}
 
@@ -105,7 +107,9 @@ export default function Page() {
                   linear-gradient(to right,transparent 0,transparent 54px,rgba(232,83,83,.34) 54px,rgba(232,83,83,.34) 55px,transparent 55px),
                   repeating-linear-gradient(to bottom,transparent 0,transparent 26px,rgba(102,114,132,.18) 26px,rgba(102,114,132,.18) 27px);
                 background-size:100% 100%,100% 27px;
+                background-position:0 0,0 8px;
               }
+              .notepad-is-shell .np-editor p{line-height:27px}
               .notepad-is-shell.is-dark .np-editor{
                 background-image:
                   linear-gradient(to right,transparent 0,transparent 54px,rgba(245,112,112,.38) 54px,rgba(245,112,112,.38) 55px,transparent 55px),
