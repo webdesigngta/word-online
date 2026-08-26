@@ -38,3 +38,31 @@ export function FaqJsonLd({ items }: { items: Array<{ question: string; answer: 
   };
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
 }
+
+export function HowToJsonLd({
+  name,
+  description,
+  steps,
+  path,
+}: {
+  name: string;
+  description: string;
+  steps: Array<{ title: string; text: string }>;
+  path: string;
+}) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name,
+    description,
+    url: absoluteUrl(path),
+    step: steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.title,
+      text: step.text,
+    })),
+  };
+
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+}
