@@ -60,7 +60,7 @@ export default function Page() {
             .notepad-is-shell .np-paper{min-height:650px;border:0;border-radius:0;box-shadow:none;background:#fff}
             .notepad-is-shell .np-editor{
               min-height:650px;
-              padding:11px 46px 80px 98px;
+              padding:3px 46px 80px 98px;
               font-size:16px;
               line-height:28px;
               background-color:#fff;
@@ -68,7 +68,7 @@ export default function Page() {
                 linear-gradient(to right,transparent 0,transparent 80px,rgba(232,83,83,.34) 80px,rgba(232,83,83,.34) 81px,transparent 81px),
                 repeating-linear-gradient(to bottom,transparent 0,transparent 27px,rgba(102,114,132,.18) 27px,rgba(102,114,132,.18) 28px);
               background-size:100% 100%,100% 28px;
-              background-position:0 0,0 8px;
+              background-position:0 0,0 0;
             }
             .notepad-is-shell .np-editor p{margin:0;line-height:28px}
             .notepad-is-shell .np-editor:empty:before{color:#9aa0a6}
@@ -100,14 +100,14 @@ export default function Page() {
               .notepad-is-shell .np-paper,
               .notepad-is-shell .np-editor{min-height:540px}
               .notepad-is-shell .np-editor{
-                padding:9px 22px 64px 70px;
+                padding:1px 22px 64px 70px;
                 font-size:15px;
                 line-height:27px;
                 background-image:
                   linear-gradient(to right,transparent 0,transparent 54px,rgba(232,83,83,.34) 54px,rgba(232,83,83,.34) 55px,transparent 55px),
                   repeating-linear-gradient(to bottom,transparent 0,transparent 26px,rgba(102,114,132,.18) 26px,rgba(102,114,132,.18) 27px);
                 background-size:100% 100%,100% 27px;
-                background-position:0 0,0 8px;
+                background-position:0 0,0 0;
               }
               .notepad-is-shell .np-editor p{line-height:27px}
               .notepad-is-shell.is-dark .np-editor{
