@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Ban, Download, Infinity, Trash2, UserCheck } from 'lucide-react';
 import { pageMetadata } from '@/lib/seo';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SoftwareJsonLd } from '@/components/JsonLd';
 import { ToolVisual } from '@/components/ToolVisual';
+import { HomeToolSearch, type HomeSearchTool } from '@/components/HomeToolSearch';
 import { allLivePlatformTools } from '@/tools/platform/allTools';
-import { DIRECTORY_GROUPS, familyTheme } from '@/lib/toolDesign';
 
 export const metadata = pageMetadata({
   title: 'Free Word Online – Edit Word Documents Free',
@@ -14,41 +14,76 @@ export const metadata = pageMetadata({
   path: '/',
 });
 
-const popularRoutes = ['/word-online', '/pdf-to-word', '/word-to-pdf', '/edit-pdf', '/compress-pdf', '/merge-pdf', '/pdf-to-jpg', '/xlsx-editor'];
-const popularTools = popularRoutes.map((route) => allLivePlatformTools.find((tool) => tool.route === route)).filter((tool): tool is NonNullable<typeof tool> => Boolean(tool));
+const popularRoutes = ['/pdf-to-word', '/compress-pdf', '/merge-pdf', '/edit-pdf', '/word-to-pdf', '/jpg-to-pdf'];
+const popularTools = popularRoutes
+  .map((route) => allLivePlatformTools.find((tool) => tool.route === route))
+  .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool));
+
+const searchTools: readonly HomeSearchTool[] = allLivePlatformTools.map((tool) => ({
+  route: tool.route,
+  name: tool.name,
+  primaryIntent: tool.primaryIntent,
+  searchText: [tool.name, tool.primaryIntent, tool.description, tool.cluster, ...tool.input, ...tool.output, ...tool.secondaryKeywords].join(' '),
+}));
+
+const features = [
+  { title: 'No signup', detail: 'Start instantly', Icon: UserCheck },
+  { title: 'No ads', detail: 'Clean, distraction-free tools', Icon: Ban },
+  { title: 'No limits', detail: 'Use tools as often as needed', Icon: Infinity },
+  { title: 'Unlimited downloads', detail: 'Download as much as you need', Icon: Download },
+  { title: 'Files deleted', detail: 'Permanently after 10 minutes', Icon: Trash2 },
+] as const;
 
 export default function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main className="product-home">
+      <main className="doc-home">
         <style>{`
-          .product-home{background:#fff;color:#202124;font-family:Arial,Helvetica,sans-serif}.ph-wrap{width:min(1160px,calc(100% - 40px));margin:0 auto}.ph-hero{min-height:610px;display:grid;grid-template-columns:minmax(0,1fr) minmax(420px,.9fr);gap:64px;align-items:center;padding:70px 0 66px}.ph-kicker{display:inline-flex;align-items:center;min-height:30px;padding:0 11px;border-radius:999px;background:#e8f0fe;color:#174ea6;font-size:11px;font-weight:750;letter-spacing:.055em;text-transform:uppercase}.ph-hero h1{font-size:clamp(44px,6vw,70px);line-height:1.01;letter-spacing:-.05em;margin:16px 0 20px;max-width:730px}.ph-lead{max-width:680px;color:#5f6368;font-size:19px;line-height:1.62;margin:0}.ph-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.ph-btn{min-height:46px;padding:0 19px;border-radius:999px;display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;text-decoration:none;border:1px solid #dadce0}.ph-btn.primary{background:#1a73e8;border-color:#1a73e8;color:#fff}.ph-btn.primary:hover{background:#1765cc}.ph-btn.secondary{background:#fff;color:#202124}.ph-btn.secondary:hover{background:#f8fafd}.ph-trust{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}.ph-trust span{font-size:11px;color:#5f6368;border:1px solid #e0e3e7;border-radius:999px;padding:6px 9px;background:#fff}
-          .ph-preview{border:1px solid #dadce0;border-radius:22px;background:#fff;box-shadow:0 18px 50px rgba(60,64,67,.15);overflow:hidden;transform:rotate(1deg)}.ph-preview-bar{height:48px;border-bottom:1px solid #edf0f2;display:flex;align-items:center;gap:9px;padding:0 14px;font-size:12px;font-weight:700}.ph-preview-mark{width:28px;height:28px;border-radius:8px;background:#1a73e8;color:#fff;display:grid;place-items:center;font-weight:800}.ph-preview-tabs{display:flex;gap:16px;padding:10px 15px;border-bottom:1px solid #e0e3e7;color:#5f6368;font-size:10px}.ph-preview-ribbon{display:flex;align-items:center;gap:9px;height:55px;padding:0 15px;border-bottom:1px solid #e0e3e7}.ph-preview-pill{height:28px;display:inline-flex;align-items:center;padding:0 9px;border:1px solid #dadce0;border-radius:7px;font-size:10px}.ph-preview-canvas{background:#eef2f6;padding:24px 38px}.ph-preview-page{min-height:280px;background:#fff;box-shadow:0 2px 8px rgba(60,64,67,.13);padding:38px 42px}.ph-preview-page h3{font-size:24px;margin:0 0 14px}.ph-preview-page p{font-size:13px;line-height:1.7;color:#5f6368}.ph-preview-line{height:7px;border-radius:5px;background:#edf0f2;margin:12px 0}.ph-preview-line.short{width:62%}
-          .ph-section{padding:58px 0}.ph-section.alt{background:#f8fafd}.ph-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}.ph-section h2{font-size:30px;letter-spacing:-.03em;margin:0}.ph-section-head p{color:#5f6368;margin:7px 0 0;font-size:14px}.ph-all-link{display:inline-flex;align-items:center;gap:5px;color:#174ea6;font-size:13px;font-weight:700;text-decoration:none}.ph-all-link:hover{text-decoration:underline}
-          .ph-popular-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.ph-tool-card{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:11px;border:1px solid #dadce0;border-radius:15px;background:#fff;padding:13px;text-decoration:none;color:#202124;min-height:76px;transition:transform .15s,border-color .15s,box-shadow .15s}.ph-tool-card:hover{transform:translateY(-1px);border-color:#bdc1c6;box-shadow:0 3px 10px rgba(60,64,67,.08)}.ph-tool-card strong{font-size:13px;line-height:1.3}.ph-tool-card small{display:block;color:#5f6368;font-size:10px;margin-top:3px}
-          .ph-family-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.ph-family{position:relative;border:1px solid #dadce0;border-radius:18px;background:#fff;padding:20px 20px 18px;text-decoration:none;color:#202124;overflow:hidden;transition:transform .15s,border-color .15s,box-shadow .15s}.ph-family:before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--family)}.ph-family:hover{transform:translateY(-2px);border-color:#bdc1c6;box-shadow:0 5px 16px rgba(60,64,67,.09)}.ph-family-mark{width:38px;height:38px;border-radius:12px;background:var(--family-soft);color:var(--family-ink);display:grid;place-items:center;font-weight:800;font-size:12px;margin-bottom:14px}.ph-family h3{font-size:17px;margin:0 0 7px}.ph-family p{color:#5f6368;font-size:12px;line-height:1.5;margin:0 0 12px}.ph-family span{color:var(--family-ink);font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
-          .tool-visual{display:inline-flex;align-items:center;justify-content:center;gap:3px;color:#fff;font-weight:800;letter-spacing:-.02em;box-shadow:inset 0 -1px 0 rgba(0,0,0,.12);flex:0 0 auto}.tool-visual span{color:#fff!important;margin:0!important;line-height:1!important}.tool-visual b{font-size:.75em;opacity:.88}.tool-visual-sm{width:34px;height:34px;border-radius:10px;font-size:7px}.tool-visual-md{width:46px;height:46px;border-radius:13px;font-size:8px}.tool-visual-lg{width:58px;height:58px;border-radius:16px;font-size:9px}
-          @media(max-width:900px){.ph-hero{grid-template-columns:1fr;gap:38px;padding-top:54px}.ph-preview{max-width:650px}.ph-popular-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ph-family-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-          @media(max-width:600px){.ph-wrap{width:min(100% - 24px,1160px)}.ph-hero{padding:42px 0 46px;min-height:0}.ph-hero h1{font-size:43px}.ph-lead{font-size:16px}.ph-preview-canvas{padding:16px}.ph-preview-page{padding:28px 24px;min-height:230px}.ph-section{padding:44px 0}.ph-section-head{align-items:flex-start;flex-direction:column}.ph-popular-grid,.ph-family-grid{grid-template-columns:1fr}.ph-tool-card{min-height:72px}}
+          .doc-home{background:#fff;color:#202124;font-family:Arial,Helvetica,sans-serif}.dh-wrap{width:min(1180px,calc(100% - 40px));margin:0 auto}
+          .dh-hero{display:grid;grid-template-columns:minmax(300px,.78fr) minmax(480px,1.22fr);gap:58px;align-items:center;padding:66px 0 34px}.dh-copy h1{font-size:clamp(46px,5.2vw,66px);line-height:1.01;letter-spacing:-.052em;margin:0 0 17px;max-width:570px}.dh-copy p{color:#5f6368;font-size:17px;line-height:1.62;margin:0;max-width:500px}.dh-search-area{position:relative;z-index:4}.home-tool-search{position:relative}.hts-form{display:flex;align-items:center;gap:11px;min-height:62px;padding:0 17px;border:1px solid #cfd4dc;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(60,64,67,.07);transition:border-color .15s,box-shadow .15s}.hts-form:focus-within{border-color:#8ab4f8;box-shadow:0 0 0 4px rgba(26,115,232,.10),0 10px 28px rgba(60,64,67,.08)}.hts-form svg{color:#5f6368;flex:0 0 auto}.hts-form input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#202124;font-size:15px}.hts-form input::placeholder{color:#73777e}.hts-clear{width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:#5f6368;cursor:pointer}.hts-clear:hover{background:#f1f3f4}.hts-results{position:absolute;left:0;right:0;top:70px;background:#fff;border:1px solid #dde1e7;border-radius:16px;padding:7px;box-shadow:0 18px 42px rgba(60,64,67,.16);z-index:20}.hts-result{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 11px;border-radius:11px;color:#202124;text-decoration:none}.hts-result:hover{background:#f8fafd}.hts-result span{min-width:0}.hts-result strong{display:block;font-size:13px}.hts-result small{display:block;margin-top:3px;color:#5f6368;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hts-result svg{color:#8b9097;flex:0 0 auto}.hts-no-result{padding:12px}.hts-quick{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:13px}.hts-quick>span{color:#6c7178;font-size:10px;font-weight:700}.hts-quick a{display:inline-flex;align-items:center;min-height:28px;padding:0 9px;border:1px solid #dde1e7;border-radius:999px;color:#3c4043;background:#fff;text-decoration:none;font-size:10px;font-weight:650}.hts-quick a:hover{background:#f8fafd;border-color:#c9ced5}
+          .dh-features{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid #e0e3e7;border-radius:18px;background:#fff;overflow:hidden;margin-bottom:46px}.dh-feature{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;min-width:0;padding:16px 17px;position:relative}.dh-feature:not(:last-child):after{content:'';position:absolute;right:0;top:16px;bottom:16px;width:1px;background:#e7e9ed}.dh-feature-icon{width:34px;height:34px;border:1px solid #d8dde5;border-radius:11px;display:grid;place-items:center;color:#174ea6;background:#f8fbff;flex:0 0 auto}.dh-feature strong{display:block;font-size:12px;line-height:1.2}.dh-feature small{display:block;color:#5f6368;font-size:9px;line-height:1.35;margin-top:3px}
+          .dh-popular{padding:0 0 72px}.dh-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:17px}.dh-section-head h2{font-size:22px;letter-spacing:-.025em;margin:0}.dh-all-link{display:inline-flex;align-items:center;gap:5px;color:#174ea6;font-size:12px;font-weight:700;text-decoration:none}.dh-all-link:hover{text-decoration:underline}.dh-popular-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.dh-tool-card{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:10px;min-width:0;min-height:150px;padding:17px 12px 14px;border:1px solid #dde1e7;border-radius:16px;background:#fff;color:#202124;text-decoration:none;transition:transform .15s,border-color .15s,box-shadow .15s}.dh-tool-card:hover{transform:translateY(-2px);border-color:#c5cad1;box-shadow:0 8px 20px rgba(60,64,67,.08)}.dh-tool-card strong{font-size:12px;line-height:1.25}.dh-tool-card small{display:block;color:#5f6368;font-size:10px;line-height:1.4;margin-top:3px}.tool-visual{display:inline-flex;align-items:center;justify-content:center;gap:3px;color:#fff;font-weight:800;letter-spacing:-.02em;box-shadow:inset 0 -1px 0 rgba(0,0,0,.12);flex:0 0 auto}.tool-visual span{color:#fff!important;margin:0!important;line-height:1!important}.tool-visual b{font-size:.75em;opacity:.88}.tool-visual-md{width:46px;height:46px;border-radius:13px;font-size:8px}
+          @media(max-width:980px){.dh-hero{grid-template-columns:1fr;gap:28px;padding-top:50px}.dh-copy{text-align:center}.dh-copy h1,.dh-copy p{margin-left:auto;margin-right:auto}.dh-search-area{max-width:760px;width:100%;margin:0 auto}.dh-features{grid-template-columns:repeat(3,minmax(0,1fr))}.dh-feature:nth-child(3):after,.dh-feature:last-child:after{display:none}.dh-feature:nth-child(-n+2):after{display:block}.dh-feature{border-bottom:1px solid #e7e9ed}.dh-feature:nth-child(n+4){border-bottom:0}.dh-popular-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+          @media(max-width:620px){.dh-wrap{width:min(100% - 24px,1180px)}.dh-hero{padding:40px 0 26px;gap:23px}.dh-copy h1{font-size:42px;max-width:360px}.dh-copy p{font-size:15px;max-width:390px}.hts-form{min-height:54px;padding:0 13px;border-radius:14px}.hts-form input{font-size:14px}.hts-results{top:62px}.hts-quick{justify-content:center;margin-top:11px}.hts-quick>span{width:100%;text-align:center}.dh-features{grid-template-columns:repeat(2,minmax(0,1fr));border-radius:15px;margin-bottom:36px}.dh-feature{padding:13px 12px;gap:8px;border-bottom:1px solid #e7e9ed}.dh-feature:nth-child(odd):after{display:block}.dh-feature:nth-child(even):after{display:none}.dh-feature:nth-child(4){border-bottom:1px solid #e7e9ed}.dh-feature:last-child{grid-column:1/-1;border-bottom:0}.dh-feature:last-child:after{display:none}.dh-feature-icon{width:32px;height:32px}.dh-feature strong{font-size:11px}.dh-feature small{font-size:8px}.dh-popular{padding-bottom:50px}.dh-section-head h2{font-size:20px}.dh-popular-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.dh-tool-card{min-height:132px;padding:14px 9px 12px}.dh-tool-card strong{font-size:11px}.dh-tool-card small{font-size:9px}.tool-visual-md{width:42px;height:42px}}
+          @media(max-width:390px){.dh-copy h1{font-size:38px}.hts-quick a{padding:0 8px;font-size:9px}.dh-feature{padding:12px 10px}.dh-feature small{display:none}}
         `}</style>
 
-        <div className="ph-wrap">
-          <section className="ph-hero">
-            <div>
-              <span className="ph-kicker">Free · No login · Browser-first</span>
-              <h1>Word online, plus every document tool around it.</h1>
-              <p className="ph-lead">Edit DOCX files in a familiar Word workspace, then convert PDFs, organize pages, work with spreadsheets and presentations, run OCR, or create everyday documents—all from one consistent platform.</p>
-              <div className="ph-actions"><Link className="ph-btn primary" href="/word-online">Start Word editor<ArrowRight size={16}/></Link><Link className="ph-btn secondary" href="/tools">Browse all {allLivePlatformTools.length} tools</Link></div>
-              <div className="ph-trust"><span>No sign-up</span><span>Local-first workflows</span><span>Real file outputs</span><span>Clear format limits</span></div>
+        <div className="dh-wrap">
+          <section className="dh-hero" aria-labelledby="home-heading">
+            <div className="dh-copy">
+              <h1 id="home-heading">What do you want to do today?</h1>
+              <p>Edit, convert, compress and organize documents — free online.</p>
             </div>
-            <div className="ph-preview" aria-hidden="true"><div className="ph-preview-bar"><span className="ph-preview-mark">W</span><span>Document.docx</span></div><div className="ph-preview-tabs">File <b>Home</b> Insert Layout Review View</div><div className="ph-preview-ribbon"><b>B</b><i>I</i><u>U</u><span className="ph-preview-pill">Arial</span><span className="ph-preview-pill">11</span></div><div className="ph-preview-canvas"><div className="ph-preview-page"><h3>Your document</h3><p>Write, format and export with a focused browser editor.</p><div className="ph-preview-line"/><div className="ph-preview-line"/><div className="ph-preview-line short"/></div></div></div>
+            <div className="dh-search-area">
+              <HomeToolSearch tools={searchTools} />
+            </div>
+          </section>
+
+          <section className="dh-features" aria-label="DOC321 benefits">
+            {features.map(({ title, detail, Icon }) => (
+              <div className="dh-feature" key={title}>
+                <span className="dh-feature-icon"><Icon size={17} aria-hidden="true" /></span>
+                <span><strong>{title}</strong><small>{detail}</small></span>
+              </div>
+            ))}
+          </section>
+
+          <section className="dh-popular" aria-labelledby="popular-tools-heading">
+            <div className="dh-section-head">
+              <h2 id="popular-tools-heading">Popular tools</h2>
+              <Link className="dh-all-link" href="/tools">View all tools<ArrowRight size={14} /></Link>
+            </div>
+            <div className="dh-popular-grid">
+              {popularTools.map((tool) => (
+                <Link className="dh-tool-card" href={tool.route} key={tool.id}>
+                  <ToolVisual tool={tool} size="md" />
+                  <span><strong>{tool.name}</strong><small>{tool.primaryIntent}</small></span>
+                </Link>
+              ))}
+            </div>
           </section>
         </div>
-
-        <section className="ph-section alt"><div className="ph-wrap"><div className="ph-section-head"><div><h2>Popular tools</h2><p>Jump directly into the workflows people use most.</p></div><Link className="ph-all-link" href="/tools">All tools<ArrowRight size={14}/></Link></div><div className="ph-popular-grid">{popularTools.map((tool) => <Link className="ph-tool-card" href={tool.route} key={tool.id}><ToolVisual tool={tool} size="sm"/><span><strong>{tool.name}</strong><small>{tool.primaryIntent}</small></span></Link>)}</div></div></section>
-
-        <section className="ph-section"><div className="ph-wrap"><div className="ph-section-head"><div><h2>Everything is organized by product family</h2><p>Consistent colors and controls make it easy to understand what each tool works with.</p></div></div><div className="ph-family-grid">{DIRECTORY_GROUPS.slice(0, 6).map((group) => { const theme = familyTheme(group.family); return <Link className="ph-family" href={`/tools#tools-${group.id}`} key={group.id} style={{ '--family': theme.primary, '--family-soft': theme.soft, '--family-ink': theme.ink } as React.CSSProperties}><span className="ph-family-mark">{group.label.split(' ')[0].slice(0,4).toUpperCase()}</span><h3>{group.label}</h3><p>{group.description}</p><span>Explore tools<ArrowRight size={13}/></span></Link>; })}</div></div></section>
       </main>
       <SiteFooter />
       <SoftwareJsonLd />
