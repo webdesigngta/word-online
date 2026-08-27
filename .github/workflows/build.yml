@@ -1,33 +1,50 @@
-name: Word Online Build Verify
+name: Doc321 Build Verify
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    name: Build Next.js App
+    name: Verify Doc321 Production Build
     runs-on: ubuntu-latest
+
+    env:
+      NEXT_PUBLIC_BASE_PATH: ''
+      NEXT_PUBLIC_SITE_URL: https://doc321.com
+      NEXT_PUBLIC_ALLOW_INDEXING: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Type check
         run: npm run typecheck
 
       - name: Production build
         run: npm run build
+
+      - name: Verify root export and indexing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f out/index.html
+          test -d out/_next
+          test -f out/robots.txt
+          grep -q 'Allow: /' out/robots.txt
