@@ -22,7 +22,7 @@ export function SiteHeader() {
         @media(max-width:390px){.product-site-header .site-logo{height:38px}.product-site-header .site-nav a{padding:0 7px}}
       `}</style>
       <Link href="/" className="site-brand" aria-label="DOC321 home">
-        <img className="site-logo" src="/doc321-logo.svg" width="400" height="108" alt="DOC321" decoding="async" fetchPriority="high" />
+        <img className="site-logo" src="/doc321-logo.svg" width="244" height="52" alt="DOC321" decoding="async" fetchPriority="high" />
       </Link>
       <nav className="site-nav" aria-label="Main navigation">
         {navLinks.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
