@@ -3,6 +3,7 @@ name: Deploy Doc321 Preview
 # Safe migration workflow for Doc321.com.
 # Deploys the new domain at the site root while keeping indexing disabled
 # until DNS, SSL, routing, assets, and tools are verified.
+# FTP account is dedicated to the doc321.com document root.
 
 on:
   push:
