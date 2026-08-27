@@ -1,9 +1,13 @@
 name: Deploy Doc321 Preview
 
 # Safe migration workflow for Doc321.com.
-# Manual-only until the new HostGator document root, DNS, and SSL are verified.
+# Deploys the new domain at the site root while keeping indexing disabled
+# until DNS, SSL, routing, assets, and tools are verified.
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -79,7 +83,7 @@ jobs:
             FTP_PATH="$FTP_PATH_OVERRIDE"
           else
             FTP_PATH=""
-            for candidate in './doc321.com/' '../doc321.com/' '/doc321.com/'; do
+            for candidate in './doc321.com/' '../doc321.com/'; do
               if lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" -e "set ftp:passive-mode true; set ssl:verify-certificate no; cls -d '$candidate'; bye" >/dev/null 2>&1; then
                 FTP_PATH="$candidate"
                 break
