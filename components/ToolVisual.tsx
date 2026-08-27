@@ -43,57 +43,65 @@ import { toolPalette } from '@/lib/toolDesign';
 type VisualMeta = {
   icon: LucideIcon;
   accent: string;
-  label: string;
 };
 
 function visualMeta(tool: PlatformToolDefinition): VisualMeta {
   const value = `${tool.id} ${tool.route} ${tool.name} ${tool.kind} ${tool.primaryIntent}`.toLowerCase();
 
-  if (/compress|shrink|reduce file/.test(value)) return { icon: Minimize2, accent: '#0f9d58', label: 'Compress' };
-  if (/merge|combine/.test(value)) return { icon: Files, accent: '#8e24aa', label: 'Merge' };
-  if (/split|extract page/.test(value)) return { icon: Scissors, accent: '#ef6c00', label: 'Split' };
-  if (/crop/.test(value)) return { icon: Crop, accent: '#00897b', label: 'Crop' };
-  if (/rotate/.test(value)) return { icon: RotateCw, accent: '#5e35b1', label: 'Rotate' };
-  if (/watermark|stamp/.test(value)) return { icon: Stamp, accent: '#c2185b', label: 'Mark' };
-  if (/sign|signature/.test(value)) return { icon: PenLine, accent: '#7b1fa2', label: 'Sign' };
-  if (/protect|encrypt|password/.test(value) && !/unlock|decrypt|remove/.test(value)) return { icon: Lock, accent: '#d93025', label: 'Protect' };
-  if (/unlock|decrypt/.test(value)) return { icon: Unlock, accent: '#5f6368', label: 'Unlock' };
-  if (/repair|fix document|recover/.test(value)) return { icon: Wrench, accent: '#f29900', label: 'Repair' };
-  if (/redact/.test(value)) return { icon: Shield, accent: '#c5221f', label: 'Redact' };
-  if (/ocr|scan/.test(value)) return { icon: ScanLine, accent: '#0097a7', label: 'OCR' };
-  if (/compare/.test(value)) return { icon: RefreshCw, accent: '#5e35b1', label: 'Compare' };
-  if (/find/.test(value)) return { icon: Search, accent: '#f9ab00', label: 'Find' };
-  if (/replace/.test(value)) return { icon: RefreshCw, accent: '#f57c00', label: 'Replace' };
-  if (/remove formatting|clear formatting/.test(value)) return { icon: Eraser, accent: '#7e57c2', label: 'Clean' };
-  if (/remove|delete/.test(value)) return { icon: Trash2, accent: '#d93025', label: 'Remove' };
-  if (/sort/.test(value)) return { icon: ArrowDown, accent: '#188038', label: 'Sort' };
-  if (/character count|word count|count/.test(value)) return { icon: Hash, accent: '#00897b', label: 'Count' };
-  if (/case|uppercase|lowercase/.test(value)) return { icon: Type, accent: '#3949ab', label: 'Case' };
-  if (/notepad|write notes/.test(value)) return { icon: Pencil, accent: '#7c4dff', label: 'Write' };
-  if (/speech|voice|dictat/.test(value)) return { icon: Mic, accent: '#00897b', label: 'Voice' };
-  if (/translate|language/.test(value)) return { icon: Languages, accent: '#5e35b1', label: 'Language' };
-  if (/accessib/.test(value)) return { icon: Accessibility, accent: '#00796b', label: 'Access' };
-  if (/html|markdown|code/.test(value)) return { icon: Code2, accent: '#546e7a', label: 'Code' };
-  if (/metadata|properties|info/.test(value)) return { icon: Settings, accent: '#546e7a', label: 'Info' };
-  if (/flatten|layer/.test(value)) return { icon: Layers3, accent: '#6d4c41', label: 'Flatten' };
-  if (/image|jpg|jpeg|png/.test(value)) return { icon: Image, accent: '#9334e6', label: 'Image' };
-  if (/spreadsheet|xlsx|xls\b|csv/.test(value)) return { icon: Table2, accent: '#188038', label: 'Sheet' };
-  if (/presentation|powerpoint|pptx|ppt\b/.test(value)) return { icon: Presentation, accent: '#f29900', label: 'Slides' };
-  if (/create|maker|generator|invoice|proposal|resume|memo|agenda|minutes/.test(value)) return { icon: FilePlus2, accent: '#1a73e8', label: 'Create' };
-  if (/view|reader|preview/.test(value)) return { icon: Eye, accent: '#1a73e8', label: 'View' };
-  if (/edit|annotat|fill/.test(value)) return { icon: Pencil, accent: '#1a73e8', label: 'Edit' };
-  if (/convert|\bto\b/.test(value) || tool.kind === 'converter') return { icon: ArrowRightLeft, accent: '#673ab7', label: 'Convert' };
-  if (/search|inspect|analy/.test(value)) return { icon: FileSearch, accent: '#00897b', label: 'Analyze' };
-  if (/copy/.test(value)) return { icon: Copy, accent: '#546e7a', label: 'Copy' };
-  if (/text|writing/.test(value)) return { icon: Type, accent: '#007b83', label: 'Text' };
+  if (/compress|shrink|reduce file/.test(value)) return { icon: Minimize2, accent: '#0f9d58' };
+  if (/merge|combine/.test(value)) return { icon: Files, accent: '#8e24aa' };
+  if (/split|extract page/.test(value)) return { icon: Scissors, accent: '#ef6c00' };
+  if (/crop/.test(value)) return { icon: Crop, accent: '#00897b' };
+  if (/rotate/.test(value)) return { icon: RotateCw, accent: '#5e35b1' };
+  if (/watermark|stamp/.test(value)) return { icon: Stamp, accent: '#c2185b' };
+  if (/sign|signature/.test(value)) return { icon: PenLine, accent: '#7b1fa2' };
+  if (/protect|encrypt|password/.test(value) && !/unlock|decrypt|remove/.test(value)) return { icon: Lock, accent: '#d93025' };
+  if (/unlock|decrypt/.test(value)) return { icon: Unlock, accent: '#5f6368' };
+  if (/repair|fix document|recover/.test(value)) return { icon: Wrench, accent: '#f29900' };
+  if (/redact/.test(value)) return { icon: Shield, accent: '#c5221f' };
+  if (/ocr|scan/.test(value)) return { icon: ScanLine, accent: '#0097a7' };
+  if (/compare/.test(value)) return { icon: RefreshCw, accent: '#5e35b1' };
+  if (/find/.test(value)) return { icon: Search, accent: '#f9ab00' };
+  if (/replace/.test(value)) return { icon: RefreshCw, accent: '#f57c00' };
+  if (/remove formatting|clear formatting/.test(value)) return { icon: Eraser, accent: '#7e57c2' };
+  if (/remove|delete/.test(value)) return { icon: Trash2, accent: '#d93025' };
+  if (/sort/.test(value)) return { icon: ArrowDown, accent: '#188038' };
+  if (/character count|word count|count/.test(value)) return { icon: Hash, accent: '#00897b' };
+  if (/case|uppercase|lowercase/.test(value)) return { icon: Type, accent: '#3949ab' };
+  if (/notepad|write notes/.test(value)) return { icon: Pencil, accent: '#7c4dff' };
+  if (/speech|voice|dictat/.test(value)) return { icon: Mic, accent: '#00897b' };
+  if (/translate|language/.test(value)) return { icon: Languages, accent: '#5e35b1' };
+  if (/accessib/.test(value)) return { icon: Accessibility, accent: '#00796b' };
+  if (/html|markdown|code/.test(value)) return { icon: Code2, accent: '#546e7a' };
+  if (/metadata|properties|info/.test(value)) return { icon: Settings, accent: '#546e7a' };
+  if (/flatten|layer/.test(value)) return { icon: Layers3, accent: '#6d4c41' };
+  if (/image|jpg|jpeg|png/.test(value)) return { icon: Image, accent: '#9334e6' };
+  if (/spreadsheet|xlsx|xls\b|csv/.test(value)) return { icon: Table2, accent: '#188038' };
+  if (/presentation|powerpoint|pptx|ppt\b/.test(value)) return { icon: Presentation, accent: '#f29900' };
+  if (/create|maker|generator|invoice|proposal|resume|memo|agenda|minutes/.test(value)) return { icon: FilePlus2, accent: '#1a73e8' };
+  if (/view|reader|preview/.test(value)) return { icon: Eye, accent: '#1a73e8' };
+  if (/edit|annotat|fill/.test(value)) return { icon: Pencil, accent: '#1a73e8' };
+  if (/convert|\bto\b/.test(value) || tool.kind === 'converter') return { icon: ArrowRightLeft, accent: '#673ab7' };
+  if (/search|inspect|analy/.test(value)) return { icon: FileSearch, accent: '#00897b' };
+  if (/copy/.test(value)) return { icon: Copy, accent: '#546e7a' };
+  if (/text|writing/.test(value)) return { icon: Type, accent: '#007b83' };
 
-  return { icon: FileText, accent: '#1a73e8', label: 'Document' };
+  return { icon: FileText, accent: '#1a73e8' };
+}
+
+function stableHash(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 const sizeMap = {
-  sm: { box: 38, icon: 18, radius: 11, badge: 6 },
-  md: { box: 50, icon: 23, radius: 14, badge: 7 },
-  lg: { box: 66, icon: 30, radius: 18, badge: 8 },
+  sm: { box: 38, icon: 18, radius: 11, dot: 2.2 },
+  md: { box: 50, icon: 24, radius: 14, dot: 2.7 },
+  lg: { box: 66, icon: 32, radius: 18, dot: 3.2 },
 } as const;
 
 export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition; size?: 'sm' | 'md' | 'lg' }) {
@@ -101,7 +109,11 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
   const meta = visualMeta(tool);
   const dimensions = sizeMap[size];
   const Icon = meta.icon;
-  const formatLabel = palette.targetLabel ? `${palette.sourceLabel}→${palette.targetLabel}` : meta.label;
+  const signature = stableHash(`${tool.id}:${tool.route}:${tool.name}`);
+  const rotation = ((signature >>> 20) % 5 - 2) * 1.5;
+  const glowX = 18 + (signature % 58);
+  const glowY = 12 + ((signature >>> 6) % 44);
+  const dots = Array.from({ length: 6 }, (_, index) => Boolean(signature & (1 << index)));
 
   const style = {
     '--tool-primary': palette.primary,
@@ -114,7 +126,8 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
     background: `linear-gradient(145deg, ${palette.primary} 0%, ${meta.accent} 100%)`,
     position: 'relative',
     overflow: 'hidden',
-    boxShadow: '0 6px 16px rgba(32,33,36,.12), inset 0 0 0 1px rgba(255,255,255,.16)',
+    boxShadow: '0 7px 18px rgba(32,33,36,.13), inset 0 0 0 1px rgba(255,255,255,.20)',
+    flex: '0 0 auto',
   } as CSSProperties;
 
   return (
@@ -122,13 +135,23 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
       <span
         style={{
           position: 'absolute',
-          width: dimensions.box * 0.7,
-          height: dimensions.box * 0.7,
+          width: dimensions.box * 0.88,
+          height: dimensions.box * 0.88,
           borderRadius: '50%',
           background: 'rgba(255,255,255,.14)',
-          right: -dimensions.box * 0.2,
-          top: -dimensions.box * 0.24,
+          left: `${glowX}%`,
+          top: `${glowY}%`,
+          transform: 'translate(-50%,-50%)',
           pointerEvents: 'none',
+        }}
+      />
+      <span
+        style={{
+          position: 'absolute',
+          inset: dimensions.box * 0.12,
+          borderRadius: dimensions.radius * 0.72,
+          border: '1px solid rgba(255,255,255,.10)',
+          transform: `rotate(${rotation}deg)`,
         }}
       />
       <Icon
@@ -136,35 +159,42 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
           width: dimensions.icon,
           height: dimensions.icon,
           color: '#fff',
-          strokeWidth: 2,
-          position: 'relative',
-          zIndex: 1,
-          transform: size === 'sm' ? 'translateY(-1px)' : 'translateY(-2px)',
+          strokeWidth: 2.15,
+          position: 'absolute',
+          zIndex: 2,
+          left: '50%',
+          top: '48%',
+          transform: `translate(-50%,-50%) rotate(${rotation}deg)`,
+          filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.10))',
         }}
       />
       <span
         style={{
           position: 'absolute',
-          zIndex: 2,
-          left: '50%',
-          bottom: size === 'sm' ? 3 : 5,
-          transform: 'translateX(-50%)',
-          maxWidth: '88%',
-          padding: size === 'sm' ? '1px 3px' : '2px 4px',
-          borderRadius: 999,
-          background: 'rgba(17,24,39,.26)',
-          color: '#fff',
-          fontSize: dimensions.badge,
-          fontWeight: 800,
-          lineHeight: 1.15,
-          letterSpacing: '.01em',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          textTransform: 'uppercase',
+          right: dimensions.box * 0.13,
+          bottom: dimensions.box * 0.12,
+          zIndex: 3,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: Math.max(1, dimensions.dot * 0.55),
+          padding: Math.max(2, dimensions.dot * 0.7),
+          borderRadius: dimensions.dot * 2.3,
+          background: 'rgba(17,24,39,.18)',
+          backdropFilter: 'blur(2px)',
         }}
       >
-        {formatLabel}
+        {dots.map((active, index) => (
+          <span
+            key={index}
+            style={{
+              width: dimensions.dot,
+              height: dimensions.dot,
+              borderRadius: index % 2 === 0 ? '50%' : dimensions.dot * 0.35,
+              background: active ? '#fff' : 'rgba(255,255,255,.34)',
+              opacity: active ? 1 : 0.56,
+            }}
+          />
+        ))}
       </span>
     </span>
   );
