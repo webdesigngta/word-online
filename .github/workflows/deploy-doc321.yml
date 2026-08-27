@@ -26,7 +26,10 @@ jobs:
       FTP_SERVER: ${{ secrets.DOC321_FTP_SERVER || secrets.HOSTGATOR_FTP_SERVER }}
       FTP_USERNAME: ${{ secrets.DOC321_FTP_USERNAME || secrets.HOSTGATOR_FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.DOC321_FTP_PASSWORD || secrets.HOSTGATOR_FTP_PASSWORD }}
-      FTP_PATH: ${{ secrets.DOC321_FTP_PATH }}
+      # Existing HostGator FTP account is rooted at public_html.
+      # cPanel document root for doc321.com:
+      # /home2/ddhynzte/public_html/website_4e5f58cf
+      FTP_PATH: ${{ secrets.DOC321_FTP_PATH || './website_4e5f58cf/' }}
 
     steps:
       - name: Checkout repository
@@ -65,7 +68,7 @@ jobs:
             exit 1
           fi
           if [ -z "$FTP_PATH" ]; then
-            echo "Missing DOC321_FTP_PATH. Set it to the Doc321.com HostGator document root as seen from this FTP account."
+            echo "Missing Doc321 FTP path."
             exit 1
           fi
 
