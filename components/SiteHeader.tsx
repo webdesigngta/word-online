@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+// DOC321 primary brand lockup: document + 3-2-1 speed motif.
 const navLinks = [
   ['Tools', '/tools'],
   ['Edit', '/edit'],
