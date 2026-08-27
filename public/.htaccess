@@ -3,6 +3,12 @@ Options -Indexes
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  # Canonical host: HTTPS + non-www. Preserve the full path and query string.
+  RewriteCond %{HTTPS} !=on [OR]
+  RewriteCond %{HTTP_HOST} ^www\.doc321\.com$ [NC]
+  RewriteRule ^ https://doc321.com%{REQUEST_URI} [R=301,L,NE]
+
   RewriteRule ^docx-editor-online/?$ docx-editor/ [R=301,L]
   RewriteRule ^edit-docx-online/?$ docx-editor/ [R=301,L]
   RewriteRule ^free-word-editor/?$ word-online/ [R=301,L]
