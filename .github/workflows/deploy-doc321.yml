@@ -26,10 +26,7 @@ jobs:
       FTP_SERVER: ${{ secrets.DOC321_FTP_SERVER || secrets.HOSTGATOR_FTP_SERVER }}
       FTP_USERNAME: ${{ secrets.DOC321_FTP_USERNAME || secrets.HOSTGATOR_FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.DOC321_FTP_PASSWORD || secrets.HOSTGATOR_FTP_PASSWORD }}
-      # Existing HostGator FTP account is rooted at public_html.
-      # cPanel document root for doc321.com:
-      # /home2/ddhynzte/public_html/website_4e5f58cf
-      FTP_PATH: ${{ secrets.DOC321_FTP_PATH || './website_4e5f58cf/' }}
+      FTP_PATH_OVERRIDE: ${{ secrets.DOC321_FTP_PATH }}
 
     steps:
       - name: Checkout repository
@@ -59,7 +56,7 @@ jobs:
           test -d out/_next
           printf '%s\n' "${GITHUB_SHA::12}" > out/build.txt
 
-      - name: Validate Doc321 deployment settings
+      - name: Validate FTP credentials
         shell: bash
         run: |
           set -euo pipefail
@@ -67,15 +64,36 @@ jobs:
             echo "Missing FTP credentials. Add DOC321_FTP_* secrets or keep the existing HOSTGATOR_FTP_* secrets."
             exit 1
           fi
-          if [ -z "$FTP_PATH" ]; then
-            echo "Missing Doc321 FTP path."
-            exit 1
-          fi
 
       - name: Install FTP client
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends lftp
+
+      - name: Resolve Doc321 FTP directory
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "$FTP_PATH_OVERRIDE" ]; then
+            FTP_PATH="$FTP_PATH_OVERRIDE"
+          else
+            FTP_PATH=""
+            for candidate in './doc321.com/' '../doc321.com/' '/doc321.com/'; do
+              if lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" -e "set ftp:passive-mode true; set ssl:verify-certificate no; cls -d '$candidate'; bye" >/dev/null 2>&1; then
+                FTP_PATH="$candidate"
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$FTP_PATH" ]; then
+            echo "Could not reach /home2/ddhynzte/doc321.com with the existing FTP login. Create a Doc321-specific FTP account rooted at doc321.com or add DOC321_FTP_PATH."
+            exit 1
+          fi
+
+          echo "Resolved Doc321 FTP path: $FTP_PATH"
+          echo "FTP_PATH=$FTP_PATH" >> "$GITHUB_ENV"
 
       - name: Deploy Doc321 preview to HostGator
         shell: bash
