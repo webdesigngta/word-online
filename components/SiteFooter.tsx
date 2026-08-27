@@ -20,7 +20,7 @@ export function SiteFooter() {
       <div className="fwo-site-footer-inner">
         <div>
           <Link className="fwo-site-footer-brand" href="/" aria-label="DOC321 home">
-            <img className="fwo-site-footer-logo" src="/doc321-logo.svg" width="410" height="104" alt="DOC321" />
+            <img className="fwo-site-footer-logo" src="/doc321-logo.png" width="400" height="108" alt="DOC321" loading="lazy" decoding="async" />
           </Link>
           <p>Fast, browser-first tools for Word, PDF, spreadsheets, presentations and everyday documents.</p>
         </div>
