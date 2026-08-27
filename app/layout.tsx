@@ -14,14 +14,14 @@ const criticalEditorCss = `
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: 'Free Word Online – Edit DOCX Files Free', template: '%s | Free Word Online' },
+  title: { default: 'DOC321 – Free Online Document Tools', template: '%s | DOC321' },
   description: site.description,
   applicationName: site.name,
   category: 'productivity',
-  keywords: ['word online','free word editor','docx editor online','edit docx online','word document editor','online document editor'],
-  authors: [{ name: 'Free Word Online' }],
-  creator: 'Free Word Online',
-  publisher: 'Free Word Online',
+  keywords: ['word online','free word editor','docx editor online','edit docx online','pdf tools','document tools','online document editor'],
+  authors: [{ name: 'DOC321' }],
+  creator: 'DOC321',
+  publisher: 'DOC321',
   referrer: 'origin-when-cross-origin',
   robots: allowIndexing ? { index: true, follow: true } : { index: false, follow: false, noarchive: true },
   icons: { icon: absoluteUrl('/favicon.svg'), apple: absoluteUrl('/app-icon.svg') },
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#f8fafd',
+  themeColor: '#0B66E6',
   colorScheme: 'light',
 };
 

@@ -3,10 +3,10 @@ export const allowIndexing = process.env.NEXT_PUBLIC_ALLOW_INDEXING === 'true';
 export const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '');
 
 export const site = {
-  name: 'Free Word Online',
-  shortName: 'Word Online',
+  name: 'DOC321',
+  shortName: 'DOC321',
   description:
-    'Edit Word documents online for free. Open DOCX files, format text, insert tables and images, autosave locally, and export your work without creating an account.',
+    'Fast, free browser-based tools for Word, PDF, spreadsheets, presentations, images and everyday documents.',
 };
 
 export function absoluteUrl(path = '/') {
