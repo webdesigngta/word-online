@@ -127,13 +127,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          # Deploy immutable Next.js assets first and KEEP older hashed chunks.
+          # This prevents an already-open/cached page from failing while a new
+          # release is being uploaded. New HTML is published only after every
+          # chunk it references is already available.
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
           set ftp:passive-mode true
           set ssl:verify-certificate no
           set net:max-retries 2
           set net:timeout 30
           set xfer:clobber true
-          mirror --reverse --verbose --delete --parallel=2 ./out/ "$FTP_PATH"
+          mirror --reverse --verbose --parallel=4 ./out/_next/ "$FTP_PATH/_next/"
+          bye
+          EOF
+
+          # Publish HTML and other public files second. Delete stale non-_next
+          # files, but deliberately preserve old hashed _next assets so cached
+          # tabs can finish loading safely after a deployment.
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+          set ftp:passive-mode true
+          set ssl:verify-certificate no
+          set net:max-retries 2
+          set net:timeout 30
+          set xfer:clobber true
+          mirror --reverse --verbose --delete --parallel=2 --exclude-glob '_next/**' ./out/ "$FTP_PATH"
           bye
           EOF
 
@@ -189,3 +207,21 @@ jobs:
           done
 
           curl --fail --silent --show-error https://doc321.com/robots.txt | grep -q 'Allow: /'
+
+          # Verify that the live native editor pages contain their expected
+          # shells rather than only returning an HTTP 200 fallback page.
+          curl --fail --silent --show-error https://doc321.com/word-online/ | grep -q 'editor-route'
+          curl --fail --silent --show-error https://doc321.com/docx-editor/ | grep -q 'editor-route'
+          curl --fail --silent --show-error https://doc321.com/create-word-document/ | grep -q 'editor-route'
+          curl --fail --silent --show-error https://doc321.com/online-notepad/ | grep -q 'notepad-native-page'
+
+          # Catch the most common "page couldn't load" failure: HTML deployed
+          # successfully but a referenced Next.js JavaScript chunk is missing.
+          editor_html="$(curl --fail --silent --show-error https://doc321.com/word-online/)"
+          editor_chunk="$(printf '%s' "$editor_html" | grep -oE '/_next/static/[^\" ]+\.js' | head -n 1)"
+          test -n "$editor_chunk"
+          echo "Checking editor JS chunk: $editor_chunk"
+          curl --fail --silent --show-error --location \
+            --connect-timeout 10 --max-time 20 \
+            --output /dev/null \
+            "https://doc321.com${editor_chunk}"
