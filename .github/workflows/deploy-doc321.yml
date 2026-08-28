@@ -60,6 +60,29 @@ jobs:
           test -d out/_next
           test -f out/robots.txt
           grep -q 'Allow: /' out/robots.txt
+
+          # Guard against older tool templates returning to production.
+          # These routes cover the Word/DOCX legacy path plus the editor-first variants.
+          for route in \
+            docx-viewer \
+            merge-word-documents \
+            docx-to-html \
+            docx-to-txt \
+            docx-to-rtf \
+            word-count \
+            compare-word-documents \
+            split-word-document \
+            extract-docx-images \
+            word-online \
+            docx-editor \
+            create-word-document \
+            online-notepad; do
+            page="out/${route}/index.html"
+            echo "Verifying DOC321 tool shell: ${page}"
+            test -f "$page"
+            grep -q 'platform-task-page' "$page"
+          done
+
           printf '%s\n' "${GITHUB_SHA::12}" > out/build.txt
 
       - name: Validate Doc321 FTP password
@@ -130,7 +153,18 @@ jobs:
           set -euo pipefail
           getent ahostsv4 doc321.com
 
-          for path in / /pdf-to-word/ /word-to-pdf/ /compress-pdf/ /tools/ /robots.txt; do
+          for path in \
+            / \
+            /tools/ \
+            /pdf-to-word/ \
+            /word-to-pdf/ \
+            /compress-pdf/ \
+            /docx-viewer/ \
+            /merge-word-documents/ \
+            /docx-to-html/ \
+            /docx-to-txt/ \
+            /docx-to-rtf/ \
+            /robots.txt; do
             url="https://doc321.com${path}"
             echo "Checking $url"
             curl --fail --silent --show-error --location \
