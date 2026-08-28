@@ -192,6 +192,10 @@ export function UploadButtonNormalizer() {
     const card = document.querySelector<HTMLElement>('.platform-task-card');
     if (!card) return;
 
+    // Native editors intentionally own their controls, upload/open actions, and visual system.
+    // Do not rewrite Word editor, DOCX editor, creator, or Online Notepad interfaces.
+    if (card.querySelector('.editor-route, .notepad-is-shell, [data-native-editor="true"]')) return;
+
     refresh(card);
     let dragDepth = 0;
 
