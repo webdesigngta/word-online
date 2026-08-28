@@ -6,6 +6,7 @@ import './material-icons.css';
 import './docs-editor.css';
 import './doc321-brand.css';
 import './tool-pages.css';
+import './tool-pages-special.css';
 import './home-typography.css';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
