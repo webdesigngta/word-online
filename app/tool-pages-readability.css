@@ -123,7 +123,19 @@
   height:17px!important;
   margin:0!important;
   color:#fff!important;
-  stroke:currentColor!important;
+  stroke:#fff!important;
+  fill:none!important;
+}
+
+/* Keep the upload glyph white even when older tool CSS targets nested SVG paths. */
+.platform-task-workspace [data-uniform-file-picker="true"] .uniform-upload-icon,
+.platform-task-workspace [data-uniform-file-picker="true"] .uniform-upload-icon svg,
+.platform-task-workspace [data-uniform-file-picker="true"] .uniform-upload-icon svg *,
+.platform-task-workspace [data-uniform-file-picker="true"] .uniform-upload-icon path,
+.platform-task-workspace [data-uniform-file-picker="true"] .uniform-upload-icon polyline,
+.platform-task-workspace [data-uniform-file-picker="true"] .uniform-upload-icon line{
+  color:#fff!important;
+  stroke:#fff!important;
 }
 
 .platform-task-workspace [data-uniform-file-picker="true"]:after{
