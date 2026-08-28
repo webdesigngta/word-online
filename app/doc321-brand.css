@@ -1,0 +1,26 @@
+:root{
+  --doc-navy:#011855;
+  --doc-ink:#101B3F;
+  --doc-blue:#006CFD;
+  --doc-sky:#00B4FC;
+  --doc-purple:#9A01FA;
+  --doc-orange:#FF7200;
+  --doc-blue-soft:#EEF6FF;
+  --doc-purple-soft:#F8EEFF;
+  --doc-orange-soft:#FFF4E9;
+  --doc-cyan-soft:#EAFBFF;
+  --doc-surface:#FFFFFF;
+  --doc-surface-soft:#F8FBFF;
+  --doc-muted:#606C83;
+  --doc-muted-2:#768097;
+  --doc-line:rgba(1,24,85,.10);
+  --doc-line-strong:rgba(1,24,85,.16);
+  --doc-shadow-sm:0 8px 24px rgba(1,24,85,.045);
+  --doc-shadow-md:0 16px 40px rgba(1,24,85,.08);
+  --doc-shadow-lg:0 24px 60px rgba(1,24,85,.12);
+  --doc-radius-sm:12px;
+  --doc-radius-md:16px;
+  --doc-radius-lg:24px;
+  --doc-brand-gradient:linear-gradient(135deg,var(--doc-blue) 0%,var(--doc-purple) 58%,var(--doc-orange) 125%);
+  --doc-soft-gradient:linear-gradient(145deg,#EDF8FF 0%,#F8F3FF 55%,#FFF7EE 100%);
+}
