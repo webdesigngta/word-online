@@ -5,7 +5,9 @@ import './google-style.css';
 import './material-icons.css';
 import './docs-editor.css';
 import './doc321-brand.css';
+import './tool-pages.css';
 import './home-typography.css';
+import { ScrollToTop } from '@/components/ScrollToTop';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
 
 const criticalEditorCss = `
@@ -46,7 +48,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,0" rel="stylesheet" />
         <style dangerouslySetInnerHTML={{ __html: criticalEditorCss }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ScrollToTop />
+      </body>
     </html>
   );
 }
