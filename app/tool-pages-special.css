@@ -1,0 +1,6 @@
+/* Compatibility rules for editor-first tools that intentionally hide the landing identity. */
+.platform-task-page:has(.notepad-is-shell) .platform-task-hero{display:block!important;border:0;background:transparent;box-shadow:none;overflow:visible}
+.platform-task-page:has(.notepad-is-shell) .platform-task-hero:before,
+.platform-task-page:has(.notepad-is-shell) .platform-task-hero:after{display:none}
+.platform-task-page:has(.notepad-is-shell) .platform-task-hero-head{display:none!important}
+.platform-task-page:has(.notepad-is-shell) .platform-task-workspace{margin:0;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
