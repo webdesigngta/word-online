@@ -1,0 +1,273 @@
+/* DOC321 tool-page readability + upload UX refinements.
+   Loaded after the existing tool CSS so every individual tool page inherits
+   the same clearer hierarchy without changing each processor implementation. */
+
+.platform-task-hero-head{
+  padding:34px 28px 18px;
+}
+
+.platform-task-title-row{
+  gap:11px;
+}
+
+.platform-task-hero h1{
+  font-size:clamp(34px,4.2vw,48px)!important;
+  line-height:1.06!important;
+  letter-spacing:-.045em!important;
+}
+
+.platform-task-workspace{
+  padding:20px!important;
+}
+
+.platform-task-workspace-intro{
+  max-width:760px;
+  margin:0 auto 18px!important;
+  color:#44516B!important;
+  font-size:16px!important;
+  line-height:1.6!important;
+  text-align:center;
+  text-wrap:balance;
+}
+
+/* Keep upload cards concise: the page-level instruction now explains the job. */
+.platform-task-workspace [data-uniform-dropzone="true"]{
+  position:relative;
+  transition:border-color .16s ease,background .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+
+.platform-task-workspace [data-uniform-dropzone="true"] > h2,
+.platform-task-workspace [data-uniform-dropzone="true"] > div > h2,
+.platform-task-workspace [data-uniform-dropzone="true"] > p,
+.platform-task-workspace [data-uniform-dropzone="true"] > div > p{
+  display:none!important;
+}
+
+.platform-task-workspace.is-uniform-dragover [data-uniform-dropzone="true"],
+.platform-task-workspace[data-uniform-dropzone="true"].is-uniform-dragover{
+  border-color:var(--tool-primary)!important;
+  background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--tool-soft) 88%,#fff))!important;
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--tool-primary) 12%,transparent),0 18px 36px color-mix(in srgb,var(--tool-primary) 13%,transparent)!important;
+}
+
+.uniform-drop-hint{
+  display:block!important;
+  margin-top:10px!important;
+  color:#66728A!important;
+  font-size:13px!important;
+  font-weight:650!important;
+  line-height:1.4!important;
+  text-align:center!important;
+}
+
+[data-uniform-upload-helper="true"]{
+  color:#66728A!important;
+  font-size:13px!important;
+  line-height:1.45!important;
+}
+
+/* One consistent upload icon and label on every normalized file picker. */
+.platform-task-workspace [data-uniform-file-picker="true"]{
+  min-height:50px!important;
+  min-width:168px!important;
+  padding:0 20px!important;
+  gap:9px!important;
+}
+
+.platform-task-workspace [data-uniform-file-picker="true"] svg{
+  display:none!important;
+}
+
+.platform-task-workspace [data-uniform-file-picker="true"]:before{
+  content:'↑';
+  display:grid;
+  place-items:center;
+  width:20px;
+  height:20px;
+  color:#fff;
+  font-size:19px!important;
+  font-weight:850;
+  line-height:1!important;
+  transform:translateY(-1px);
+}
+
+.platform-task-workspace [data-uniform-file-picker="true"]:after{
+  content:'Choose Files';
+  font-size:15px!important;
+  color:#fff!important;
+  white-space:nowrap;
+}
+
+/* Key benefits must be readable at a glance. */
+.platform-task-features{
+  gap:11px!important;
+  margin-top:16px!important;
+}
+
+.platform-task-feature{
+  gap:10px!important;
+  padding:14px 12px!important;
+  min-height:70px;
+}
+
+.platform-task-feature-icon{
+  width:40px!important;
+  height:40px!important;
+}
+
+.platform-task-feature strong{
+  font-size:14px!important;
+  line-height:1.25!important;
+}
+
+.platform-task-feature small{
+  margin-top:4px!important;
+  font-size:11.5px!important;
+  line-height:1.35!important;
+}
+
+/* Raise the readability floor across the long tool page. */
+.platform-task-section-kicker{
+  font-size:13px!important;
+}
+
+.platform-task-section-head p,
+.platform-task-detail p,
+.platform-task-journey-copy p,
+.platform-task-context-card p,
+.platform-task-seo-intro p,
+.platform-task-seo-grid p,
+.platform-task-seo-workflow p,
+.platform-task-seo-wide p,
+.platform-task-faq-head p,
+.platform-task-faq details p,
+.tool-page-bottom-cta p{
+  font-size:16px!important;
+  line-height:1.72!important;
+}
+
+.platform-task-detail h3{
+  font-size:19px!important;
+}
+
+.platform-task-journey-num{
+  font-size:14px!important;
+}
+
+.platform-task-journey-badge,
+.platform-task-journey-action{
+  font-size:13px!important;
+}
+
+.platform-task-chip{
+  min-height:34px!important;
+  padding:0 12px!important;
+  font-size:12px!important;
+}
+
+.platform-task-related-head p{
+  font-size:14px!important;
+}
+
+.platform-task-related-all{
+  font-size:13px!important;
+}
+
+.platform-task-related-link strong{
+  font-size:14.5px!important;
+}
+
+.platform-task-related-link small{
+  font-size:12px!important;
+  line-height:1.45!important;
+}
+
+.platform-task-faq summary{
+  font-size:16px!important;
+  line-height:1.45!important;
+}
+
+/* Older task interfaces often used 10–12px helper copy. Raise that floor. */
+.platform-task-workspace :is(
+  .fwo-task-copy span,
+  .fwo-single-meta,
+  .fwo-single-result-copy span,
+  .fwo-merge-status,
+  .fwo-info-status,
+  .fwo-count-status,
+  .fwo-convert-status,
+  .fwo-file-name,
+  .fwo-legacy-copy span,
+  .fwo-legacy-note,
+  .swt-status,
+  .swt-meta,
+  .iwt-status,
+  .iwt-confidence,
+  [class*="-warning"],
+  [class*="-status"]
+){
+  font-size:13px!important;
+  line-height:1.5!important;
+}
+
+.platform-task-workspace :is(
+  .fwo-task-copy strong,
+  .fwo-single-result-copy strong,
+  .fwo-merge-ready strong,
+  .fwo-info-stat strong,
+  .fwo-count-card strong
+){
+  line-height:1.25!important;
+}
+
+@media(max-width:900px){
+  .platform-task-features{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+
+@media(max-width:640px){
+  .platform-task-hero-head{
+    padding:28px 18px 15px;
+  }
+
+  .platform-task-title-row{
+    gap:9px;
+  }
+
+  .platform-task-hero h1{
+    font-size:clamp(30px,9vw,38px)!important;
+  }
+
+  .platform-task-workspace{
+    margin:0 10px 10px!important;
+    padding:15px!important;
+  }
+
+  .platform-task-workspace-intro{
+    font-size:15px!important;
+    margin-bottom:14px!important;
+  }
+
+  .platform-task-features{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+  }
+
+  .platform-task-feature{
+    min-height:68px;
+  }
+
+  .platform-task-section-head p,
+  .platform-task-detail p,
+  .platform-task-journey-copy p,
+  .platform-task-context-card p,
+  .platform-task-seo-intro p,
+  .platform-task-seo-grid p,
+  .platform-task-seo-workflow p,
+  .platform-task-seo-wide p,
+  .platform-task-faq details p,
+  .tool-page-bottom-cta p{
+    font-size:15px!important;
+  }
+}
