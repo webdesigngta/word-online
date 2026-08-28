@@ -61,8 +61,7 @@ jobs:
           test -f out/robots.txt
           grep -q 'Allow: /' out/robots.txt
 
-          # Guard against older tool templates returning to production.
-          # These routes cover the Word/DOCX legacy path plus the editor-first variants.
+          # Guard the shared task-page system on normal tools.
           for route in \
             docx-viewer \
             merge-word-documents \
@@ -72,16 +71,27 @@ jobs:
             word-count \
             compare-word-documents \
             split-word-document \
-            extract-docx-images \
-            word-online \
-            docx-editor \
-            create-word-document \
-            online-notepad; do
+            extract-docx-images; do
             page="out/${route}/index.html"
-            echo "Verifying DOC321 tool shell: ${page}"
+            echo "Verifying DOC321 shared tool shell: ${page}"
             test -f "$page"
             grep -q 'platform-task-page' "$page"
           done
+
+          # Native editors must remain native and must NOT be forced into the
+          # generic upload-card experience.
+          for route in word-online docx-editor create-word-document; do
+            page="out/${route}/index.html"
+            echo "Verifying native Word editor: ${page}"
+            test -f "$page"
+            grep -q 'editor-route' "$page"
+          done
+
+          page="out/online-notepad/index.html"
+          echo "Verifying native Online Notepad: ${page}"
+          test -f "$page"
+          grep -q 'notepad-native-page' "$page"
+          grep -q 'notepad-is-shell' "$page"
 
           printf '%s\n' "${GITHUB_SHA::12}" > out/build.txt
 
@@ -164,6 +174,10 @@ jobs:
             /docx-to-html/ \
             /docx-to-txt/ \
             /docx-to-rtf/ \
+            /word-online/ \
+            /docx-editor/ \
+            /create-word-document/ \
+            /online-notepad/ \
             /robots.txt; do
             url="https://doc321.com${path}"
             echo "Checking $url"
