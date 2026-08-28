@@ -75,24 +75,22 @@
 }
 
 .platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
-  .fwo-single-drop,
-  .fwo-merge-picker,
+  [class*="-drop "],
+  [class$="-drop"],
+  [class*="-picker "],
+  [class$="-picker"],
   .fwo-viewer-empty,
-  .fwo-convert-drop,
-  .fwo-split-picker,
-  .fwo-compare-picker,
   .fwo-legacy-empty
 ) svg{
   color:var(--tool-primary)!important;
 }
 
 .platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
-  .fwo-single-drop,
-  .fwo-merge-picker,
+  [class*="-drop "],
+  [class$="-drop"],
+  [class*="-picker "],
+  [class$="-picker"],
   .fwo-viewer-empty,
-  .fwo-convert-drop,
-  .fwo-split-picker,
-  .fwo-compare-picker,
   .fwo-legacy-empty
 ) h2{
   margin-top:0!important;
@@ -103,15 +101,15 @@
 }
 
 .platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
-  .fwo-single-drop,
-  .fwo-merge-picker,
+  [class*="-drop "],
+  [class$="-drop"],
+  [class*="-picker "],
+  [class$="-picker"],
   .fwo-viewer-empty,
-  .fwo-convert-drop,
-  .fwo-split-picker,
-  .fwo-compare-picker,
   .fwo-legacy-empty
-) :is(p,div:not([class])){
-  color:var(--doc-muted);
+) p{
+  color:var(--doc-muted)!important;
+  line-height:1.6!important;
 }
 
 /* File-entry controls are normalized by UploadButtonNormalizer. */
@@ -131,6 +129,8 @@
   .fwo-single-button,
   .fwo-task-button,
   .fwo-convert-button,
+  .fwo-image-button,
+  .fwo-info-button,
   .fwo-merge-button:not(.secondary),
   .fwo-split-button:not(.secondary),
   .fwo-compare-button:not(.secondary),
@@ -154,6 +154,8 @@
   .fwo-single-button,
   .fwo-task-button,
   .fwo-convert-button,
+  .fwo-image-button,
+  .fwo-info-button,
   .fwo-merge-button:not(.secondary),
   .fwo-split-button:not(.secondary),
   .fwo-compare-button:not(.secondary),
@@ -196,7 +198,9 @@
   .fwo-merge-download,
   .fwo-download-button,
   .fwo-split-download,
-  a[class*="-download"]
+  a[class*="-download"],
+  [class*="-btn"].success,
+  [class*="-button"].success
 ){
   min-height:44px!important;
   border:0!important;
@@ -253,7 +257,8 @@
 
 .platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-count-card,
-  .fwo-docx-chip
+  .fwo-docx-chip,
+  .fwo-info-stat
 ){
   border:1px solid var(--workspace-border)!important;
   background:var(--workspace-soft)!important;
@@ -277,6 +282,7 @@
   .fwo-convert-warning,
   .fwo-split-warning,
   .fwo-compare-warning,
+  .fwo-info-warning,
   .fwo-legacy-note.warn,
   [class*="-warning "],
   [class$="-warning"]
@@ -327,7 +333,8 @@
   .fwo-convert-status,
   .fwo-split-status,
   .fwo-compare-status,
-  .fwo-legacy-copy span
+  .fwo-legacy-copy span,
+  .fwo-info-status
 ){
   color:var(--doc-muted)!important;
   line-height:1.5!important;
@@ -376,6 +383,8 @@
     .fwo-merge-button,
     .fwo-task-button,
     .fwo-convert-button,
+    .fwo-image-button,
+    .fwo-info-button,
     .fwo-single-download,
     .fwo-merge-download,
     .fwo-download-button
