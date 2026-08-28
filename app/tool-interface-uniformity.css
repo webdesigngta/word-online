@@ -1,24 +1,25 @@
 /* DOC321 workspace compatibility layer.
    Some tools predate PlatformTaskPage and still ship their own interface CSS.
    These rules keep the working area visually consistent without changing the
-   underlying processors or task-specific UX. Scoped to tool workspaces only. */
+   underlying processors or task-specific UX. Full editors/notepad are excluded
+   because their controls intentionally use a dedicated application UI. */
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace{
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)){
   --workspace-border:color-mix(in srgb,var(--tool-primary) 22%,#dfe6f2);
   --workspace-soft:color-mix(in srgb,var(--tool-soft) 72%,#fff);
   --workspace-shadow:0 14px 34px color-mix(in srgb,var(--tool-primary) 10%,rgba(1,24,85,.07));
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace,
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace *{
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)),
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) *{
   box-sizing:border-box;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(button,input,select,textarea){
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(button,input,select,textarea){
   font:inherit;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(input:not([type="file"]),select,textarea){
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea){
   border:1px solid var(--workspace-border)!important;
   border-radius:12px!important;
   background:#fff!important;
@@ -28,20 +29,24 @@
   transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace textarea{
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) textarea{
   min-height:130px;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(input:not([type="file"]),select,textarea):focus{
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea):focus{
   border-color:var(--tool-primary)!important;
   box-shadow:0 0 0 4px color-mix(in srgb,var(--tool-primary) 13%,transparent)!important;
 }
 
-/* Normalize the common legacy upload/drop surfaces. */
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+/* Normalize common upload/drop surfaces across older tool families. */
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-drop,
   .fwo-merge-picker,
   .fwo-viewer-empty,
+  .fwo-convert-drop,
+  .fwo-split-picker,
+  .fwo-compare-picker,
+  .fwo-legacy-empty,
   [class*="-drop "],
   [class$="-drop"],
   [class*="-picker "],
@@ -55,36 +60,40 @@
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-drop,
   .fwo-merge-picker,
-  .fwo-viewer-empty
+  .fwo-viewer-empty,
+  .fwo-convert-drop,
+  .fwo-split-picker,
+  .fwo-compare-picker,
+  .fwo-legacy-empty
 ){
   min-height:300px!important;
   padding:34px!important;
-}
-
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
-  .fwo-single-drop,
-  .fwo-merge-picker,
-  .fwo-viewer-empty
-) > div,
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-merge-picker{
   text-align:center;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-drop,
   .fwo-merge-picker,
-  .fwo-viewer-empty
+  .fwo-viewer-empty,
+  .fwo-convert-drop,
+  .fwo-split-picker,
+  .fwo-compare-picker,
+  .fwo-legacy-empty
 ) svg{
   color:var(--tool-primary)!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-drop,
   .fwo-merge-picker,
-  .fwo-viewer-empty
+  .fwo-viewer-empty,
+  .fwo-convert-drop,
+  .fwo-split-picker,
+  .fwo-compare-picker,
+  .fwo-legacy-empty
 ) h2{
   margin-top:0!important;
   color:var(--doc-navy)!important;
@@ -93,23 +102,42 @@
   letter-spacing:-.025em!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-drop,
   .fwo-merge-picker,
-  .fwo-viewer-empty
-) p,
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-viewer-empty div div{
-  color:var(--doc-muted)!important;
-  font-size:14px!important;
-  line-height:1.6!important;
+  .fwo-viewer-empty,
+  .fwo-convert-drop,
+  .fwo-split-picker,
+  .fwo-compare-picker,
+  .fwo-legacy-empty
+) :is(p,div:not([class])){
+  color:var(--doc-muted);
 }
 
-/* Primary task buttons use each tool's palette instead of the old fixed blue. */
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+/* File-entry controls are normalized by UploadButtonNormalizer. */
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) [data-uniform-file-picker="true"]{
+  min-height:48px!important;
+  border:0!important;
+  border-radius:12px!important;
+  padding:0 20px!important;
+  background:linear-gradient(135deg,var(--tool-primary),var(--tool-secondary))!important;
+  color:#fff!important;
+  font-weight:800!important;
+  box-shadow:0 8px 20px color-mix(in srgb,var(--tool-primary) 24%,transparent)!important;
+}
+
+/* Known primary process controls from the older Word/document families. */
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-button,
-  .fwo-merge-button:not(.secondary),
   .fwo-task-button,
-  [class*="-button"]:not(.secondary):not([class*="toolbar"]):not([class*="icon"])
+  .fwo-convert-button,
+  .fwo-merge-button:not(.secondary),
+  .fwo-split-button:not(.secondary),
+  .fwo-compare-button:not(.secondary),
+  .fwo-legacy-btn.primary,
+  .pdf-tool-button.primary,
+  [class*="-btn"].primary,
+  [class*="-button"].primary
 ){
   min-height:46px!important;
   border:0!important;
@@ -122,21 +150,30 @@
   transition:transform .15s ease,box-shadow .15s ease,filter .15s ease!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-button,
-  .fwo-merge-button:not(.secondary),
   .fwo-task-button,
-  [class*="-button"]:not(.secondary):not([class*="toolbar"]):not([class*="icon"])
+  .fwo-convert-button,
+  .fwo-merge-button:not(.secondary),
+  .fwo-split-button:not(.secondary),
+  .fwo-compare-button:not(.secondary),
+  .fwo-legacy-btn.primary,
+  .pdf-tool-button.primary,
+  [class*="-btn"].primary,
+  [class*="-button"].primary
 ):not(:disabled):hover{
   transform:translateY(-1px)!important;
   filter:brightness(.99)!important;
   box-shadow:0 11px 26px color-mix(in srgb,var(--tool-primary) 30%,transparent)!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+/* Secondary actions remain visibly secondary. */
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-merge-button.secondary,
+  .fwo-split-button.secondary,
+  .fwo-compare-button.secondary,
   [class*="-button"].secondary,
-  [class*="secondary-button"]
+  [class*="-btn"].secondary
 ){
   min-height:44px!important;
   border:1px solid color-mix(in srgb,var(--tool-primary) 22%,#d9e1ec)!important;
@@ -147,17 +184,18 @@
   box-shadow:none!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace button:disabled{
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) button:disabled{
   opacity:.52!important;
   cursor:not-allowed!important;
   transform:none!important;
-  box-shadow:none!important;
 }
 
 /* Downloads/results should still feel like the same product, not a separate green UI. */
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-download,
   .fwo-merge-download,
+  .fwo-download-button,
+  .fwo-split-download,
   a[class*="-download"]
 ){
   min-height:44px!important;
@@ -176,22 +214,27 @@
 }
 
 /* Legacy icon tiles now inherit the current tool identity. */
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-task-icon,
   .fwo-single-result-icon,
-  [class*="-icon "]:not([class*="button"]),
-  [class$="-icon"]:not([class*="button"])
+  .fwo-result-icon,
+  .fwo-legacy-icon
 ){
   background:var(--tool-soft)!important;
   color:var(--tool-primary)!important;
   border-radius:12px!important;
 }
 
-/* File rows, cards, and results all use the DOC321 surface system. */
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+/* File rows, cards, and results use the DOC321 surface system. */
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-merge-file,
   .fwo-single-result,
   .fwo-merge-ready,
+  .fwo-result,
+  .fwo-split-options,
+  .fwo-split-output,
+  .fwo-compare-file,
+  .fwo-compare-stat,
   [class*="-result "],
   [class$="-result"],
   [class*="-ready "],
@@ -203,15 +246,38 @@
   box-shadow:0 5px 16px rgba(1,24,85,.045)!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-merge-file-index{
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .fwo-merge-file-index{
   background:var(--tool-soft)!important;
   color:var(--tool-primary)!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
+  .fwo-count-card,
+  .fwo-docx-chip
+){
+  border:1px solid var(--workspace-border)!important;
+  background:var(--workspace-soft)!important;
+  color:var(--tool-ink)!important;
+}
+
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .fwo-count-upload{
+  border:1px solid color-mix(in srgb,var(--tool-primary) 30%,#d3dce9)!important;
+  border-radius:12px!important;
+  background:var(--tool-soft)!important;
+  color:var(--tool-ink)!important;
+  min-height:44px!important;
+  padding:0 15px!important;
+  font-weight:750!important;
+}
+
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-single-warning,
   .fwo-merge-warning,
   .fwo-task-warnings,
+  .fwo-convert-warning,
+  .fwo-split-warning,
+  .fwo-compare-warning,
+  .fwo-legacy-note.warn,
   [class*="-warning "],
   [class$="-warning"]
 ){
@@ -223,43 +289,52 @@
   line-height:1.5!important;
 }
 
-/* Viewer surfaces: keep the document itself neutral but brand the surrounding frame. */
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-viewer-document{
+/* Viewer/editor-like document surfaces keep the document neutral and brand the frame. */
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .fwo-viewer-document{
   border:1px solid var(--workspace-border)!important;
   border-radius:18px!important;
   background:linear-gradient(180deg,var(--workspace-soft),#f4f7fb)!important;
   padding:24px!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-viewer-page{
-  border:1px solid #e2e7ef!important;
-  border-radius:4px!important;
-  box-shadow:0 12px 30px rgba(1,24,85,.12)!important;
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(.fwo-viewer-page,.fwo-legacy-paper){
+  border-color:#e2e7ef!important;
+  box-shadow:0 12px 30px rgba(1,24,85,.10)!important;
+}
+
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .fwo-legacy-paper[contenteditable=true]:focus{
+  box-shadow:inset 0 0 0 2px var(--tool-primary),0 12px 30px rgba(1,24,85,.10)!important;
 }
 
 /* Improve readability of older task controls that used very small copy. */
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-task-copy strong,
   .fwo-single-result-copy strong,
-  .fwo-merge-ready strong
+  .fwo-result-copy strong,
+  .fwo-merge-ready strong,
+  .fwo-legacy-copy strong
 ){
   color:var(--doc-navy)!important;
   font-size:14px!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   .fwo-task-copy span,
   .fwo-single-meta,
   .fwo-single-result-copy span,
-  .fwo-merge-status
+  .fwo-result-copy span,
+  .fwo-merge-status,
+  .fwo-convert-status,
+  .fwo-split-status,
+  .fwo-compare-status,
+  .fwo-legacy-copy span
 ){
   color:var(--doc-muted)!important;
-  font-size:12px!important;
   line-height:1.5!important;
 }
 
-/* A consistent inner-card treatment for the many later tool families. */
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+/* Inner cards/panels across later tool families use the same geometry. */
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   [class*="-panel "],
   [class$="-panel"],
   [class*="-card "],
@@ -269,7 +344,7 @@
   border-radius:16px!important;
 }
 
-.platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+.platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
   [class*="-badge "],
   [class$="-badge"],
   [class*="-chip "],
@@ -279,27 +354,32 @@
 }
 
 @media(max-width:700px){
-  .platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+  .platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
     .fwo-single-drop,
     .fwo-merge-picker,
-    .fwo-viewer-empty
+    .fwo-viewer-empty,
+    .fwo-convert-drop,
+    .fwo-split-picker,
+    .fwo-compare-picker,
+    .fwo-legacy-empty
   ){
     min-height:240px!important;
     padding:24px 16px!important;
   }
 
-  .platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-viewer-document{
+  .platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .fwo-viewer-document{
     padding:10px!important;
   }
 
-  .platform-task-page:not(:has(.notepad-is-shell)) .platform-task-workspace :is(
+  .platform-task-page .platform-task-workspace:not(:has(.editor-route)):not(:has(.notepad-is-shell)) :is(
     .fwo-single-button,
     .fwo-merge-button,
     .fwo-task-button,
+    .fwo-convert-button,
     .fwo-single-download,
-    .fwo-merge-download
+    .fwo-merge-download,
+    .fwo-download-button
   ){
-    width:100%;
     justify-content:center!important;
   }
 }
