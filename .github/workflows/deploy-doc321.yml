@@ -206,22 +206,41 @@ jobs:
               "$url"
           done
 
-          curl --fail --silent --show-error https://doc321.com/robots.txt | grep -q 'Allow: /'
+          # Save responses to disk before inspecting them. This avoids SIGPIPE
+          # false failures from `curl | grep -q` while pipefail is enabled.
+          curl --fail --silent --show-error https://doc321.com/robots.txt -o /tmp/doc321-robots.txt
+          curl --fail --silent --show-error https://doc321.com/word-online/ -o /tmp/doc321-word-online.html
+          curl --fail --silent --show-error https://doc321.com/docx-editor/ -o /tmp/doc321-docx-editor.html
+          curl --fail --silent --show-error https://doc321.com/create-word-document/ -o /tmp/doc321-create-word.html
+          curl --fail --silent --show-error https://doc321.com/online-notepad/ -o /tmp/doc321-notepad.html
 
-          # Verify that the live native editor pages contain their expected
-          # shells rather than only returning an HTTP 200 fallback page.
-          curl --fail --silent --show-error https://doc321.com/word-online/ | grep -q 'editor-route'
-          curl --fail --silent --show-error https://doc321.com/docx-editor/ | grep -q 'editor-route'
-          curl --fail --silent --show-error https://doc321.com/create-word-document/ | grep -q 'editor-route'
-          curl --fail --silent --show-error https://doc321.com/online-notepad/ | grep -q 'notepad-native-page'
+          grep -q 'Allow: /' /tmp/doc321-robots.txt
+          grep -q 'editor-route' /tmp/doc321-word-online.html
+          grep -q 'editor-route' /tmp/doc321-docx-editor.html
+          grep -q 'editor-route' /tmp/doc321-create-word.html
+          grep -q 'notepad-native-page' /tmp/doc321-notepad.html
+          grep -q 'notepad-is-shell' /tmp/doc321-notepad.html
 
           # Catch the most common "page couldn't load" failure: HTML deployed
-          # successfully but a referenced Next.js JavaScript chunk is missing.
-          editor_html="$(curl --fail --silent --show-error https://doc321.com/word-online/)"
-          editor_chunk="$(printf '%s' "$editor_html" | grep -oE '/_next/static/[^\" ]+\.js' | head -n 1)"
-          test -n "$editor_chunk"
-          echo "Checking editor JS chunk: $editor_chunk"
-          curl --fail --silent --show-error --location \
-            --connect-timeout 10 --max-time 20 \
-            --output /dev/null \
-            "https://doc321.com${editor_chunk}"
+          # successfully but one of the Next.js JavaScript chunks it references
+          # is missing. Verify every JS chunk referenced by the flagship editor.
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          html = Path('/tmp/doc321-word-online.html').read_text(encoding='utf-8')
+          chunks = sorted(set(re.findall(r'/_next/static/[^"\s]+\.js', html)))
+          if not chunks:
+              raise SystemExit('No Next.js JavaScript chunks found in live Word Online HTML')
+          Path('/tmp/doc321-editor-chunks.txt').write_text('\n'.join(chunks) + '\n', encoding='utf-8')
+          print(f'Found {len(chunks)} live editor JavaScript chunks')
+          PY
+
+          while IFS= read -r editor_chunk; do
+            [ -n "$editor_chunk" ] || continue
+            echo "Checking editor JS chunk: $editor_chunk"
+            curl --fail --silent --show-error --location \
+              --connect-timeout 10 --max-time 20 \
+              --output /dev/null \
+              "https://doc321.com${editor_chunk}"
+          done < /tmp/doc321-editor-chunks.txt
