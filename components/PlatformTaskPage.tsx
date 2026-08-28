@@ -22,7 +22,7 @@ import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
 import { ToolVisual } from '@/components/ToolVisual';
 import { ToolSeoContent } from '@/components/ToolSeoContent';
 import { UploadButtonNormalizer } from '@/components/UploadButtonNormalizer';
-import { directoryGroupId, groupDefinition, relatedToolScore, toolPalette } from '@/lib/toolDesign';
+import { relatedToolScore, toolPalette } from '@/lib/toolDesign';
 import type { PlatformToolDefinition } from '@/tools/platform/catalog';
 import { allLivePlatformTools, getAllPlatformToolByRoute } from '@/tools/platform/allTools';
 
@@ -37,6 +37,36 @@ function formatTypes(values: readonly string[]) {
     .filter((value, index, list) => list.indexOf(value) === index);
 }
 
+function cleanHeading(tool: PlatformToolDefinition | undefined, fallback: string) {
+  const name = (tool?.name || fallback).replace(/\s+online$/i, '').trim();
+  if (!tool) return name;
+
+  if (tool.kind === 'converter' && /\bto\b/i.test(name) && !/^convert\b/i.test(name)) return `Convert ${name}`;
+  if (tool.kind === 'viewer' && /\s+viewer$/i.test(name)) return `View ${name.replace(/\s+viewer$/i, '')}`;
+  if (tool.kind === 'editor' && /\s+editor$/i.test(name)) return `Edit ${name.replace(/\s+editor$/i, '')}`;
+  return name;
+}
+
+function naturalList(values: readonly string[]) {
+  if (!values.length) return '';
+  if (values.length === 1) return values[0];
+  if (values.length === 2) return `${values[0]} or ${values[1]}`;
+  return `${values.slice(0, -1).join(', ')}, or ${values.at(-1)}`;
+}
+
+function workspaceInstruction(tool: PlatformToolDefinition | undefined, inputs: readonly string[], outputs: readonly string[]) {
+  if (!tool) return 'Add your file or content below and follow the simple steps to get your result.';
+  const input = naturalList(inputs.slice(0, 3)) || 'file';
+  const output = naturalList(outputs.slice(0, 3)) || 'result';
+
+  if (tool.kind === 'converter') return `Add your ${input} file. DOC321 converts it to ${output} and makes it ready to download.`;
+  if (tool.kind === 'viewer') return `Add your ${input} file to open and review it directly in your browser.`;
+  if (tool.kind === 'editor') return `Open your ${input} file and make your changes directly in the browser.`;
+  if (tool.kind === 'creator') return `Enter the information you need below. DOC321 creates the document for you to review and download.`;
+  if (['text', 'language'].includes(tool.kind)) return 'Paste or type your text below, choose what you need, and get the result instantly.';
+  return `Add your ${input} file, choose any options you need, and DOC321 prepares the ${output} result for you.`;
+}
+
 function howToSteps(tool: PlatformToolDefinition) {
   const inputs = formatTypes(tool.input);
   const outputs = formatTypes(tool.output);
@@ -45,7 +75,7 @@ function howToSteps(tool: PlatformToolDefinition) {
 
   if (tool.kind === 'converter') {
     return [
-      { title: `Add your ${inputLabel} file`, text: 'Choose your file from the hero workspace or drag it into the upload area when available.' },
+      { title: `Add your ${inputLabel} file`, text: 'Choose your file from the hero workspace or drag it into the upload area.' },
       { title: 'Choose the settings you need', text: 'Use only the options that matter for your conversion. Defaults are selected to keep the workflow quick.' },
       { title: `Convert with ${tool.name}`, text: tool.primaryIntent },
       { title: `Download ${outputLabel}`, text: 'Review the finished file, download it, or continue with another relevant DOC321 tool.' },
@@ -63,7 +93,7 @@ function howToSteps(tool: PlatformToolDefinition) {
 
   if (tool.kind === 'viewer') {
     return [
-      { title: `Open your ${inputLabel} file`, text: 'Choose the file directly in the hero workspace.' },
+      { title: `Open your ${inputLabel} file`, text: 'Choose the file directly in the hero workspace or drag it into the upload area.' },
       { title: 'Review the document', text: tool.primaryIntent },
       { title: 'Inspect what matters', text: 'Move through the content and check the information you came to verify.' },
       { title: 'Continue only if needed', text: 'Use a related edit, convert, organize, or download workflow without starting your search again.' },
@@ -89,7 +119,7 @@ function howToSteps(tool: PlatformToolDefinition) {
   }
 
   return [
-    { title: `Add ${inputLabel}`, text: 'Choose the file or content you want to work with in the hero workspace.' },
+    { title: `Add ${inputLabel}`, text: 'Choose the file or content you want to work with in the hero workspace, or drag it into the upload area.' },
     { title: 'Choose your options', text: 'Set only what is necessary for the result you want.' },
     { title: `Run ${tool.name}`, text: tool.primaryIntent },
     { title: `Use ${outputLabel}`, text: 'Review the result, download it, or continue into a closely related workflow.' },
@@ -122,7 +152,6 @@ export function PlatformTaskPage({
 }) {
   const current = getAllPlatformToolByRoute(route);
   const palette = current ? toolPalette(current) : fallbackPalette;
-  const group = current ? groupDefinition(directoryGroupId(current)) : groupDefinition('formats');
   const relatedTools = current
     ? allLivePlatformTools
       .filter((item) => item.route !== current.route)
@@ -136,7 +165,8 @@ export function PlatformTaskPage({
   const steps = current ? howToSteps(current) : [];
   const inputTypes = current ? formatTypes(current.input) : [];
   const outputTypes = current ? formatTypes(current.output) : [];
-  const displayName = current?.name ?? title;
+  const displayName = cleanHeading(current, title);
+  const taskInstruction = workspaceInstruction(current, inputTypes, outputTypes);
   const pageStyle = {
     '--tool-primary': palette.primary,
     '--tool-secondary': palette.secondary,
@@ -163,20 +193,21 @@ export function PlatformTaskPage({
             <div className="platform-task-hero">
               <div className="platform-task-hero-head">
                 <div className="platform-task-title-row">
-                  {current ? <ToolVisual tool={current} size="lg" /> : null}
+                  {current ? <ToolVisual tool={current} size="md" /> : null}
                   <h1 id="platform-task-title">{displayName}</h1>
                 </div>
-                <p className="platform-task-hero-copy">{description}</p>
-                <Link className="platform-task-family-link" href={`/tools#tools-${group.id}`}>Browse {group.label}<ArrowRight size={14}/></Link>
               </div>
-              <div className="platform-task-workspace platform-task-card" aria-label={`${displayName} working area`}>{tool}</div>
+              <div className="platform-task-workspace platform-task-card" aria-label={`${displayName} working area`}>
+                <p className="platform-task-workspace-intro">{taskInstruction}</p>
+                {tool}
+              </div>
             </div>
           </section>
 
           <section className="platform-task-features" aria-label="DOC321 tool benefits">
             {featureItems.map(({ title: itemTitle, detail, Icon }) => (
               <article className="platform-task-feature" key={itemTitle}>
-                <span className="platform-task-feature-icon"><Icon size={17} aria-hidden="true" /></span>
+                <span className="platform-task-feature-icon"><Icon size={19} aria-hidden="true" /></span>
                 <span><strong>{itemTitle}</strong><small>{detail}</small></span>
               </article>
             ))}
