@@ -2,8 +2,11 @@
 
 import { useEffect } from 'react';
 
-const uploadText = /^(choose|select|upload|open|add)\b[\s\S]*(file|files|pdf|pdfs|docx|doc|document|documents|word|image|images|photo|photos|scan|scans|xlsx|xls|csv|pptx|ppt|presentation|presentations|rtf|odt|html|epub|markdown|md|txt)|^choose again$/i;
-const shortChooseText = /^(choose|select|upload|open)\b[\s\S]{0,88}(file|files|pdf|pdfs|docx|doc|document|documents|word|image|images|photo|photos|scan|scans|xlsx|xls|csv|pptx|ppt|presentation|presentations|rtf|odt|html|epub|markdown|md|txt)[.!]?$/i;
+const uploadText = /^(choose|select|upload|open|add|browse|pick|load|import|attach)\b[\s\S]*(file|files|pdf|pdfs|docx|doc|document|documents|word|image|images|photo|photos|scan|scans|xlsx|xls|csv|pptx|ppt|presentation|presentations|rtf|odt|html|epub|markdown|md|txt)|^choose again$|^browse$/i;
+const shortChooseText = /^(choose|select|upload|open|add|browse|pick|load|import|attach)\b[\s\S]{0,88}(file|files|pdf|pdfs|docx|doc|document|documents|word|image|images|photo|photos|scan|scans|xlsx|xls|csv|pptx|ppt|presentation|presentations|rtf|odt|html|epub|markdown|md|txt)[.!]?$/i;
+const explicitUploadAction = /^(choose|select|upload|open|add|browse|pick|load|import|attach)\b/i;
+const nonUploadAction = /\b(convert|process|download|save|merge|split|compare|extract|repair|compress|remove|protect|unlock|rotate|crop|run|create|generate|apply|submit|reset|copy)\b/i;
+
 const dropSurfaceSelector = [
   '.fwo-single-drop',
   '.fwo-merge-picker',
@@ -23,8 +26,8 @@ function textOf(element: Element) {
   return (element.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
-function inputFileLabel(input: HTMLInputElement | null) {
-  if (!input) return 'Supported files only.';
+function acceptedLabels(input: HTMLInputElement | null) {
+  if (!input) return [] as string[];
   const accept = (input.accept || '').toLowerCase();
   const labels: string[] = [];
   const add = (label: string) => { if (!labels.includes(label)) labels.push(label); };
@@ -45,11 +48,25 @@ function inputFileLabel(input: HTMLInputElement | null) {
   if (/image\/jpeg|\.jpe?g\b/.test(accept)) add('JPG');
   if (/image\/png|\.png\b/.test(accept)) add('PNG');
   if (/image\/webp|\.webp\b/.test(accept)) add('WEBP');
-  if (/image\//.test(accept) && !labels.some((label) => ['JPG', 'PNG', 'WEBP'].includes(label))) add('image');
+  if (/image\//.test(accept) && !labels.some((label) => ['JPG', 'PNG', 'WEBP'].includes(label))) add('Images');
 
-  if (!labels.length) return accept ? 'Supported files only.' : 'Choose a supported file.';
-  const joined = labels.length === 1 ? labels[0] : labels.length === 2 ? `${labels[0]} and ${labels[1]}` : `${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)}`;
-  return `${joined} ${labels.length === 1 ? 'files' : 'files'} only.`;
+  return labels;
+}
+
+function compactAcceptedLabel(input: HTMLInputElement | null) {
+  const labels = acceptedLabels(input);
+  if (!labels.length) return 'Supported files';
+  if (labels.length === 1) return `${labels[0]} only`;
+  if (labels.length === 2) return `${labels[0]} or ${labels[1]}`;
+  return `${labels.slice(0, -1).join(', ')} or ${labels.at(-1)}`;
+}
+
+function helperAcceptedLabel(input: HTMLInputElement | null) {
+  const labels = acceptedLabels(input);
+  if (!labels.length) return 'Supported files only.';
+  if (labels.length === 1) return `${labels[0]} files only.`;
+  if (labels.length === 2) return `${labels[0]} or ${labels[1]} files only.`;
+  return `${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)} files only.`;
 }
 
 function acceptMatches(input: HTMLInputElement, file: File) {
@@ -74,6 +91,23 @@ function firstMatchingInput(root: Element, files: File[]) {
   return inputs.find((input) => acceptMatches(input, files[0])) ?? inputs[0];
 }
 
+function fileInputForTrigger(root: Element, element: HTMLElement) {
+  if (element instanceof HTMLLabelElement && element.htmlFor) {
+    const associated = root.querySelector<HTMLInputElement>(`#${CSS.escape(element.htmlFor)}`);
+    if (associated?.type === 'file') return associated;
+  }
+
+  const dropzone = element.closest<HTMLElement>('[data-uniform-dropzone="true"]');
+  const local = dropzone?.querySelector<HTMLInputElement>('input[type="file"]');
+  return local ?? root.querySelector<HTMLInputElement>('input[type="file"]');
+}
+
+function isAssociatedFileLabel(root: Element, element: HTMLElement) {
+  if (!(element instanceof HTMLLabelElement) || !element.htmlFor) return false;
+  const target = root.querySelector<HTMLInputElement>(`#${CSS.escape(element.htmlFor)}`);
+  return target?.type === 'file';
+}
+
 function markDropSurfaces(root: Element) {
   const surfaces = Array.from(root.querySelectorAll<HTMLElement>(dropSurfaceSelector));
   if (!surfaces.length && root.querySelector('input[type="file"]')) {
@@ -83,28 +117,63 @@ function markDropSurfaces(root: Element) {
   surfaces.forEach((surface) => surface.setAttribute('data-uniform-dropzone', 'true'));
 }
 
+function buildUploadIcon() {
+  const icon = document.createElement('span');
+  icon.className = 'uniform-upload-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = '<svg class="uniform-upload-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14a2 2 0 0 0 2-2v-3"/><path d="M3 15v3a2 2 0 0 0 2 2"/></svg>';
+  return icon;
+}
+
+function ensureUploadMeta(root: Element, element: HTMLElement) {
+  const input = fileInputForTrigger(root, element);
+  if (!input) return;
+
+  if (!element.querySelector(':scope > .uniform-upload-icon')) element.prepend(buildUploadIcon());
+
+  let meta = element.nextElementSibling instanceof HTMLElement && element.nextElementSibling.classList.contains('uniform-upload-meta')
+    ? element.nextElementSibling
+    : null;
+
+  if (!meta) {
+    meta = document.createElement('div');
+    meta.className = 'uniform-upload-meta';
+    meta.innerHTML = '<span class="uniform-drop-hint">Drag & drop files here</span><span class="uniform-upload-meta-dot" aria-hidden="true">•</span><span class="uniform-upload-format"></span>';
+    element.insertAdjacentElement('afterend', meta);
+  }
+
+  const format = meta.querySelector<HTMLElement>('.uniform-upload-format');
+  if (format) {
+    const compact = compactAcceptedLabel(input);
+    format.textContent = compact;
+    format.setAttribute('aria-label', `Accepted file types: ${compact}`);
+  }
+}
+
+function shouldNormalizeTrigger(root: Element, element: HTMLElement) {
+  const text = textOf(element);
+  if (!text) return isAssociatedFileLabel(root, element);
+  if (uploadText.test(text) || isAssociatedFileLabel(root, element)) return true;
+
+  const dropzone = element.closest<HTMLElement>('[data-uniform-dropzone="true"]');
+  if (!dropzone || !dropzone.querySelector('input[type="file"]')) return false;
+  return explicitUploadAction.test(text) && !nonUploadAction.test(text) && text.length <= 64;
+}
+
 function markUploadTriggers(root: Element) {
   root.querySelectorAll<HTMLElement>('button,label,[role="button"],a').forEach((element) => {
-    const text = textOf(element);
-    if (!text || !uploadText.test(text)) return;
+    if (!shouldNormalizeTrigger(root, element)) return;
     element.setAttribute('data-uniform-file-picker', 'true');
     element.setAttribute('aria-label', 'Choose Files');
-
-    const dropzone = element.closest<HTMLElement>('[data-uniform-dropzone="true"]');
-    if (dropzone && !element.nextElementSibling?.classList.contains('uniform-drop-hint')) {
-      const hint = document.createElement('span');
-      hint.className = 'uniform-drop-hint';
-      hint.textContent = 'or drag & drop files here';
-      element.insertAdjacentElement('afterend', hint);
-    }
+    ensureUploadMeta(root, element);
   });
 }
 
 function normalizeHelperText(root: Element) {
   const input = root.querySelector<HTMLInputElement>('input[type="file"]');
-  const label = inputFileLabel(input);
+  const label = helperAcceptedLabel(input);
   root.querySelectorAll<HTMLElement>('span,small,p,div').forEach((element) => {
-    if (element.children.length || element.closest('button,label,[role="button"],a')) return;
+    if (element.children.length || element.closest('button,label,[role="button"],a,.uniform-upload-meta')) return;
     const text = textOf(element);
     if (!text || !shortChooseText.test(text)) return;
     element.textContent = label;
@@ -151,7 +220,9 @@ export function UploadButtonNormalizer() {
       card.classList.remove('is-uniform-dragover');
       const input = firstMatchingInput(card, files);
       if (!input) return;
-      const selected = input.multiple ? files : files.slice(0, 1);
+      const valid = files.filter((file) => acceptMatches(input, file));
+      if (!valid.length) return;
+      const selected = input.multiple ? valid : valid.slice(0, 1);
       const transfer = new DataTransfer();
       selected.forEach((file) => transfer.items.add(file));
       input.files = transfer.files;
