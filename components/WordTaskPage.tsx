@@ -1,10 +1,5 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
-import { Breadcrumbs } from '@/components/Breadcrumbs';
-import { SiteFooter } from '@/components/SiteFooter';
-import { SiteHeader } from '@/components/SiteHeader';
-import { FaqJsonLd } from '@/components/JsonLd';
-import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
+import { PlatformTaskPage } from '@/components/PlatformTaskPage';
 import { wordInterfaces } from '@/tools/word/interfaces/config';
 
 export function WordTaskPage({
@@ -23,87 +18,16 @@ export function WordTaskPage({
   faq: Array<{ question: string; answer: string }>;
 }) {
   const current = wordInterfaces.find((item) => item.eyebrow === eyebrow);
-  const relatedTools = wordInterfaces
-    .filter((item) => item.indexable && item.route !== current?.route)
-    .sort((left, right) => Number(right.kind === current?.kind) - Number(left.kind === current?.kind))
-    .slice(0, 6);
-  const toolId = current?.id ?? eyebrow.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const fallbackRoute = `/${eyebrow.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
 
   return (
-    <>
-      <ToolViewAnalytics toolId={toolId} route={current?.route} />
-      <SiteHeader />
-      <main className="word-task-page">
-        <style>{`
-          .word-task-page { background:#f8fafd; color:#202124; min-height:100vh; padding:30px 20px 72px; font-family:Arial,Helvetica,sans-serif; }
-          .word-task-wrap { width:min(1120px,100%); margin:0 auto; }
-          .word-task-hero { text-align:center; max-width:820px; margin:22px auto 28px; }
-          .word-task-eyebrow { margin:0 0 10px; color:#0b57d0; font-size:12px; font-weight:700; letter-spacing:.08em; }
-          .word-task-hero h1 { margin:0; color:#202124; font-size:clamp(32px,5vw,52px); line-height:1.08; letter-spacing:-.035em; }
-          .word-task-lead { margin:16px auto 0; color:#5f6368; font-size:17px; line-height:1.65; max-width:740px; }
-          .word-task-card { border:1px solid #e0e3e7; border-radius:20px; background:#fff; box-shadow:0 12px 34px rgba(60,64,67,.09); padding:24px; }
-          .word-task-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:30px; }
-          .word-task-detail { background:#fff; border:1px solid #e6e9ef; border-radius:16px; padding:20px; }
-          .word-task-detail h2 { margin:0 0 8px; font-size:17px; }
-          .word-task-detail p { margin:0; color:#5f6368; line-height:1.6; font-size:14px; }
-          .word-task-related { margin:34px 0 0; }
-          .word-task-related h2 { font-size:24px; margin:0 0 6px; }
-          .word-task-related > p { color:#5f6368; margin:0 0 14px; line-height:1.55; }
-          .word-task-related-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-          .word-task-related-link { display:block; color:#202124; text-decoration:none; background:#fff; border:1px solid #e0e3e7; border-radius:13px; padding:14px 15px; }
-          .word-task-related-link:hover { border-color:#a8b9d3; box-shadow:0 5px 14px rgba(60,64,67,.07); }
-          .word-task-related-link strong { display:block; font-size:14px; margin-bottom:4px; }
-          .word-task-related-link span { color:#5f6368; font-size:12px; line-height:1.45; }
-          .word-task-faq { margin:34px auto 0; max-width:900px; }
-          .word-task-faq h2 { font-size:26px; margin:0 0 14px; }
-          .word-task-faq details { background:#fff; border:1px solid #e0e3e7; border-radius:14px; padding:0 18px; margin:10px 0; }
-          .word-task-faq summary { cursor:pointer; padding:16px 0; font-weight:600; }
-          .word-task-faq p { color:#5f6368; line-height:1.6; margin:0 0 16px; }
-          @media(max-width:760px){ .word-task-page{padding:24px 12px 56px}.word-task-card{padding:14px}.word-task-grid,.word-task-related-grid{grid-template-columns:1fr}.word-task-hero h1{font-size:34px} }
-        `}</style>
-        <div className="word-task-wrap">
-          <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools', href: '/tools' }, { label: current?.name ?? title }]} />
-          <section className="word-task-hero">
-            <p className="word-task-eyebrow">{eyebrow}</p>
-            <h1>{title}</h1>
-            <p className="word-task-lead">{description}</p>
-          </section>
-          <section className="word-task-card">{tool}</section>
-          <section className="word-task-grid">
-            {details.map((item) => (
-              <article className="word-task-detail" key={item.title}>
-                <h2>{item.title}</h2>
-                <p>{item.text}</p>
-              </article>
-            ))}
-          </section>
-          {relatedTools.length ? (
-            <section className="word-task-related" aria-labelledby="related-word-tools">
-              <h2 id="related-word-tools">Related Word tools</h2>
-              <p>Continue with another document task using the same shared Word platform.</p>
-              <div className="word-task-related-grid">
-                {relatedTools.map((item) => (
-                  <Link className="word-task-related-link" href={item.route} key={item.route}>
-                    <strong>{item.name}</strong>
-                    <span>{item.description}</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ) : null}
-          <section className="word-task-faq">
-            <h2>Frequently asked questions</h2>
-            {faq.map((item) => (
-              <details key={item.question}>
-                <summary>{item.question}</summary>
-                <p>{item.answer}</p>
-              </details>
-            ))}
-          </section>
-        </div>
-      </main>
-      <SiteFooter />
-      <FaqJsonLd items={faq} />
-    </>
+    <PlatformTaskPage
+      route={current?.route ?? fallbackRoute}
+      title={title}
+      description={description}
+      tool={tool}
+      details={details}
+      faq={faq}
+    />
   );
 }
