@@ -4,6 +4,7 @@ import './globals.css';
 import './google-style.css';
 import './material-icons.css';
 import './docs-editor.css';
+import './doc321-brand.css';
 import './home-typography.css';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
 
