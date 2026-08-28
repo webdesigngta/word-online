@@ -30,12 +30,28 @@
   text-wrap:balance;
 }
 
-/* Keep upload cards concise: the page-level instruction now explains the job. */
+/* A single, calm upload pattern across all file-based tools. */
 .platform-task-workspace [data-uniform-dropzone="true"]{
   position:relative;
+  border-width:1.5px!important;
+  border-style:dashed!important;
+  border-color:color-mix(in srgb,var(--tool-primary) 28%,#D6DEEA)!important;
+  border-radius:20px!important;
+  background:
+    radial-gradient(circle at 50% 0%,color-mix(in srgb,var(--tool-primary) 7%,transparent),transparent 48%),
+    linear-gradient(180deg,#fff,color-mix(in srgb,var(--tool-soft) 56%,#fff))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
   transition:border-color .16s ease,background .16s ease,box-shadow .16s ease,transform .16s ease;
 }
 
+/* Remove the old floating decorative document/upload icon. The action now has
+   one proper upload glyph inside the Choose Files button. */
+.platform-task-workspace [data-uniform-dropzone="true"] > svg,
+.platform-task-workspace [data-uniform-dropzone="true"] > div > svg:first-child:not(.uniform-upload-icon-svg){
+  display:none!important;
+}
+
+/* Keep upload cards concise: the page-level instruction already explains the job. */
 .platform-task-workspace [data-uniform-dropzone="true"] > h2,
 .platform-task-workspace [data-uniform-dropzone="true"] > div > h2,
 .platform-task-workspace [data-uniform-dropzone="true"] > p,
@@ -46,49 +62,68 @@
 .platform-task-workspace.is-uniform-dragover [data-uniform-dropzone="true"],
 .platform-task-workspace[data-uniform-dropzone="true"].is-uniform-dragover{
   border-color:var(--tool-primary)!important;
-  background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--tool-soft) 88%,#fff))!important;
-  box-shadow:0 0 0 5px color-mix(in srgb,var(--tool-primary) 12%,transparent),0 18px 36px color-mix(in srgb,var(--tool-primary) 13%,transparent)!important;
+  background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--tool-soft) 90%,#fff))!important;
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--tool-primary) 10%,transparent),0 16px 34px color-mix(in srgb,var(--tool-primary) 12%,transparent)!important;
 }
 
-.uniform-drop-hint{
-  display:block!important;
-  margin-top:10px!important;
-  color:#66728A!important;
-  font-size:13px!important;
-  font-weight:650!important;
-  line-height:1.4!important;
-  text-align:center!important;
-}
-
-[data-uniform-upload-helper="true"]{
-  color:#66728A!important;
-  font-size:13px!important;
-  line-height:1.45!important;
-}
-
-/* One consistent upload icon and label on every normalized file picker. */
+/* Standardized primary file action. */
 .platform-task-workspace [data-uniform-file-picker="true"]{
-  min-height:50px!important;
-  min-width:168px!important;
-  padding:0 20px!important;
-  gap:9px!important;
+  min-height:52px!important;
+  min-width:174px!important;
+  padding:0 18px!important;
+  border:1px solid color-mix(in srgb,var(--tool-primary) 72%,#fff)!important;
+  border-radius:13px!important;
+  background:linear-gradient(135deg,var(--tool-primary),color-mix(in srgb,var(--tool-secondary) 62%,var(--tool-primary)))!important;
+  box-shadow:0 6px 16px color-mix(in srgb,var(--tool-primary) 22%,transparent)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  color:#fff!important;
+  font-size:0!important;
+  font-weight:800!important;
+  line-height:1!important;
+  text-decoration:none!important;
+  cursor:pointer!important;
+  transition:transform .15s ease,filter .15s ease,box-shadow .15s ease!important;
 }
 
-.platform-task-workspace [data-uniform-file-picker="true"] svg{
+.platform-task-workspace [data-uniform-file-picker="true"]:hover{
+  transform:translateY(-1px)!important;
+  filter:brightness(.99)!important;
+  box-shadow:0 9px 22px color-mix(in srgb,var(--tool-primary) 27%,transparent)!important;
+}
+
+.platform-task-workspace [data-uniform-file-picker="true"]:focus-visible{
+  outline:none!important;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--tool-primary) 16%,transparent),0 8px 20px color-mix(in srgb,var(--tool-primary) 23%,transparent)!important;
+}
+
+/* Hide legacy button icons only; keep the new upload-tray icon. */
+.platform-task-workspace [data-uniform-file-picker="true"] > svg{
   display:none!important;
 }
 
-.platform-task-workspace [data-uniform-file-picker="true"]:before{
-  content:'↑';
-  display:grid;
-  place-items:center;
-  width:20px;
-  height:20px;
-  color:#fff;
-  font-size:19px!important;
-  font-weight:850;
-  line-height:1!important;
-  transform:translateY(-1px);
+.uniform-upload-icon{
+  width:28px!important;
+  height:28px!important;
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 auto!important;
+  margin-left:-5px!important;
+  border-radius:8px!important;
+  background:rgba(255,255,255,.15)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)!important;
+  color:#fff!important;
+}
+
+.uniform-upload-icon-svg{
+  display:block!important;
+  width:17px!important;
+  height:17px!important;
+  margin:0!important;
+  color:#fff!important;
+  stroke:currentColor!important;
 }
 
 .platform-task-workspace [data-uniform-file-picker="true"]:after{
@@ -96,6 +131,68 @@
   font-size:15px!important;
   color:#fff!important;
   white-space:nowrap;
+  letter-spacing:-.01em;
+}
+
+/* Put drag/drop guidance and accepted file type on ONE compact line instead of
+   stacking three unrelated-looking lines beneath the button. */
+.uniform-upload-meta{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  flex-wrap:wrap!important;
+  margin-top:11px!important;
+  min-height:27px;
+  text-align:center!important;
+}
+
+.uniform-drop-hint{
+  display:inline-flex!important;
+  align-items:center!important;
+  color:#66728A!important;
+  font-size:13.5px!important;
+  font-weight:650!important;
+  line-height:1.4!important;
+}
+
+.uniform-upload-meta-dot{
+  color:#B1BAC9!important;
+  font-size:12px!important;
+  line-height:1!important;
+}
+
+.uniform-upload-format{
+  display:inline-flex!important;
+  align-items:center!important;
+  min-height:26px!important;
+  padding:0 9px!important;
+  border:1px solid color-mix(in srgb,var(--tool-primary) 14%,#DFE6F1)!important;
+  border-radius:999px!important;
+  background:color-mix(in srgb,var(--tool-soft) 72%,#fff)!important;
+  color:var(--tool-ink)!important;
+  font-size:12.5px!important;
+  font-weight:780!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+
+/* Old helper text such as “Choose a DOCX file” is redundant once the compact
+   accepted-format chip is present. */
+[data-uniform-upload-helper="true"]{
+  display:none!important;
+}
+
+.platform-task-workspace input[type="file"]::file-selector-button{
+  min-height:46px!important;
+  border:0!important;
+  border-radius:11px!important;
+  background:var(--tool-primary)!important;
+  color:#fff!important;
+  padding:0 17px!important;
+  font-weight:760!important;
+  cursor:pointer!important;
+  margin-right:10px!important;
 }
 
 /* Key benefits must be readable at a glance. */
@@ -247,6 +344,26 @@
   .platform-task-workspace-intro{
     font-size:15px!important;
     margin-bottom:14px!important;
+  }
+
+  .platform-task-workspace [data-uniform-file-picker="true"]{
+    min-width:164px!important;
+    min-height:50px!important;
+    padding:0 16px!important;
+  }
+
+  .uniform-upload-meta{
+    gap:6px!important;
+    margin-top:10px!important;
+  }
+
+  .uniform-upload-meta-dot{
+    display:none!important;
+  }
+
+  .uniform-upload-format{
+    min-height:25px!important;
+    font-size:12px!important;
   }
 
   .platform-task-features{
