@@ -39,11 +39,12 @@ const searchTools: readonly HomeSearchTool[] = allLivePlatformTools.map((tool) =
 }));
 
 const features = [
-  { title: 'Free to use', detail: 'Start with any tool', Icon: Sparkles },
-  { title: 'No signup', detail: 'Get straight to work', Icon: UserCheck },
-  { title: 'Fast & simple', detail: 'Built for quick tasks', Icon: Zap },
-  { title: 'Private by design', detail: 'Your files stay yours', Icon: ShieldCheck },
-  { title: 'Automatic cleanup', detail: 'Files deleted after 10 min', Icon: Clock },
+  { title: 'No sign-up', detail: 'Start instantly', Icon: UserCheck },
+  { title: 'No ads', detail: 'Zero distractions', Icon: Sparkles },
+  { title: 'No limits', detail: 'Use tools as much as you need', Icon: Zap },
+  { title: 'Unlimited downloads', detail: 'Download every finished file', Icon: Download },
+  { title: 'Safe & private', detail: 'Your files stay protected', Icon: ShieldCheck },
+  { title: 'Deleted after 10 minutes', detail: 'Files are permanently removed', Icon: Clock },
 ] as const;
 
 const reasons = [
@@ -90,12 +91,13 @@ export default function HomePage() {
           .hts-quick>span{color:#747981;font-size:10px;font-weight:700}
           .hts-quick a{display:inline-flex;align-items:center;min-height:28px;padding:0 9px;border:1px solid #dfe3e8;border-radius:999px;color:#40454b;background:#fff;text-decoration:none;font-size:10px;font-weight:700}
           .hts-quick a:hover{background:#f8f9fa;border-color:#c9ced5}
-          .dh-features{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));max-width:980px;margin:40px auto 0;padding:18px 0 0;border-top:1px solid var(--line)}
+          .dh-features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));max-width:980px;margin:40px auto 0;padding:18px 0 0;border-top:1px solid var(--line)}
           .dh-feature{display:flex;align-items:center;justify-content:center;gap:9px;min-width:0;padding:0 12px;text-align:left;position:relative}
           .dh-feature:not(:last-child):after{content:'';position:absolute;right:0;top:2px;bottom:2px;width:1px;background:#eceef1}
           .dh-feature-icon{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:#f4f6f8;color:#4b5563;flex:0 0 auto}
           .dh-feature strong{display:block;font-size:11px;line-height:1.2}
           .dh-feature small{display:block;margin-top:2px;color:#858b93;font-size:9px;line-height:1.3}
+          body .doc-home .dh-feature:nth-child(6) .dh-feature-icon{background:#FFF3E7;color:#EA6500}
           .dh-section{padding:82px 0}
           .dh-section-soft{background:linear-gradient(180deg,#fafafa 0%,#fff 100%);border-top:1px solid #f0f1f3;border-bottom:1px solid #f0f1f3}
           .dh-section-head{max-width:680px;margin:0 auto 30px;text-align:center}
@@ -202,8 +204,6 @@ export default function HomePage() {
             .dh-feature{justify-content:flex-start;padding:0 9px}
             .dh-feature:nth-child(even):after{display:none}
             .dh-feature:nth-child(odd):after{display:block}
-            .dh-feature:last-child{grid-column:1/-1;justify-content:center}
-            .dh-feature:last-child:after{display:none}
             .dh-section{padding:62px 0}
             .dh-section-head{margin-bottom:24px}
             .dh-section-head p{font-size:12px}
@@ -233,9 +233,8 @@ export default function HomePage() {
             .dh-solid-link{width:100%}
           }
           @media(max-width:390px){
-            .dh-feature small{display:none}
-            .dh-feature{justify-content:center;text-align:center}
-            .dh-feature-icon{display:none}
+            .dh-features{grid-template-columns:1fr}
+            .dh-feature{justify-content:flex-start;text-align:left}
             .convert-file{width:96px}
           }
         `}</style>
@@ -251,7 +250,7 @@ export default function HomePage() {
                 <HomeToolSearch tools={searchTools} />
               </div>
 
-              <div className="dh-features" aria-label="DOC321 features">
+              <div className="dh-features" aria-label="Why DOC321 is different">
                 {features.map(({ title, detail, Icon }) => (
                   <div className="dh-feature" key={title}>
                     <span className="dh-feature-icon"><Icon size={15} aria-hidden="true" /></span>
