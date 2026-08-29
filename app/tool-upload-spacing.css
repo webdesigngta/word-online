@@ -1,0 +1,49 @@
+/* Keep generic upload CTAs and drag/drop guidance grouped together.
+   Some legacy tool surfaces expose the picker button and generated helper as
+   separate grid rows; without explicit track sizing those rows stretch across
+   the tall drop zone and create a large empty gap. */
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"]{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-auto-rows:max-content!important;
+  align-content:center!important;
+  justify-items:center!important;
+  row-gap:0!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] > [data-uniform-file-picker="true"]{
+  align-self:center!important;
+  justify-self:center!important;
+  margin:0!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] > .uniform-upload-meta{
+  align-self:center!important;
+  justify-self:center!important;
+  width:auto!important;
+  margin:13px 0 0!important;
+}
+
+/* The same compact rhythm also applies when the normalized picker sits inside
+   one wrapper element rather than directly inside the drop surface. */
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] > div:not(.uniform-upload-meta){
+  align-self:center!important;
+  justify-self:center!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] > div:not(.uniform-upload-meta) > [data-uniform-file-picker="true"] + .uniform-upload-meta{
+  margin-top:13px!important;
+}
+
+@media(max-width:640px){
+  .platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+  .platform-task-workspace [data-uniform-dropzone="true"] > .uniform-upload-meta,
+  .platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+  .platform-task-workspace [data-uniform-dropzone="true"] > div:not(.uniform-upload-meta) > [data-uniform-file-picker="true"] + .uniform-upload-meta{
+    margin-top:12px!important;
+  }
+}
