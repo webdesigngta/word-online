@@ -9,6 +9,8 @@ export function WordTaskPage({
   tool,
   details,
   faq,
+  customContent,
+  customHowToSteps,
 }: {
   eyebrow: string;
   title: string;
@@ -16,6 +18,8 @@ export function WordTaskPage({
   tool: ReactNode;
   details: Array<{ title: string; text: string }>;
   faq: Array<{ question: string; answer: string }>;
+  customContent?: ReactNode;
+  customHowToSteps?: Array<{ title: string; text: string }>;
 }) {
   const current = wordInterfaces.find((item) => item.eyebrow === eyebrow);
   const fallbackRoute = `/${eyebrow.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
@@ -28,6 +32,8 @@ export function WordTaskPage({
       tool={tool}
       details={details}
       faq={faq}
+      customContent={customContent}
+      customHowToSteps={customHowToSteps}
     />
   );
 }
