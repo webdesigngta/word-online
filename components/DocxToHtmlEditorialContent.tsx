@@ -112,12 +112,14 @@ function HowToVisual() {
   );
 }
 
-function RelatedDirectory({ tools }: { tools: typeof allLivePlatformTools }) {
-  const groups = [
-    { title: 'Convert from DOCX', items: [] as typeof allLivePlatformTools },
-    { title: 'Convert to DOCX', items: [] as typeof allLivePlatformTools },
-    { title: 'HTML tools', items: [] as typeof allLivePlatformTools },
-    { title: 'Document tools', items: [] as typeof allLivePlatformTools },
+type RelatedTool = (typeof allLivePlatformTools)[number];
+
+function RelatedDirectory({ tools }: { tools: readonly RelatedTool[] }) {
+  const groups: Array<{ title: string; items: RelatedTool[] }> = [
+    { title: 'Convert from DOCX', items: [] },
+    { title: 'Convert to DOCX', items: [] },
+    { title: 'HTML tools', items: [] },
+    { title: 'Document tools', items: [] },
   ];
 
   tools.forEach((item) => {
