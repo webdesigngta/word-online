@@ -4,10 +4,14 @@ import { getAllPlatformToolByRoute } from '@/tools/platform/allTools';
 
 function cleanFreeOnline(value: string) {
   return value
-    .replace(/\bfree\b/gi, '')
+    .replace(/\bonline\s+for\s+free\b/gi, '')
+    .replace(/\bfor\s+free\b/gi, '')
+    .replace(/\bfree\s+online\b/gi, '')
     .replace(/\bonline\b/gi, '')
+    .replace(/\bfree\b/gi, '')
     .replace(/\s+/g, ' ')
     .replace(/\s+([–—-])\s+/g, ' $1 ')
+    .replace(/\bfor\s*$/i, '')
     .trim();
 }
 
