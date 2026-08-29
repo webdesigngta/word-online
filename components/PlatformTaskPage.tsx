@@ -1,17 +1,10 @@
 import type { CSSProperties, ReactNode } from 'react';
-import {
-  Ban,
-  Clock,
-  Download,
-  Infinity,
-  ShieldCheck,
-  UserX,
-} from 'lucide-react';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { FaqJsonLd, HowToJsonLd } from '@/components/JsonLd';
 import { PdfJsWorkerSetup } from '@/components/PdfJsWorkerSetup';
+import { ToolFeatureStrip } from '@/components/ToolFeatureStrip';
 import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
 import { ToolVisual } from '@/components/ToolVisual';
 import { UniversalToolEditorialContent } from '@/components/UniversalToolEditorialContent';
@@ -120,15 +113,6 @@ function howToSteps(tool: PlatformToolDefinition) {
   ];
 }
 
-const featureItems = [
-  { title: 'No sign-up', detail: 'Start instantly', Icon: UserX },
-  { title: 'No ads', detail: 'Zero distractions', Icon: Ban },
-  { title: 'No limits', detail: 'Use tools freely', Icon: Infinity },
-  { title: 'Unlimited downloads', detail: 'Save every result', Icon: Download },
-  { title: 'Safe & private', detail: 'Your files stay protected', Icon: ShieldCheck },
-  { title: 'Deleted after 10 min', detail: 'Temporary files are removed', Icon: Clock },
-] as const;
-
 export function PlatformTaskPage({
   route,
   title,
@@ -192,14 +176,7 @@ export function PlatformTaskPage({
             </div>
           </section>
 
-          <section className="platform-task-features" aria-label="DOC321 tool benefits">
-            {featureItems.map(({ title: itemTitle, detail, Icon }) => (
-              <article className="platform-task-feature" key={itemTitle}>
-                <span className="platform-task-feature-icon"><Icon size={19} aria-hidden="true" /></span>
-                <span><strong>{itemTitle}</strong><small>{detail}</small></span>
-              </article>
-            ))}
-          </section>
+          <ToolFeatureStrip />
 
           {customContent ?? (current ? (
             <UniversalToolEditorialContent
