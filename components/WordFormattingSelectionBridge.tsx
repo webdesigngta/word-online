@@ -2,21 +2,27 @@
 
 import { useEffect, useRef } from 'react';
 
+type SelectionBookmark = {
+  start: number;
+  end: number;
+};
+
+type CleanupNode = HTMLElement & { __fwoCleanup?: () => void };
+
 type TrackedInput = HTMLInputElement & {
   _valueTracker?: { setValue: (value: string) => void };
 };
 
 const SIZE_OPTIONS = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 96];
-const FORMAT_LABELS = new Set([
-  'Bold',
-  'Italic',
-  'Underline',
-  'Clear formatting',
-  'Paint format',
-  'Text color',
-  'Highlight color',
-  'Font family',
-  'Paragraph style',
+
+const OWNED_BUTTON_COMMANDS: Record<string, string> = {
+  Bold: 'bold',
+  Italic: 'italic',
+  Underline: 'underline',
+  'Clear formatting': 'removeFormat',
+};
+
+const GENERIC_FORMAT_LABELS = new Set([
   'Align left',
   'Alignment options',
   'Line spacing',
@@ -26,10 +32,52 @@ const FORMAT_LABELS = new Set([
   'Numbered list',
   'Decrease indent',
   'Increase indent',
+  'Paragraph style',
 ]);
 
 function editorElement() {
   return document.querySelector<HTMLElement>('.editor-page');
+}
+
+function controlLabel(target: HTMLElement | null) {
+  const control = target?.closest<HTMLElement>('button,label,select,input');
+  return (control?.getAttribute('aria-label') || control?.getAttribute('title') || '').trim();
+}
+
+function textLength(node: Node): number {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data.length;
+  let total = 0;
+  node.childNodes.forEach((child) => { total += textLength(child); });
+  return total;
+}
+
+function absoluteTextOffset(root: HTMLElement, container: Node, offset: number) {
+  let total = 0;
+  let found: number | null = null;
+
+  const visit = (node: Node) => {
+    if (found !== null) return;
+    if (node === container) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node as Text;
+        found = total + Math.max(0, Math.min(text.data.length, offset));
+        return;
+      }
+      const limit = Math.max(0, Math.min(node.childNodes.length, offset));
+      let local = 0;
+      for (let index = 0; index < limit; index += 1) local += textLength(node.childNodes[index]);
+      found = total + local;
+      return;
+    }
+    if (node.nodeType === Node.TEXT_NODE) {
+      total += (node as Text).data.length;
+      return;
+    }
+    node.childNodes.forEach(visit);
+  };
+
+  visit(root);
+  return found;
 }
 
 function rangeInside(editor: HTMLElement) {
@@ -37,22 +85,75 @@ function rangeInside(editor: HTMLElement) {
   if (!selection?.rangeCount) return null;
   const range = selection.getRangeAt(0);
   try {
-    return editor.contains(range.commonAncestorContainer) ? range : null;
+    return editor.contains(range.commonAncestorContainer) || range.commonAncestorContainer === editor ? range : null;
   } catch {
     return null;
   }
 }
 
-function elementAtRangeStart(editor: HTMLElement, range: Range) {
-  let node: Node | null = range.startContainer;
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    const element = node as Element;
-    const child = element.childNodes[Math.min(range.startOffset, Math.max(0, element.childNodes.length - 1))];
-    if (child) node = child;
+function bookmarkSelection(editor: HTMLElement): SelectionBookmark | null {
+  const range = rangeInside(editor);
+  if (!range || range.collapsed) return null;
+  const start = absoluteTextOffset(editor, range.startContainer, range.startOffset);
+  const end = absoluteTextOffset(editor, range.endContainer, range.endOffset);
+  if (start === null || end === null || end <= start) return null;
+  return { start, end };
+}
+
+function boundaryAtOffset(editor: HTMLElement, target: number) {
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+  let consumed = 0;
+  let node: Node | null = walker.nextNode();
+  let last: Text | null = null;
+
+  while (node) {
+    const text = node as Text;
+    last = text;
+    const next = consumed + text.data.length;
+    if (target <= next) return { node: text, offset: Math.max(0, Math.min(text.data.length, target - consumed)) };
+    consumed = next;
+    node = walker.nextNode();
   }
+
+  return last ? { node: last, offset: last.data.length } : null;
+}
+
+function restoreBookmark(editor: HTMLElement, bookmark: SelectionBookmark | null, focus = true) {
+  if (!bookmark) return false;
+  const start = boundaryAtOffset(editor, bookmark.start);
+  const end = boundaryAtOffset(editor, bookmark.end);
+  if (!start || !end) return false;
+
+  try {
+    const range = document.createRange();
+    range.setStart(start.node, start.offset);
+    range.setEnd(end.node, end.offset);
+    const selection = window.getSelection();
+    if (focus) editor.focus({ preventScroll: true });
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function selectAllEditor(editor: HTMLElement) {
+  const range = document.createRange();
+  range.selectNodeContents(editor);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  editor.focus({ preventScroll: true });
+}
+
+function selectionElement(editor: HTMLElement, bookmark: SelectionBookmark | null) {
+  if (bookmark) restoreBookmark(editor, bookmark, false);
+  const range = rangeInside(editor);
+  if (!range) return editor;
+  let node: Node | null = range.startContainer;
   if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-  if (!(node instanceof HTMLElement)) return editor;
-  return editor.contains(node) ? node : editor;
+  return node instanceof HTMLElement && editor.contains(node) ? node : editor;
 }
 
 function rgbToHex(value: string) {
@@ -73,13 +174,13 @@ function inheritedHighlight(element: HTMLElement, editor: HTMLElement) {
   return '#ffffff';
 }
 
-function fontSizePoints(element: HTMLElement) {
+function pointSize(element: HTMLElement) {
   const px = Number.parseFloat(getComputedStyle(element).fontSize);
   if (!Number.isFinite(px) || px <= 0) return 11;
   return Math.round((px * 72 / 96) * 2) / 2;
 }
 
-function displaySize(value: number) {
+function sizeText(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
@@ -92,11 +193,6 @@ function setReactInputValue(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function controlLabel(target: HTMLElement | null) {
-  const control = target?.closest<HTMLElement>('button,label,select,input');
-  return (control?.getAttribute('aria-label') || control?.getAttribute('title') || '').trim();
-}
-
 function safeIntersects(range: Range, node: Node) {
   try {
     return range.intersectsNode(node);
@@ -106,7 +202,8 @@ function safeIntersects(range: Range, node: Node) {
 }
 
 export function WordFormattingSelectionBridge() {
-  const savedRangeRef = useRef<Range | null>(null);
+  const bookmarkRef = useRef<SelectionBookmark | null>(null);
+  const restoringRef = useRef(false);
 
   useEffect(() => {
     const editor = editorElement();
@@ -116,55 +213,41 @@ export function WordFormattingSelectionBridge() {
     if (!editor || !toolbar || !sizeControl || !originalSizeInput) return;
 
     let sizeTrigger = sizeControl.querySelector<HTMLButtonElement>('.fwo-font-size-trigger');
-    let sizeMenu = document.querySelector<HTMLElement>('.fwo-font-size-menu');
+    let sizeMenu = document.querySelector<CleanupNode>('.fwo-font-size-menu');
     let customSizeInput: HTMLInputElement | null = null;
 
-    const saveSelection = () => {
-      const range = rangeInside(editor);
-      if (range) savedRangeRef.current = range.cloneRange();
-      return range;
+    const remember = () => {
+      if (restoringRef.current) return bookmarkRef.current;
+      const bookmark = bookmarkSelection(editor);
+      if (bookmark) bookmarkRef.current = bookmark;
+      return bookmarkRef.current;
     };
 
-    const restoreSelection = (focus = true) => {
-      const range = savedRangeRef.current;
-      if (!range) return null;
-      try {
-        const selection = window.getSelection();
-        if (focus) editor.focus({ preventScroll: true });
-        selection?.removeAllRanges();
-        selection?.addRange(range.cloneRange());
-        return selection?.rangeCount ? selection.getRangeAt(0) : null;
-      } catch {
-        return null;
-      }
+    const restore = (focus = true) => {
+      restoringRef.current = true;
+      const ok = restoreBookmark(editor, bookmarkRef.current, focus);
+      restoringRef.current = false;
+      return ok;
     };
 
-    const setActiveButton = (label: string, active: boolean) => {
-      const button = toolbar.querySelector<HTMLElement>(`button[aria-label="${label}"]`);
-      if (button) button.dataset.fwoFormatActive = active ? 'true' : 'false';
-    };
+    const notifyInput = () => editor.dispatchEvent(new Event('input', { bubbles: true }));
 
-    const syncState = (preferredRange?: Range | null) => {
-      const range = preferredRange ?? rangeInside(editor) ?? savedRangeRef.current;
-      if (!range) return;
-      let element: HTMLElement;
-      try {
-        element = elementAtRangeStart(editor, range);
-      } catch {
-        return;
-      }
+    const syncState = () => {
+      const bookmark = bookmarkRef.current;
+      if (!bookmark) return;
+      const element = selectionElement(editor, bookmark);
       const style = getComputedStyle(element);
-      const size = fontSizePoints(element);
-      const sizeText = displaySize(size);
+      const size = pointSize(element);
+      const display = sizeText(size);
 
-      setReactInputValue(originalSizeInput, sizeText);
-      if (sizeTrigger) sizeTrigger.textContent = sizeText;
+      setReactInputValue(originalSizeInput, display);
+      if (sizeTrigger) sizeTrigger.textContent = display;
 
       const fontLabel = document.querySelector<HTMLElement>('.fwo-font-label');
-      if (fontLabel) {
-        const firstFont = style.fontFamily.split(',')[0]?.replace(/["']/g, '').trim();
-        if (firstFont) fontLabel.textContent = firstFont;
-      }
+      const firstFont = style.fontFamily.split(',')[0]?.replace(/["']/g, '').trim();
+      if (fontLabel && firstFont) fontLabel.textContent = firstFont;
+      const fontSelect = toolbar.querySelector<HTMLSelectElement>('select[aria-label="Font family"]');
+      if (fontSelect && firstFont && Array.from(fontSelect.options).some((option) => option.value === firstFont)) fontSelect.value = firstFont;
 
       const textInput = toolbar.querySelector<HTMLInputElement>('input[aria-label="Text color"]');
       const textTool = textInput?.closest<HTMLElement>('.docs-color-tool');
@@ -177,67 +260,91 @@ export function WordFormattingSelectionBridge() {
 
       const highlightInput = toolbar.querySelector<HTMLInputElement>('input[aria-label="Highlight color"]');
       const highlightTool = highlightInput?.closest<HTMLElement>('.docs-color-tool');
-      const highlight = inheritedHighlight(element, editor);
-      if (highlightInput) highlightInput.value = highlight;
+      const highlightColor = inheritedHighlight(element, editor);
+      if (highlightInput) highlightInput.value = highlightColor;
       if (highlightTool) {
-        highlightTool.style.setProperty('--fwo-selected-color', highlight);
-        highlightTool.dataset.fwoHasColor = highlight === '#ffffff' ? 'false' : 'true';
+        highlightTool.style.setProperty('--fwo-selected-color', highlightColor);
+        highlightTool.dataset.fwoHasColor = highlightColor === '#ffffff' ? 'false' : 'true';
       }
 
+      const setActive = (label: string, active: boolean) => {
+        const button = toolbar.querySelector<HTMLElement>(`button[aria-label="${label}"]`);
+        if (button) button.dataset.fwoFormatActive = active ? 'true' : 'false';
+      };
       const weight = Number.parseInt(style.fontWeight, 10);
-      setActiveButton('Bold', style.fontWeight === 'bold' || (Number.isFinite(weight) && weight >= 600));
-      setActiveButton('Italic', style.fontStyle === 'italic');
-      setActiveButton('Underline', style.textDecorationLine.includes('underline'));
+      setActive('Bold', style.fontWeight === 'bold' || (Number.isFinite(weight) && weight >= 600));
+      setActive('Italic', style.fontStyle === 'italic');
+      setActive('Underline', style.textDecorationLine.includes('underline'));
     };
 
-    const reselectAfterFormatting = () => {
+    const keepSelected = () => {
+      restore(true);
       window.requestAnimationFrame(() => {
-        const current = rangeInside(editor);
-        if (current && !current.collapsed) savedRangeRef.current = current.cloneRange();
-        else restoreSelection(true);
-        const finalRange = rangeInside(editor) ?? savedRangeRef.current;
-        if (finalRange) savedRangeRef.current = finalRange.cloneRange();
-        syncState(finalRange);
+        restore(true);
+        syncState();
       });
     };
 
-    const applyExactFontSize = (requested: number) => {
+    const runCommand = (command: string, value?: string) => {
+      if (!bookmarkRef.current) remember();
+      if (!bookmarkRef.current || !restore(true)) return;
+      document.execCommand(command, false, value);
+      notifyInput();
+      keepSelected();
+    };
+
+    const applyFontSize = (requested: number) => {
       const size = Math.min(96, Math.max(6, Math.round(requested * 2) / 2));
-      const restored = restoreSelection(true);
-      if (!restored) return;
+      if (!bookmarkRef.current) remember();
+      if (!bookmarkRef.current || !restore(true)) return;
 
-      try {
-        document.execCommand('styleWithCSS', false, 'false');
-      } catch {
-        // Older engines may not expose styleWithCSS; fontSize still works.
-      }
       document.execCommand('fontSize', false, '7');
-
-      const selected = rangeInside(editor) ?? restored;
-      const generated = Array.from(editor.querySelectorAll<HTMLElement>('font[size="7"]'))
-        .filter((node) => safeIntersects(selected, node));
-      generated.forEach((node) => {
-        node.removeAttribute('size');
-        node.style.fontSize = `${size}pt`;
-      });
-
-      const after = rangeInside(editor) ?? selected;
-      savedRangeRef.current = after.cloneRange();
-      editor.dispatchEvent(new Event('input', { bubbles: true }));
-      restoreSelection(true);
-      syncState(savedRangeRef.current);
+      const selected = rangeInside(editor);
+      if (selected) {
+        Array.from(editor.querySelectorAll<HTMLElement>('font[size="7"]')).forEach((node) => {
+          if (!safeIntersects(selected, node)) return;
+          node.removeAttribute('size');
+          node.style.fontSize = `${size}pt`;
+        });
+      }
+      setReactInputValue(originalSizeInput, sizeText(size));
+      if (sizeTrigger) sizeTrigger.textContent = sizeText(size);
+      notifyInput();
+      keepSelected();
     };
 
-    const currentSavedSize = () => {
-      const range = rangeInside(editor) ?? savedRangeRef.current;
-      if (!range) return Number(originalSizeInput.value) || 11;
-      return fontSizePoints(elementAtRangeStart(editor, range));
+    const currentSize = () => pointSize(selectionElement(editor, bookmarkRef.current));
+
+    const applyFont = (font: string) => {
+      runCommand('fontName', font);
+      const label = document.querySelector<HTMLElement>('.fwo-font-label');
+      if (label) label.textContent = font;
+      const select = toolbar.querySelector<HTMLSelectElement>('select[aria-label="Font family"]');
+      if (select && Array.from(select.options).some((option) => option.value === font)) select.value = font;
     };
+
+    const applyColor = (kind: 'text' | 'highlight', color: string) => {
+      if (kind === 'text') runCommand('foreColor', color);
+      else {
+        if (!bookmarkRef.current) remember();
+        if (!bookmarkRef.current || !restore(true)) return;
+        const applied = document.execCommand('hiliteColor', false, color);
+        if (!applied) document.execCommand('backColor', false, color);
+        notifyInput();
+        keepSelected();
+      }
+      const input = toolbar.querySelector<HTMLInputElement>(`input[aria-label="${kind === 'text' ? 'Text color' : 'Highlight color'}"]`);
+      const tool = input?.closest<HTMLElement>('.docs-color-tool');
+      if (tool) {
+        tool.style.setProperty('--fwo-selected-color', color);
+        tool.dataset.fwoHasColor = color.toLowerCase() === '#ffffff' ? 'false' : 'true';
+      }
+    };
+
+    originalSizeInput.style.display = 'none';
+    originalSizeInput.tabIndex = -1;
 
     if (!sizeTrigger) {
-      originalSizeInput.style.display = 'none';
-      originalSizeInput.tabIndex = -1;
-
       sizeTrigger = document.createElement('button');
       sizeTrigger.type = 'button';
       sizeTrigger.className = 'fwo-font-size-trigger';
@@ -245,18 +352,19 @@ export function WordFormattingSelectionBridge() {
       sizeTrigger.setAttribute('aria-haspopup', 'menu');
       sizeTrigger.setAttribute('aria-expanded', 'false');
       sizeTrigger.textContent = originalSizeInput.value || '11';
+      const plus = sizeControl.querySelector<HTMLButtonElement>('button[aria-label="Increase font size"]');
+      sizeControl.insertBefore(sizeTrigger, plus || null);
+    }
 
-      const plusButton = sizeControl.querySelector<HTMLButtonElement>('button[aria-label="Increase font size"]');
-      sizeControl.insertBefore(sizeTrigger, plusButton || null);
-
-      sizeMenu = document.createElement('div');
+    if (!sizeMenu) {
+      sizeMenu = document.createElement('div') as CleanupNode;
       sizeMenu.className = 'fwo-font-size-menu';
       sizeMenu.setAttribute('role', 'menu');
       sizeMenu.setAttribute('aria-label', 'Font size');
       sizeMenu.hidden = true;
 
-      const customRow = document.createElement('div');
-      customRow.className = 'fwo-font-size-custom';
+      const custom = document.createElement('div');
+      custom.className = 'fwo-font-size-custom';
       customSizeInput = document.createElement('input');
       customSizeInput.type = 'number';
       customSizeInput.min = '6';
@@ -264,11 +372,11 @@ export function WordFormattingSelectionBridge() {
       customSizeInput.step = '0.5';
       customSizeInput.inputMode = 'decimal';
       customSizeInput.setAttribute('aria-label', 'Custom font size');
-      const customApply = document.createElement('button');
-      customApply.type = 'button';
-      customApply.textContent = 'Apply';
-      customRow.append(customSizeInput, customApply);
-      sizeMenu.appendChild(customRow);
+      const apply = document.createElement('button');
+      apply.type = 'button';
+      apply.textContent = 'Apply';
+      custom.append(customSizeInput, apply);
+      sizeMenu.appendChild(custom);
 
       const options = document.createElement('div');
       options.className = 'fwo-font-size-options';
@@ -276,318 +384,295 @@ export function WordFormattingSelectionBridge() {
         const button = document.createElement('button');
         button.type = 'button';
         button.setAttribute('role', 'menuitem');
-        button.dataset.size = String(value);
         button.textContent = String(value);
-        button.addEventListener('mousedown', (event) => event.preventDefault());
-        button.addEventListener('click', () => {
-          applyExactFontSize(value);
-          if (sizeMenu) sizeMenu.hidden = true;
-          sizeTrigger?.setAttribute('aria-expanded', 'false');
-        });
+        button.dataset.size = String(value);
         options.appendChild(button);
       });
       sizeMenu.appendChild(options);
       document.body.appendChild(sizeMenu);
 
-      const positionSizeMenu = () => {
-        if (!sizeTrigger || !sizeMenu || sizeMenu.hidden) return;
-        const rect = sizeTrigger.getBoundingClientRect();
-        const width = 154;
-        const left = Math.max(8, Math.min(rect.left - 18, window.innerWidth - width - 8));
-        const top = Math.min(window.innerHeight - 250, rect.bottom + 6);
-        sizeMenu.style.left = `${left}px`;
-        sizeMenu.style.top = `${Math.max(8, top)}px`;
-      };
-
-      sizeTrigger.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-        saveSelection();
-      });
-      sizeTrigger.addEventListener('click', () => {
-        if (!sizeMenu) return;
-        const opening = sizeMenu.hidden;
-        sizeMenu.hidden = !opening;
-        sizeTrigger?.setAttribute('aria-expanded', opening ? 'true' : 'false');
-        if (opening) {
-          if (customSizeInput) customSizeInput.value = displaySize(currentSavedSize());
-          positionSizeMenu();
-        }
-      });
-
       const applyCustom = () => {
         const value = Number(customSizeInput?.value);
         if (!Number.isFinite(value)) return;
-        applyExactFontSize(value);
+        applyFontSize(value);
         if (sizeMenu) sizeMenu.hidden = true;
         sizeTrigger?.setAttribute('aria-expanded', 'false');
       };
-      customApply.addEventListener('click', applyCustom);
+      apply.addEventListener('click', applyCustom);
       customSizeInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
           applyCustom();
-        } else if (event.key === 'Escape') {
-          sizeMenu!.hidden = true;
-          sizeTrigger?.setAttribute('aria-expanded', 'false');
-          restoreSelection(true);
         }
       });
-
-      const closeSizeMenu = (event: MouseEvent) => {
-        if (!sizeMenu || sizeMenu.hidden) return;
-        const target = event.target as Node;
-        if (sizeMenu.contains(target) || sizeTrigger?.contains(target)) return;
-        sizeMenu.hidden = true;
-        sizeTrigger?.setAttribute('aria-expanded', 'false');
-      };
-      const reposition = () => positionSizeMenu();
-      document.addEventListener('mousedown', closeSizeMenu);
-      window.addEventListener('resize', reposition);
-      window.addEventListener('scroll', reposition, true);
-
-      sizeMenu.dataset.fwoCleanup = 'managed';
-      (sizeMenu as HTMLElement & { __fwoCleanup?: () => void }).__fwoCleanup = () => {
-        document.removeEventListener('mousedown', closeSizeMenu);
-        window.removeEventListener('resize', reposition);
-        window.removeEventListener('scroll', reposition, true);
-      };
+    } else {
+      customSizeInput = sizeMenu.querySelector<HTMLInputElement>('input[aria-label="Custom font size"]');
     }
 
+    const positionSizeMenu = () => {
+      if (!sizeMenu || !sizeTrigger || sizeMenu.hidden) return;
+      const rect = sizeTrigger.getBoundingClientRect();
+      const width = 154;
+      sizeMenu.style.left = `${Math.max(8, Math.min(rect.left - 18, window.innerWidth - width - 8))}px`;
+      sizeMenu.style.top = `${Math.max(8, Math.min(window.innerHeight - 250, rect.bottom + 6))}px`;
+    };
+
+    const toggleSizeMenu = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      remember();
+      if (!sizeMenu || !sizeTrigger) return;
+      const opening = sizeMenu.hidden;
+      sizeMenu.hidden = !opening;
+      sizeTrigger.setAttribute('aria-expanded', opening ? 'true' : 'false');
+      if (opening) {
+        if (customSizeInput) customSizeInput.value = sizeText(currentSize());
+        positionSizeMenu();
+      } else keepSelected();
+    };
+    sizeTrigger.addEventListener('click', toggleSizeMenu);
+
     const onSelectionChange = () => {
-      const range = saveSelection();
-      if (range) syncState(range);
+      if (restoringRef.current) return;
+      const bookmark = bookmarkSelection(editor);
+      if (!bookmark) return;
+      bookmarkRef.current = bookmark;
+      syncState();
     };
 
-    const onToolbarPointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target || !toolbar.contains(target)) return;
-      saveSelection();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      const active = document.activeElement as HTMLElement | null;
+      const activeInEditor = Boolean(active && (active === editor || editor.contains(active)));
+      const selectionInEditor = Boolean(rangeInside(editor));
+
+      if (key === 'a' && (activeInEditor || selectionInEditor)) {
+        event.preventDefault();
+        event.stopPropagation();
+        selectAllEditor(editor);
+        bookmarkRef.current = bookmarkSelection(editor);
+        syncState();
+        return;
+      }
+
+      if (!activeInEditor && !selectionInEditor) return;
+      const command = key === 'b' ? 'bold' : key === 'i' ? 'italic' : key === 'u' ? 'underline' : null;
+      if (!command) return;
+      event.preventDefault();
+      event.stopPropagation();
+      remember();
+      runCommand(command);
     };
 
-    const onToolbarClickCapture = (event: MouseEvent) => {
+    const onPointerDownCapture = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
-      if (!target || !toolbar.contains(target)) return;
-      const label = controlLabel(target);
-      if (label === 'Decrease font size' || label === 'Increase font size') {
+      if (!target) return;
+      if (toolbar.contains(target) || target.closest('.fwo-font-menu,.fwo-font-size-menu,.fwo-style-menu,.fwo-local-popover')) remember();
+    };
+
+    const onClickCapture = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const fontItem = target.closest<HTMLButtonElement>('.fwo-font-item');
+      if (fontItem) {
+        const font = fontItem.querySelector<HTMLElement>('.fwo-font-name')?.textContent?.trim() || '';
+        if (!font) return;
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        saveSelection();
-        const delta = label === 'Increase font size' ? 1 : -1;
-        applyExactFontSize(currentSavedSize() + delta);
+        applyFont(font);
+        const menu = fontItem.closest<HTMLElement>('.fwo-font-menu');
+        if (menu) menu.hidden = true;
+        document.querySelector<HTMLButtonElement>('.fwo-font-trigger')?.setAttribute('aria-expanded', 'false');
+        return;
+      }
+
+      const sizeOption = target.closest<HTMLButtonElement>('.fwo-font-size-options button[data-size]');
+      if (sizeOption) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        applyFontSize(Number(sizeOption.dataset.size));
+        if (sizeMenu) sizeMenu.hidden = true;
+        sizeTrigger?.setAttribute('aria-expanded', 'false');
+        return;
+      }
+
+      const button = target.closest<HTMLButtonElement>('button');
+      const label = controlLabel(target);
+      if (button && toolbar.contains(button) && OWNED_BUTTON_COMMANDS[label]) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        remember();
+        runCommand(OWNED_BUTTON_COMMANDS[label]);
+        return;
+      }
+
+      if (button && toolbar.contains(button) && (label === 'Decrease font size' || label === 'Increase font size')) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        remember();
+        applyFontSize(currentSize() + (label === 'Increase font size' ? 1 : -1));
+        return;
+      }
+
+      if (GENERIC_FORMAT_LABELS.has(label) || target.closest('.fwo-style-item,.fwo-local-popover')) {
+        window.setTimeout(keepSelected, 0);
       }
     };
 
-    const onFormattingClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-      const label = controlLabel(target);
-      const isToolbarFormat = toolbar.contains(target) && FORMAT_LABELS.has(label);
-      const isFontItem = Boolean(target.closest('.fwo-font-item'));
-      const isStyleItem = Boolean(target.closest('.fwo-style-item'));
-      const isLocalFormattingOption = Boolean(target.closest('.fwo-local-popover'));
-      if (isToolbarFormat || isFontItem || isStyleItem || isLocalFormattingOption) reselectAfterFormatting();
+    const onColorEventCapture = (event: Event) => {
+      const target = event.target as HTMLInputElement | null;
+      if (!(target instanceof HTMLInputElement) || target.type !== 'color') return;
+      const label = target.getAttribute('aria-label');
+      if (label !== 'Text color' && label !== 'Highlight color') return;
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      remember();
+      applyColor(label === 'Text color' ? 'text' : 'highlight', target.value);
     };
 
-    const onFormattingChange = (event: Event) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-      const label = controlLabel(target);
-      if (label === 'Text color' || label === 'Highlight color' || label === 'Font family' || label === 'Paragraph style') {
-        reselectAfterFormatting();
-      }
+    const closeSizeMenu = (event: MouseEvent) => {
+      if (!sizeMenu || sizeMenu.hidden) return;
+      const target = event.target as Node;
+      if (sizeMenu.contains(target) || sizeTrigger?.contains(target)) return;
+      sizeMenu.hidden = true;
+      sizeTrigger?.setAttribute('aria-expanded', 'false');
+      keepSelected();
     };
 
-    const onEditorInput = () => {
-      window.requestAnimationFrame(() => syncState(rangeInside(editor) ?? savedRangeRef.current));
+    const onFontSelectChangeCapture = (event: Event) => {
+      const target = event.target as HTMLSelectElement | null;
+      if (!(target instanceof HTMLSelectElement) || target.getAttribute('aria-label') !== 'Font family') return;
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      remember();
+      applyFont(target.value);
     };
 
     document.addEventListener('selectionchange', onSelectionChange);
-    toolbar.addEventListener('pointerdown', onToolbarPointerDown, true);
-    toolbar.addEventListener('click', onToolbarClickCapture, true);
-    document.addEventListener('click', onFormattingClick);
-    document.addEventListener('change', onFormattingChange);
-    editor.addEventListener('input', onEditorInput);
-
-    saveSelection();
-    syncState(rangeInside(editor));
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('pointerdown', onPointerDownCapture, true);
+    document.addEventListener('click', onClickCapture, true);
+    document.addEventListener('input', onColorEventCapture, true);
+    document.addEventListener('change', onColorEventCapture, true);
+    document.addEventListener('change', onFontSelectChangeCapture, true);
+    document.addEventListener('mousedown', closeSizeMenu);
+    window.addEventListener('resize', positionSizeMenu);
+    window.addEventListener('scroll', positionSizeMenu, true);
 
     return () => {
       document.removeEventListener('selectionchange', onSelectionChange);
-      toolbar.removeEventListener('pointerdown', onToolbarPointerDown, true);
-      toolbar.removeEventListener('click', onToolbarClickCapture, true);
-      document.removeEventListener('click', onFormattingClick);
-      document.removeEventListener('change', onFormattingChange);
-      editor.removeEventListener('input', onEditorInput);
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.removeEventListener('pointerdown', onPointerDownCapture, true);
+      document.removeEventListener('click', onClickCapture, true);
+      document.removeEventListener('input', onColorEventCapture, true);
+      document.removeEventListener('change', onColorEventCapture, true);
+      document.removeEventListener('change', onFontSelectChangeCapture, true);
+      document.removeEventListener('mousedown', closeSizeMenu);
+      window.removeEventListener('resize', positionSizeMenu);
+      window.removeEventListener('scroll', positionSizeMenu, true);
+      sizeTrigger?.removeEventListener('click', toggleSizeMenu);
+      sizeMenu?.__fwoCleanup?.();
+      sizeMenu?.remove();
+      sizeTrigger?.remove();
       originalSizeInput.style.display = '';
       originalSizeInput.tabIndex = 0;
-      sizeTrigger?.remove();
-      if (sizeMenu) {
-        (sizeMenu as HTMLElement & { __fwoCleanup?: () => void }).__fwoCleanup?.();
-        sizeMenu.remove();
-      }
     };
   }, []);
 
   return (
     <style jsx global>{`
       .fwo-font-size-trigger {
-        box-sizing: border-box;
-        width: 38px;
-        height: 26px;
-        margin: 0 1px;
-        padding: 0 3px;
-        border: 1px solid #747775;
-        border-radius: 5px;
+        width: 42px;
+        height: 28px;
+        padding: 0 5px;
+        border: 1px solid #9aa0a6;
+        border-radius: 4px;
         background: #fff;
         color: #202124;
-        font: 500 13px/24px Arial, Helvetica, sans-serif;
-        text-align: center;
-        cursor: pointer;
+        font: 500 13px/1 Arial,Helvetica,sans-serif;
+        text-align:center;
+        cursor:pointer;
       }
-      .fwo-font-size-trigger:hover,
-      .fwo-font-size-trigger[aria-expanded='true'] {
-        border-color: #0b57d0;
-        background: #f8fbff;
-      }
+      .fwo-font-size-trigger:hover,.fwo-font-size-trigger[aria-expanded='true'] { background:#f1f3f4; border-color:#5f6368; }
       .fwo-font-size-menu {
-        position: fixed;
-        z-index: 9000;
-        width: 154px;
-        box-sizing: border-box;
-        padding: 7px;
-        border: 1px solid #d9dee5;
-        border-radius: 11px;
-        background: #fff;
-        box-shadow: 0 10px 28px rgba(60,64,67,.22), 0 2px 7px rgba(60,64,67,.10);
-        font-family: Arial, Helvetica, sans-serif;
+        position:fixed;
+        z-index:9000;
+        width:154px;
+        max-height:360px;
+        overflow:auto;
+        box-sizing:border-box;
+        padding:6px;
+        border:1px solid #dadce0;
+        border-radius:10px;
+        background:#fff;
+        box-shadow:0 8px 24px rgba(60,64,67,.24),0 2px 6px rgba(60,64,67,.12);
+        font-family:Arial,Helvetica,sans-serif;
       }
-      .fwo-font-size-menu[hidden] { display: none !important; }
-      .fwo-font-size-custom {
-        display: grid;
-        grid-template-columns: minmax(0,1fr) auto;
-        gap: 5px;
-        padding: 1px 1px 7px;
-        border-bottom: 1px solid #edf0f2;
-      }
-      .fwo-font-size-custom input {
-        min-width: 0;
-        height: 30px;
-        box-sizing: border-box;
-        border: 1px solid #c9cdd2;
-        border-radius: 7px;
-        padding: 0 7px;
-        outline: 0;
-        font: 400 13px Arial, Helvetica, sans-serif;
-      }
-      .fwo-font-size-custom input:focus { border-color: #0b57d0; box-shadow: 0 0 0 2px rgba(11,87,208,.11); }
-      .fwo-font-size-custom button {
-        height: 30px;
-        border: 0;
-        border-radius: 7px;
-        background: #e8f0fe;
-        color: #174ea6;
-        padding: 0 8px;
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .fwo-font-size-options {
-        max-height: 250px;
-        overflow: auto;
-        padding-top: 5px;
-      }
-      .fwo-font-size-options button {
-        width: 100%;
-        min-height: 30px;
-        border: 0;
-        border-radius: 6px;
-        background: transparent;
-        color: #202124;
-        text-align: left;
-        padding: 4px 10px;
-        font-size: 13px;
-        cursor: pointer;
-      }
-      .fwo-font-size-options button:hover { background: #f1f3f4; }
+      .fwo-font-size-menu[hidden] { display:none!important; }
+      .fwo-font-size-custom { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:5px; padding:3px 2px 7px; border-bottom:1px solid #edf0f2; margin-bottom:4px; }
+      .fwo-font-size-custom input { min-width:0; height:30px; box-sizing:border-box; border:1px solid #c9cdd2; border-radius:6px; padding:0 7px; font-size:13px; }
+      .fwo-font-size-custom button { height:30px; border:0; border-radius:6px; padding:0 8px; background:#e8f0fe; color:#0b57d0; font-size:12px; cursor:pointer; }
+      .fwo-font-size-options { display:grid; }
+      .fwo-font-size-options button { min-height:32px; border:0; border-radius:6px; background:transparent; color:#202124; text-align:left; padding:5px 9px; font-size:13px; cursor:pointer; }
+      .fwo-font-size-options button:hover { background:#f1f3f4; }
 
-      .docs-toolbar button[data-fwo-format-active='true'] {
-        background: #d3e3fd !important;
-        color: #0b57d0 !important;
-      }
+      .docs-toolbar button[data-fwo-format-active='true'] { background:#d3e3fd!important; color:#041e49!important; }
 
       .docs-color-tool {
-        overflow: visible !important;
+        --fwo-selected-color:#202124;
+        position:relative!important;
+        width:34px!important;
+        height:30px!important;
+        display:grid!important;
+        place-items:center!important;
+        border-radius:7px!important;
+        overflow:hidden;
       }
-      .docs-color-tool .material-symbols-rounded {
-        color: var(--fwo-selected-color, #202124) !important;
-        transition: color .12s ease !important;
+      .docs-color-tool:hover { background:#e8eaed!important; }
+      .docs-color-tool .material-symbols-rounded,
+      .docs-color-tool .material-symbols-outlined,
+      .docs-color-tool .material-icons {
+        position:relative;
+        z-index:1;
+        font-size:20px!important;
+        color:var(--fwo-selected-color)!important;
       }
-      .docs-color-tool[data-fwo-has-color='false'] .material-symbols-rounded {
-        color: #3c4043 !important;
+      .docs-color-tool::before {
+        content:'';
+        position:absolute;
+        left:7px;
+        right:7px;
+        bottom:2px;
+        height:4px;
+        border-radius:4px;
+        background:var(--fwo-selected-color);
+        box-shadow:0 0 0 1px rgba(60,64,67,.28);
+        z-index:2;
+        pointer-events:none;
       }
-      .docs-color-tool::after {
-        left: 5px !important;
-        right: 5px !important;
-        bottom: 2px !important;
-        height: 4px !important;
-        border: 1px solid rgba(60,64,67,.38) !important;
-        border-radius: 4px !important;
-        background: var(--fwo-selected-color, #202124) !important;
-        box-shadow: 0 0 0 1px rgba(255,255,255,.65) inset;
+      .docs-color-tool.highlight::after {
+        content:'';
+        position:absolute;
+        inset:5px 6px 7px;
+        border-radius:5px;
+        background:var(--fwo-selected-color);
+        opacity:.18;
+        pointer-events:none;
       }
-
-      .docs-toolbar-right-spacer { display: none !important; }
-      .docs-toolbar-mode-group {
-        min-width: 108px !important;
-        width: 108px !important;
-        flex: 0 0 108px !important;
-      }
-      .docs-toolbar-mode-group .docs-toolbar-combo[data-fwo-single-trigger='true'] {
-        box-sizing: border-box !important;
-        width: 104px !important;
-        min-width: 104px !important;
-        height: 30px !important;
-        padding-right: 18px !important;
-      }
-      .docs-toolbar-mode-group .docs-toolbar-button[aria-label='Editing mode'] {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        gap: 5px !important;
-        width: 86px !important;
-        min-width: 86px !important;
-        height: 30px !important;
-        padding: 0 2px 0 7px !important;
-        white-space: nowrap !important;
-      }
-      .docs-toolbar-mode-group .docs-toolbar-button[aria-label='Editing mode'] .material-symbols-rounded {
-        flex: 0 0 18px;
-      }
-      .fwo-editing-mode-text {
-        display: inline-block !important;
-        min-width: 0 !important;
-        overflow: visible !important;
-        color: #3c4043 !important;
-        font: 500 12px/30px Arial, Helvetica, sans-serif !important;
-        white-space: nowrap !important;
-      }
-
-      @media (max-width: 720px) {
-        .docs-toolbar-mode-group {
-          min-width: 96px !important;
-          width: 96px !important;
-          flex-basis: 96px !important;
-        }
-        .docs-toolbar-mode-group .docs-toolbar-combo[data-fwo-single-trigger='true'] {
-          width: 92px !important;
-          min-width: 92px !important;
-        }
-        .docs-toolbar-mode-group .docs-toolbar-button[aria-label='Editing mode'] {
-          width: 75px !important;
-          min-width: 75px !important;
-        }
-        .fwo-editing-mode-text { font-size: 11px !important; }
+      .docs-color-tool input[type='color'] {
+        position:absolute!important;
+        inset:0!important;
+        z-index:5!important;
+        width:100%!important;
+        height:100%!important;
+        opacity:0!important;
+        cursor:pointer!important;
       }
     `}</style>
   );
