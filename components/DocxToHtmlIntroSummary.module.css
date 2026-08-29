@@ -1,8 +1,8 @@
 .summaryStrip{
   display:grid;
-  grid-template-columns:minmax(0,1.08fr) minmax(440px,.92fr);
+  grid-template-columns:minmax(0,1.12fr) minmax(420px,.88fr);
   align-items:start;
-  gap:28px;
+  gap:64px;
   margin:42px 0 96px;
   padding:0 2px;
 }
@@ -19,10 +19,10 @@
 .summaryList{
   display:grid;
   gap:18px;
-  width:min(500px,100%);
-  max-width:500px;
+  width:min(430px,100%);
+  max-width:430px;
   justify-self:end;
-  margin-left:0;
+  margin-left:auto;
   padding-top:1px;
 }
 
@@ -122,12 +122,14 @@
 @media(max-width:1000px){
   .summaryStrip{
     grid-template-columns:minmax(0,1fr) minmax(360px,.9fr);
-    gap:28px;
+    gap:40px;
   }
 
   .summaryList{
+    width:min(420px,100%);
+    max-width:420px;
     justify-self:end;
-    margin-left:0;
+    margin-left:auto;
   }
 }
 
@@ -143,6 +145,7 @@
   }
 
   .summaryList{
+    width:100%;
     max-width:620px;
     justify-self:start;
     margin-left:0;
