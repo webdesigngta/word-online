@@ -4,17 +4,16 @@ import {
   BookOpen,
   CheckCircle2,
   Code2,
-  Download,
   FileText,
   Layers3,
   RefreshCw,
   Sparkles,
-  Upload,
 } from 'lucide-react';
 import { ToolVisual } from '@/components/ToolVisual';
 import { relatedToolScore } from '@/lib/toolDesign';
 import { allLivePlatformTools, getAllPlatformToolByRoute } from '@/tools/platform/allTools';
 import styles from './DocxToHtmlEditorialContent.module.css';
+import introStyles from './DocxToHtmlIntroSummary.module.css';
 
 export const docxToHtmlFaq: Array<{ question: string; answer: string }> = [
   {
@@ -131,6 +130,12 @@ export function DocxToHtmlEditorialContent() {
       .slice(0, 12)
     : [];
 
+  const summaryItems = [
+    'Free DOCX to HTML converter',
+    'Simple online document conversion',
+    'Upload your DOCX file and convert it to HTML',
+  ];
+
   const workItems = [
     { Icon: Sparkles, text: 'DOC321 provides online tools for common document and file tasks.' },
     { Icon: CheckCircle2, text: 'Each tool is focused on a specific job so you can choose what you need and complete the task without navigating through complicated software.' },
@@ -139,15 +144,20 @@ export function DocxToHtmlEditorialContent() {
 
   return (
     <div className={styles.content}>
-      <section className={styles.intro} aria-labelledby="docx-html-intro-title">
-        <span className={styles.eyebrow}>Free DOCX to HTML converter</span>
-        <h2 id="docx-html-intro-title">Free Online DOCX to HTML Converter</h2>
-        <p className={styles.lead}>Convert DOCX to HTML online for free with DOC321. Upload a Word document and turn its content into HTML using a simple online converter.</p>
-        <div className={styles.quickPoints} aria-label="DOCX to HTML converter highlights">
-          <span>Free DOCX to HTML converter</span>
-          <span>Simple online document conversion</span>
-          <span>Upload your DOCX file and convert it to HTML</span>
+      <section className={introStyles.summaryStrip} aria-label="DOCX to HTML converter highlights">
+        <p className={introStyles.summaryLead}>Convert DOCX to HTML online for free with DOC321. Upload a Word document and turn its content into HTML using a simple online converter.</p>
+        <div className={introStyles.summaryList}>
+          {summaryItems.map((item) => (
+            <div className={introStyles.summaryItem} key={item}>
+              <CheckCircle2 className={introStyles.summaryCheck} aria-hidden="true" />
+              <span>{item}</span>
+            </div>
+          ))}
         </div>
+      </section>
+
+      <section className={`${styles.intro} ${introStyles.introCentered}`} aria-labelledby="docx-html-intro-title">
+        <h2 id="docx-html-intro-title">Free Online DOCX to HTML Converter</h2>
         <div className={styles.introBody}>
           <p>Need to convert a DOCX file to HTML?</p>
           <p>DOC321 provides a simple online DOCX to HTML converter that helps you turn content from a Word document into HTML.</p>
