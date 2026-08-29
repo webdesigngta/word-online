@@ -12,6 +12,7 @@ import './tool-pages-readability.css';
 import './tool-pages-clean-upload.css';
 import './tool-feature-nowrap.css';
 import './tool-upload-spacing.css';
+import './text-tool-uniformity.css';
 import './docx-to-html-compact.css';
 import './home-typography.css';
 import { ScrollToTop } from '@/components/ScrollToTop';
