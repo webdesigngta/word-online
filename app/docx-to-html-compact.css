@@ -1,0 +1,200 @@
+/* DOCX → HTML editorial page: compact, readable spacing without touching the uploader or feature strip. */
+
+.platform-task-page section[aria-label="DOCX to HTML converter highlights"]{
+  margin-top:0!important;
+  margin-bottom:54px!important;
+}
+
+.platform-task-page section:has(#docx-html-intro-title){
+  margin-bottom:64px!important;
+}
+
+.platform-task-page section:has(#docx-html-convert-title),
+.platform-task-page section:has(#docx-html-content-title),
+.platform-task-page section:has(#docx-html-existing-title){
+  gap:64px!important;
+  margin-bottom:72px!important;
+}
+
+.platform-task-page section:has(#docx-html-convert-title) > div:last-child,
+.platform-task-page section:has(#docx-html-existing-title) > div:last-child,
+.platform-task-page section:has(#docx-html-content-title) > div:first-child{
+  min-height:320px!important;
+}
+
+.platform-task-page section:has(#docx-html-how-title){
+  min-height:320px!important;
+  margin-top:0!important;
+  margin-bottom:72px!important;
+}
+
+.platform-task-page section:has(#docx-html-how-title) > div:first-child{
+  padding:40px 44px!important;
+}
+
+.platform-task-page section:has(#docx-html-how-title) ol{
+  gap:14px!important;
+  margin-top:22px!important;
+}
+
+.platform-task-page section:has(#docx-html-how-title) p[style]{
+  margin-top:18px!important;
+}
+
+.platform-task-page section:has(#docx-html-anywhere-title){
+  margin-bottom:72px!important;
+}
+
+.platform-task-page section:has(#docx-html-anywhere-title) > div{
+  column-gap:56px!important;
+  row-gap:34px!important;
+  margin-top:38px!important;
+}
+
+.platform-task-page section:has(#docx-html-anywhere-title) article p{
+  margin-top:8px!important;
+}
+
+.platform-task-page section:has(#docx-html-faq-title){
+  margin-bottom:70px!important;
+}
+
+.platform-task-page section:has(#docx-html-faq-title) > h2{
+  margin-bottom:28px!important;
+}
+
+.platform-task-page section:has(#docx-html-faq-title) details{
+  padding:16px 4px 17px!important;
+}
+
+.platform-task-page section:has(#docx-html-faq-title) details p{
+  margin-top:8px!important;
+  line-height:1.65!important;
+}
+
+.platform-task-page section[aria-label="Explore all DOC321 tools"]{
+  min-height:280px!important;
+  margin-bottom:38px!important;
+}
+
+.platform-task-page section[aria-label="Explore all DOC321 tools"] > div:first-child{
+  padding:40px 46px!important;
+}
+
+.platform-task-page section[aria-label="Explore all DOC321 tools"] > div:last-child{
+  min-height:280px!important;
+}
+
+.platform-task-page section[aria-label="Explore all DOC321 tools"] a{
+  margin-top:22px!important;
+}
+
+.platform-task-page section:has(#docx-html-related-title){
+  margin-bottom:56px!important;
+  padding-top:0!important;
+}
+
+.platform-task-page section:has(#docx-html-related-title) > div:first-child{
+  margin-bottom:22px!important;
+}
+
+.platform-task-page section:has(#docx-html-related-title) > div:last-child{
+  padding-top:20px!important;
+}
+
+@media(max-width:900px){
+  .platform-task-page section[aria-label="DOCX to HTML converter highlights"]{
+    margin-bottom:46px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-intro-title){
+    margin-bottom:54px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-convert-title),
+  .platform-task-page section:has(#docx-html-content-title),
+  .platform-task-page section:has(#docx-html-existing-title){
+    gap:42px!important;
+    margin-bottom:62px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-convert-title) > div:last-child,
+  .platform-task-page section:has(#docx-html-existing-title) > div:last-child,
+  .platform-task-page section:has(#docx-html-content-title) > div:first-child{
+    min-height:300px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-how-title),
+  .platform-task-page section:has(#docx-html-anywhere-title),
+  .platform-task-page section:has(#docx-html-faq-title){
+    margin-bottom:60px!important;
+  }
+}
+
+@media(max-width:720px){
+  .platform-task-page section[aria-label="DOCX to HTML converter highlights"]{
+    margin-bottom:40px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-intro-title){
+    margin-bottom:46px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-convert-title),
+  .platform-task-page section:has(#docx-html-content-title),
+  .platform-task-page section:has(#docx-html-existing-title){
+    gap:26px!important;
+    margin-bottom:52px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-convert-title) > div:last-child,
+  .platform-task-page section:has(#docx-html-existing-title) > div:last-child,
+  .platform-task-page section:has(#docx-html-content-title) > div:first-child{
+    min-height:270px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-how-title){
+    margin-bottom:52px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-how-title) > div:first-child{
+    padding:30px 24px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-anywhere-title){
+    margin-bottom:52px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-anywhere-title) > div{
+    row-gap:26px!important;
+    margin-top:30px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-faq-title){
+    margin-bottom:52px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-faq-title) > h2{
+    margin-bottom:20px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-faq-title) details{
+    padding:14px 2px 15px!important;
+  }
+
+  .platform-task-page section[aria-label="Explore all DOC321 tools"]{
+    margin-bottom:30px!important;
+  }
+
+  .platform-task-page section[aria-label="Explore all DOC321 tools"] > div:first-child{
+    padding:32px 24px 28px!important;
+  }
+
+  .platform-task-page section[aria-label="Explore all DOC321 tools"] > div:last-child{
+    min-height:170px!important;
+  }
+
+  .platform-task-page section:has(#docx-html-related-title){
+    margin-bottom:44px!important;
+  }
+}
