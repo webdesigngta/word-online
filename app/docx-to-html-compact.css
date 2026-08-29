@@ -147,6 +147,16 @@
     margin-bottom:52px!important;
   }
 
+  /* On mobile, keep the explanatory copy before the illustration even for
+     the desktop-reversed content row. */
+  .platform-task-page section:has(#docx-html-content-title) > div:last-child{
+    order:1!important;
+  }
+
+  .platform-task-page section:has(#docx-html-content-title) > div:first-child{
+    order:2!important;
+  }
+
   .platform-task-page section:has(#docx-html-convert-title) > div:last-child,
   .platform-task-page section:has(#docx-html-existing-title) > div:last-child,
   .platform-task-page section:has(#docx-html-content-title) > div:first-child{
