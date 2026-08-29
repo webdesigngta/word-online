@@ -3,12 +3,9 @@ import {
   Accessibility,
   ArrowDown,
   ArrowRightLeft,
-  Asterisk,
-  CircleDot,
   Code2,
   Copy,
   Crop,
-  Diamond,
   Eraser,
   Eye,
   FilePlus2,
@@ -24,7 +21,6 @@ import {
   Minimize2,
   Pencil,
   PenLine,
-  Plus,
   Presentation,
   RefreshCw,
   RotateCw,
@@ -33,15 +29,12 @@ import {
   Search,
   Settings,
   Shield,
-  Sparkles,
   Stamp,
-  Star,
   Table2,
   Trash2,
   Type,
   Unlock,
   Wrench,
-  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import type { PlatformToolDefinition } from '@/tools/platform/catalog';
@@ -51,9 +44,6 @@ type VisualMeta = {
   icon: LucideIcon;
   accent: string;
 };
-
-const MINI_ICONS: readonly LucideIcon[] = [Sparkles, CircleDot, Diamond, Plus, Star, Zap, Asterisk];
-const MINI_COLORS = ['#00B4FC', '#FF7200', '#9A01FA', '#18A66A', '#F0447A', '#006CFD', '#7C35F2'] as const;
 
 function visualMeta(tool: PlatformToolDefinition): VisualMeta {
   const value = `${tool.id} ${tool.route} ${tool.name} ${tool.kind} ${tool.primaryIntent}`.toLowerCase();
@@ -74,6 +64,8 @@ function visualMeta(tool: PlatformToolDefinition): VisualMeta {
   if (/find/.test(value)) return { icon: Search, accent: '#f9ab00' };
   if (/replace/.test(value)) return { icon: RefreshCw, accent: '#f57c00' };
   if (/remove formatting|clear formatting/.test(value)) return { icon: Eraser, accent: '#7e57c2' };
+  if (/remove.*metadata/.test(value)) return { icon: Trash2, accent: '#d93025' };
+  if (/metadata|properties|info/.test(value)) return { icon: Settings, accent: '#546e7a' };
   if (/remove|delete/.test(value)) return { icon: Trash2, accent: '#d93025' };
   if (/sort/.test(value)) return { icon: ArrowDown, accent: '#188038' };
   if (/character count|word count|count/.test(value)) return { icon: Hash, accent: '#00897b' };
@@ -83,7 +75,6 @@ function visualMeta(tool: PlatformToolDefinition): VisualMeta {
   if (/translate|language/.test(value)) return { icon: Languages, accent: '#5e35b1' };
   if (/accessib/.test(value)) return { icon: Accessibility, accent: '#00796b' };
   if (/html|markdown|code/.test(value)) return { icon: Code2, accent: '#546e7a' };
-  if (/metadata|properties|info/.test(value)) return { icon: Settings, accent: '#546e7a' };
   if (/flatten|layer/.test(value)) return { icon: Layers3, accent: '#6d4c41' };
   if (/image|jpg|jpeg|png/.test(value)) return { icon: Image, accent: '#9334e6' };
   if (/spreadsheet|xlsx|xls\b|csv/.test(value)) return { icon: Table2, accent: '#188038' };
@@ -91,27 +82,19 @@ function visualMeta(tool: PlatformToolDefinition): VisualMeta {
   if (/create|maker|generator|invoice|proposal|resume|memo|agenda|minutes/.test(value)) return { icon: FilePlus2, accent: '#1a73e8' };
   if (/view|reader|preview/.test(value)) return { icon: Eye, accent: '#1a73e8' };
   if (/edit|annotat|fill/.test(value)) return { icon: Pencil, accent: '#1a73e8' };
-  if (/convert|\bto\b/.test(value) || tool.kind === 'converter') return { icon: ArrowRightLeft, accent: '#673ab7' };
+  if (/txt|plain text|text file/.test(value)) return { icon: Type, accent: '#007b83' };
   if (/search|inspect|analy/.test(value)) return { icon: FileSearch, accent: '#00897b' };
   if (/copy/.test(value)) return { icon: Copy, accent: '#546e7a' };
+  if (/convert|\bto\b/.test(value) || tool.kind === 'converter') return { icon: ArrowRightLeft, accent: '#673ab7' };
   if (/text|writing/.test(value)) return { icon: Type, accent: '#007b83' };
 
   return { icon: FileText, accent: '#1a73e8' };
 }
 
-function stableHash(value: string) {
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 const sizeMap = {
-  sm: { box: 38, icon: 18, radius: 11, badge: 15 },
-  md: { box: 50, icon: 24, radius: 14, badge: 18 },
-  lg: { box: 66, icon: 32, radius: 18, badge: 22 },
+  sm: { box: 38, icon: 18, radius: 11 },
+  md: { box: 50, icon: 24, radius: 14 },
+  lg: { box: 66, icon: 32, radius: 18 },
 } as const;
 
 export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition; size?: 'sm' | 'md' | 'lg' }) {
@@ -119,13 +102,6 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
   const meta = visualMeta(tool);
   const dimensions = sizeMap[size];
   const Icon = meta.icon;
-  const signature = stableHash(`${tool.id}:${tool.route}:${tool.name}`);
-  const rotation = ((signature >>> 20) % 5 - 2) * 1.5;
-  const glowX = 18 + (signature % 58);
-  const glowY = 12 + ((signature >>> 6) % 44);
-  const MiniIcon = MINI_ICONS[signature % MINI_ICONS.length];
-  const miniColor = MINI_COLORS[(signature >>> 4) % MINI_COLORS.length];
-  const badgeRotation = ((signature >>> 10) % 7 - 3) * 3;
 
   const style = {
     '--tool-primary': palette.primary,
@@ -147,12 +123,12 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
       <span
         style={{
           position: 'absolute',
-          width: dimensions.box * 0.88,
-          height: dimensions.box * 0.88,
+          width: dimensions.box * 0.92,
+          height: dimensions.box * 0.92,
           borderRadius: '50%',
-          background: 'rgba(255,255,255,.14)',
-          left: `${glowX}%`,
-          top: `${glowY}%`,
+          background: 'rgba(255,255,255,.12)',
+          left: '22%',
+          top: '18%',
           transform: 'translate(-50%,-50%)',
           pointerEvents: 'none',
         }}
@@ -162,8 +138,7 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
           position: 'absolute',
           inset: dimensions.box * 0.12,
           borderRadius: dimensions.radius * 0.72,
-          border: '1px solid rgba(255,255,255,.10)',
-          transform: `rotate(${rotation}deg)`,
+          border: '1px solid rgba(255,255,255,.12)',
         }}
       />
       <Icon
@@ -174,38 +149,12 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
           strokeWidth: 2.15,
           position: 'absolute',
           zIndex: 2,
-          left: '48%',
-          top: '47%',
-          transform: `translate(-50%,-50%) rotate(${rotation}deg)`,
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%,-50%)',
           filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.10))',
         }}
       />
-      <span
-        style={{
-          position: 'absolute',
-          right: dimensions.box * 0.08,
-          bottom: dimensions.box * 0.08,
-          zIndex: 3,
-          width: dimensions.badge,
-          height: dimensions.badge,
-          display: 'grid',
-          placeItems: 'center',
-          borderRadius: signature % 2 === 0 ? '50%' : dimensions.badge * 0.3,
-          background: miniColor,
-          border: '1.5px solid rgba(255,255,255,.88)',
-          boxShadow: '0 2px 6px rgba(1,24,85,.18)',
-          transform: `rotate(${badgeRotation}deg)`,
-        }}
-      >
-        <MiniIcon
-          style={{
-            width: dimensions.badge * 0.58,
-            height: dimensions.badge * 0.58,
-            color: '#fff',
-            strokeWidth: 2.4,
-          }}
-        />
-      </span>
     </span>
   );
 }
