@@ -9,14 +9,15 @@ function editorElement() {
 function keepSpellcheckOn() {
   const editor = editorElement();
   if (!editor) return;
-  editor.spellcheck = true;
-  editor.setAttribute('spellcheck', 'true');
+  if (!editor.spellcheck) editor.spellcheck = true;
+  if (editor.getAttribute('spellcheck') !== 'true') editor.setAttribute('spellcheck', 'true');
 }
 
 function removeHelpInfoItem() {
   document.querySelectorAll<HTMLButtonElement>('.fwo-main-menu-item').forEach((button) => {
     if (button.textContent?.trim() !== 'Info') return;
-    button.closest<HTMLElement>('.fwo-main-menu-item-wrap')?.remove();
+    const item = button.closest<HTMLElement>('.fwo-main-menu-item-wrap');
+    if (item) item.hidden = true;
   });
 }
 
