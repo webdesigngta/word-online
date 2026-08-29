@@ -1,0 +1,13 @@
+/* Keep the longest benefit label on one line without changing the feature layout. */
+.platform-task-page .platform-task-feature:nth-child(4) strong{
+  white-space:nowrap!important;
+  font-size:12.5px!important;
+  letter-spacing:-.015em!important;
+}
+
+@media(max-width:640px){
+  .platform-task-page .platform-task-feature:nth-child(4) strong{
+    font-size:11px!important;
+    letter-spacing:-.025em!important;
+  }
+}
