@@ -107,21 +107,6 @@ export function FontMenuEnhancer() {
       menu.style.maxHeight = `${Math.min(440, availableHeight)}px`;
     };
 
-    const closeMenu = () => {
-      menu.hidden = true;
-      trigger.setAttribute('aria-expanded', 'false');
-      search.value = '';
-      renderFonts('');
-    };
-
-    const chooseFont = (font: string) => {
-      select.value = font;
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      (trigger.querySelector('.fwo-font-label') as HTMLElement).textContent = font;
-      closeMenu();
-      document.querySelector<HTMLElement>('.editor-page')?.focus({ preventScroll: true });
-    };
-
     const renderFonts = (query: string) => {
       const clean = query.trim().toLowerCase();
       const fonts = allFonts().filter((font) => !clean || font.toLowerCase().includes(clean));
@@ -151,6 +136,22 @@ export function FontMenuEnhancer() {
         button.addEventListener('click', () => chooseFont(font));
         list.appendChild(button);
       });
+    };
+
+    const closeMenu = () => {
+      if (menu.hidden) return;
+      menu.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+      search.value = '';
+      renderFonts('');
+    };
+
+    const chooseFont = (font: string) => {
+      select.value = font;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      (trigger.querySelector('.fwo-font-label') as HTMLElement).textContent = font;
+      closeMenu();
+      document.querySelector<HTMLElement>('.editor-page')?.focus({ preventScroll: true });
     };
 
     renderFonts('');
@@ -184,6 +185,7 @@ export function FontMenuEnhancer() {
     };
 
     const closeOutside = (event: MouseEvent) => {
+      if (menu.hidden) return;
       const target = event.target as Node;
       if (!wrap.contains(target) && !menu.contains(target)) closeMenu();
     };
@@ -217,7 +219,7 @@ export function FontMenuEnhancer() {
       .fwo-font-trigger:hover, .fwo-font-trigger[aria-expanded='true'] { background: #e8eaed; }
       .fwo-font-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .fwo-font-caret { font-size: 10px; color: #5f6368; flex: 0 0 auto; }
-      .fwo-font-menu { position: fixed; z-index: 5000; box-sizing: border-box; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; background: #fff; border: 1px solid #dadce0; border-radius: 10px; box-shadow: 0 8px 24px rgba(60,64,67,.24), 0 2px 6px rgba(60,64,67,.12); font-family: Arial, Helvetica, sans-serif; }
+      .fwo-font-menu { position: fixed; z-index: 8000; box-sizing: border-box; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; background: #fff; border: 1px solid #dadce0; border-radius: 10px; box-shadow: 0 8px 24px rgba(60,64,67,.24), 0 2px 6px rgba(60,64,67,.12); font-family: Arial, Helvetica, sans-serif; }
       .fwo-font-menu[hidden] { display: none !important; }
       .fwo-font-search-wrap { position: sticky; top: 0; z-index: 2; padding: 8px; background: #fff; border-bottom: 1px solid #edf0f2; }
       .fwo-font-search { width: 100%; height: 34px; box-sizing: border-box; border: 1px solid #c9cdd2; border-radius: 8px; outline: 0; padding: 0 10px; background: #f8fafd; color: #202124; font: 400 13px/1 Arial, Helvetica, sans-serif; }
