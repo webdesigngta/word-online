@@ -1,7 +1,7 @@
 import { NotepadInterface } from '@/components/NotepadInterface';
+import { NativeToolEditorial } from '@/components/NativeToolEditorial';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
-import { FaqJsonLd } from '@/components/JsonLd';
 import { ToolViewAnalytics } from '@/components/ToolViewAnalytics';
 import { pageMetadata } from '@/lib/seo';
 import { getPlatformToolByRoute } from '@/tools/platform/catalog';
@@ -16,9 +16,9 @@ export const metadata = pageMetadata({
 });
 
 const details = [
-  { title: 'Write on a familiar page', text: 'A ruled-paper writing surface and notebook margin make the editor feel natural while keeping the speed of an online tool.' },
-  { title: 'Autosave in your browser', text: 'Your note is saved locally as you type. Dark mode and zoom preferences are remembered on the same browser.' },
-  { title: 'Export when you are done', text: 'Copy your note or download it as TXT, HTML or PDF. You can also open text, Markdown and HTML files.' },
+  { title: 'Write Notes on a Familiar Page', text: 'A ruled-paper writing surface and notebook margin make the editor feel natural while keeping the speed and convenience of an online notepad.' },
+  { title: 'Autosave Notes in Your Browser', text: 'Your current note is saved locally as you type, and useful preferences such as dark mode and zoom can stay available in the same browser.' },
+  { title: 'Copy or Export When You Are Done', text: 'Copy your writing or download it as TXT, HTML or PDF. You can also open text, Markdown and HTML files when you already have content to continue.' },
 ];
 
 const faq = [
@@ -28,6 +28,13 @@ const faq = [
   { question: 'Can I use speech to text?', answer: 'Yes in browsers that provide the Web Speech Recognition API. Use the microphone button to start and stop dictation.' },
 ];
 
+const steps = [
+  { title: 'Start typing your note', text: 'Click into the ruled writing page and begin with a blank note, or open supported text content you already have.' },
+  { title: 'Format only when you need to', text: 'Use headings, lists, links, images, tables and other writing controls when the note needs more structure.' },
+  { title: 'Let local autosave keep your current work', text: 'The notepad stores the current note in local browser storage while you write.' },
+  { title: 'Copy or download the result', text: 'Take the finished note as copied text or export it as TXT, HTML or PDF for the next task.' },
+];
+
 export default function Page() {
   return (
     <>
@@ -35,11 +42,10 @@ export default function Page() {
       <SiteHeader />
       <main className="notepad-native-page">
         <style>{`
-          .notepad-native-page{padding:14px 0 72px;background:#fff;color:#202124;font-family:Arial,Helvetica,sans-serif}
+          .notepad-native-page{padding:14px 0 0;background:#fff;color:#202124;font-family:Arial,Helvetica,sans-serif}
           .notepad-native-wrap{width:min(1500px,calc(100% - 48px));margin:0 auto}
 
-          /* Online Notepad owns its editor UI. Generic tool-page upload/button/readability
-             normalization is intentionally not used on this route. */
+          /* Online Notepad owns its editor UI. Generic upload normalization is intentionally not used here. */
           .notepad-is-shell{border-radius:15px!important;border-color:#dfe3e8!important;box-shadow:0 2px 7px rgba(32,33,36,.10)!important;background:#fff!important}
           .notepad-is-shell .np-topbar{padding:8px 12px;background:#fff;border-bottom-color:#e1e4e8;backdrop-filter:none;-webkit-backdrop-filter:none}
           .notepad-is-shell .np-mark{width:30px;height:30px;border-radius:9px;font-size:13px}
@@ -82,16 +88,6 @@ export default function Page() {
 
           .product-site-header .site-nav a:first-child{background:#e8f0fe;color:#174ea6;box-shadow:inset 0 0 0 1px #d2e3fc}
 
-          .notepad-native-info{width:min(1140px,calc(100% - 32px));margin:54px auto 0}
-          .notepad-native-info-head{text-align:center;max-width:720px;margin:0 auto 24px}
-          .notepad-native-info-head h1{margin:0;font-size:clamp(30px,4vw,42px);line-height:1.08;letter-spacing:-.04em;color:#101828}
-          .notepad-native-info-head p{margin:12px auto 0;color:#667085;font-size:16px;line-height:1.65}
-          .notepad-native-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-          .notepad-native-card{padding:22px;border:1px solid #e1e6ed;border-radius:16px;background:#fff;box-shadow:0 2px 8px rgba(32,33,36,.05)}
-          .notepad-native-card h2{margin:0 0 8px;font-size:18px;letter-spacing:-.02em}.notepad-native-card p{margin:0;color:#667085;font-size:14px;line-height:1.65}
-          .notepad-native-faq{max-width:900px;margin:50px auto 0}.notepad-native-faq h2{margin:0 0 16px;text-align:center;font-size:28px;letter-spacing:-.03em}
-          .notepad-native-faq details{margin:9px 0;padding:0 18px;border:1px solid #e1e6ed;border-radius:14px;background:#fff}.notepad-native-faq summary{cursor:pointer;padding:16px 0;font-size:15px;font-weight:700}.notepad-native-faq p{margin:0 0 16px;color:#667085;font-size:14px;line-height:1.65}
-
           @media(max-width:760px){
             .notepad-native-page{padding-top:8px}
             .notepad-native-wrap{width:calc(100% - 20px)}
@@ -115,7 +111,6 @@ export default function Page() {
                 linear-gradient(to right,transparent 0,transparent 54px,rgba(245,112,112,.38) 54px,rgba(245,112,112,.38) 55px,transparent 55px),
                 repeating-linear-gradient(to bottom,transparent 0,transparent 26px,rgba(222,226,232,.11) 26px,rgba(222,226,232,.11) 27px);
             }
-            .notepad-native-grid{grid-template-columns:1fr}
           }
 
           @media(max-width:480px){
@@ -127,32 +122,9 @@ export default function Page() {
         <div className="notepad-native-wrap">
           <NotepadInterface toolId={tool.id} />
         </div>
-        <section className="notepad-native-info" aria-labelledby="notepad-native-title">
-          <div className="notepad-native-info-head">
-            <h1 id="notepad-native-title">Online Notepad</h1>
-            <p>A focused browser notepad with a ruled writing surface, local autosave, formatting tools and simple exports.</p>
-          </div>
-          <div className="notepad-native-grid">
-            {details.map((item) => (
-              <article className="notepad-native-card" key={item.title}>
-                <h2>{item.title}</h2>
-                <p>{item.text}</p>
-              </article>
-            ))}
-          </div>
-          <section className="notepad-native-faq" aria-labelledby="notepad-native-faq-title">
-            <h2 id="notepad-native-faq-title">Frequently asked questions</h2>
-            {faq.map((item) => (
-              <details key={item.question}>
-                <summary>{item.question}</summary>
-                <p>{item.answer}</p>
-              </details>
-            ))}
-          </section>
-        </section>
       </main>
+      <NativeToolEditorial route={route} description={tool.description} details={details} faq={faq} steps={steps} />
       <SiteFooter />
-      <FaqJsonLd items={faq} />
     </>
   );
 }
