@@ -52,8 +52,6 @@ type VisualMeta = {
   accent: string;
 };
 
-type ToolVisualVariant = 'default' | 'directory';
-
 const MINI_ICONS: readonly LucideIcon[] = [Sparkles, CircleDot, Diamond, Plus, Star, Zap, Asterisk];
 const MINI_COLORS = ['#00B4FC', '#FF7200', '#9A01FA', '#18A66A', '#F0447A', '#006CFD', '#7C35F2'] as const;
 
@@ -116,165 +114,11 @@ const sizeMap = {
   lg: { box: 66, icon: 32, radius: 18, badge: 22 },
 } as const;
 
-const FORMAT_CODES: readonly [RegExp, string][] = [
-  [/\bpdf\b/i, 'PDF'],
-  [/\bdocx?\b|\bword\b/i, 'W'],
-  [/\bxlsx?\b|\bexcel\b/i, 'X'],
-  [/\bpptx?\b|\bpowerpoint\b/i, 'P'],
-  [/\bjpg\b|\bjpeg\b/i, 'JPG'],
-  [/\bpng\b/i, 'PNG'],
-  [/\bcsv\b/i, 'CSV'],
-  [/\btxt\b|plain text/i, 'TXT'],
-  [/\brtf\b/i, 'RTF'],
-  [/\bodt\b/i, 'ODT'],
-  [/\bhtml?\b/i, 'HTML'],
-  [/\bmarkdown\b|\bmd\b/i, 'MD'],
-  [/\bepub\b/i, 'EPUB'],
-  [/\bzip\b/i, 'ZIP'],
-  [/\bxml\b/i, 'XML'],
-  [/\bjson\b/i, 'JSON'],
-];
-
-function formatCode(values: readonly string[]) {
-  const text = values.join(' ');
-  for (const [pattern, code] of FORMAT_CODES) {
-    if (pattern.test(text)) return code;
-  }
-  return null;
-}
-
-function directoryColor(tool: PlatformToolDefinition, meta: VisualMeta) {
-  const value = `${tool.id} ${tool.route} ${tool.name} ${tool.kind} ${tool.primaryIntent} ${tool.input.join(' ')} ${tool.output.join(' ')}`.toLowerCase();
-
-  if (/unlock|protect|encrypt|password|sign|signature|redact/.test(value)) return '#E75A78';
-  if (/compress|repair|optimi[sz]e/.test(value)) return '#15A56D';
-  if (/merge|split|extract|organize|rotate|crop|page/.test(value)) return '#7B68EE';
-  if (/ocr|scan/.test(value)) return '#31A9B8';
-  if (/spreadsheet|excel|xlsx|xls\b|csv/.test(value)) return '#63B547';
-  if (/presentation|powerpoint|pptx|ppt\b/.test(value)) return '#F08A47';
-  if (/image|jpg|jpeg|png/.test(value)) return '#F1AE43';
-  if (/word|docx?\b/.test(value)) return '#4B91E5';
-  if (/pdf/.test(value)) return '#EC5A5A';
-  if (/html|markdown|code|text|txt|rtf|odt/.test(value)) return '#5E8DE8';
-  if (/translate|language/.test(value)) return '#8B63D9';
-  if (/create|maker|generator/.test(value)) return '#3D8CEB';
-
-  return meta.accent;
-}
-
-function DirectoryToolVisual({
-  tool,
-  size,
-  meta,
-}: {
-  tool: PlatformToolDefinition;
-  size: 'sm' | 'md' | 'lg';
-  meta: VisualMeta;
-}) {
-  const dimensions = sizeMap[size];
-  const Icon = meta.icon;
-  const sourceCode = formatCode(tool.input);
-  const targetCode = formatCode(tool.output);
-  const isConverter = tool.kind === 'converter' || /\bto\b|convert/i.test(`${tool.name} ${tool.primaryIntent}`);
-  const monogram = isConverter ? sourceCode : null;
-  const cornerCode = isConverter && targetCode && targetCode !== sourceCode ? targetCode : null;
-  const background = directoryColor(tool, meta);
-  const longCornerCode = Boolean(cornerCode && cornerCode.length > 3);
-
-  return (
-    <span
-      className={`tool-visual tool-visual-${size} tool-visual-directory`}
-      style={{
-        width: dimensions.box,
-        height: dimensions.box,
-        borderRadius: Math.max(9, dimensions.radius - 2),
-        background,
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 2px 5px rgba(1,24,85,.10)',
-        flex: '0 0 auto',
-      }}
-      aria-hidden="true"
-    >
-      {monogram ? (
-        <span
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: cornerCode ? '44%' : '50%',
-            transform: 'translate(-50%,-50%)',
-            color: '#fff',
-            fontFamily: 'Arial, Helvetica, sans-serif',
-            fontSize: monogram.length >= 4 ? dimensions.box * 0.24 : monogram.length === 3 ? dimensions.box * 0.28 : dimensions.box * 0.40,
-            fontWeight: 900,
-            lineHeight: 1,
-            letterSpacing: monogram.length > 2 ? '-.045em' : '-.02em',
-          }}
-        >
-          {monogram}
-        </span>
-      ) : (
-        <Icon
-          style={{
-            width: dimensions.icon,
-            height: dimensions.icon,
-            color: '#fff',
-            strokeWidth: 2.2,
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%,-50%)',
-          }}
-        />
-      )}
-
-      {cornerCode ? (
-        <span
-          style={{
-            position: 'absolute',
-            right: dimensions.box * 0.08,
-            bottom: dimensions.box * 0.08,
-            minWidth: longCornerCode ? dimensions.box * 0.42 : dimensions.box * 0.31,
-            height: dimensions.box * 0.24,
-            display: 'grid',
-            placeItems: 'center',
-            padding: '0 3px',
-            borderRadius: Math.max(3, dimensions.box * 0.08),
-            background: 'rgba(255,255,255,.96)',
-            color: background,
-            boxShadow: '0 1px 3px rgba(1,24,85,.12)',
-            fontFamily: 'Arial, Helvetica, sans-serif',
-            fontSize: dimensions.box * (longCornerCode ? 0.12 : 0.135),
-            fontWeight: 900,
-            lineHeight: 1,
-            letterSpacing: '-.03em',
-          }}
-        >
-          {cornerCode}
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
-export function ToolVisual({
-  tool,
-  size = 'md',
-  variant = 'default',
-}: {
-  tool: PlatformToolDefinition;
-  size?: 'sm' | 'md' | 'lg';
-  variant?: ToolVisualVariant;
-}) {
+export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition; size?: 'sm' | 'md' | 'lg' }) {
   const palette = toolPalette(tool);
   const meta = visualMeta(tool);
   const dimensions = sizeMap[size];
   const Icon = meta.icon;
-
-  if (variant === 'directory') {
-    return <DirectoryToolVisual tool={tool} size={size} meta={meta} />;
-  }
-
   const signature = stableHash(`${tool.id}:${tool.route}:${tool.name}`);
   const rotation = ((signature >>> 20) % 5 - 2) * 1.5;
   const glowX = 18 + (signature % 58);
