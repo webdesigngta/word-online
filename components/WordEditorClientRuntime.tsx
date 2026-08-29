@@ -4,6 +4,7 @@ import { ChecklistVisibilityFix } from '@/components/ChecklistVisibilityFix';
 import { ChromeStatusAndZoom } from '@/components/ChromeStatusAndZoom';
 import { CompactStyleMenu } from '@/components/CompactStyleMenu';
 import { DelayedTooltips } from '@/components/DelayedTooltips';
+import { DisableEditorContextMenu } from '@/components/DisableEditorContextMenu';
 import { DocumentOutline } from '@/components/DocumentOutline';
 import { EditorIntentPrompt, type EditorIntentMode } from '@/components/EditorIntentPrompt';
 import { EditorKeyboardScope } from '@/components/EditorKeyboardScope';
@@ -20,7 +21,6 @@ import { PageStructureFeatures } from '@/components/PageStructureFeatures';
 import { RemoveLegacyDesign } from '@/components/RemoveLegacyDesign';
 import { RemoveQuickActionRow } from '@/components/RemoveQuickActionRow';
 import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles';
-import { SpellingContextMenu } from '@/components/SpellingContextMenu';
 import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTriggers';
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
@@ -46,6 +46,7 @@ export function WordEditorClientRuntime({
       <A4Pagination />
       <EditorKeyboardScope />
       <EditorMenuAutoDismiss />
+      <DisableEditorContextMenu />
       <DocumentOutline />
       <GracefulEditorDialogs />
       <FontMenuEnhancer />
@@ -60,7 +61,6 @@ export function WordEditorClientRuntime({
       {intentPrompt ? <EditorIntentPrompt mode={intentPrompt} /> : null}
       <ResponsiveDropdownStyles />
       <DelayedTooltips />
-      <SpellingContextMenu />
       <ChromeStatusAndZoom />
       <FunctionalMainMenus />
       <ChecklistVisibilityFix />
