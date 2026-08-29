@@ -1,0 +1,33 @@
+/* Homepage search dropdown must always float above the sections that follow it. */
+body .doc-home .dh-hero{
+  position:relative;
+  z-index:20;
+  overflow:visible;
+}
+
+body .doc-home .dh-search-area,
+body .doc-home .home-tool-search{
+  position:relative;
+  z-index:50;
+  overflow:visible;
+}
+
+body .doc-home .hts-results{
+  z-index:1000;
+  max-height:min(430px,calc(100vh - 190px));
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+
+body .doc-home .dh-hero + .dh-section,
+body .doc-home .dh-hero + section{
+  position:relative;
+  z-index:1;
+}
+
+@media(max-width:680px){
+  body .doc-home .hts-results{
+    max-height:min(390px,calc(100vh - 170px));
+  }
+}
