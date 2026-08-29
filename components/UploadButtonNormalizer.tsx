@@ -100,9 +100,9 @@ function ensureUploadMeta(root: Element, element: HTMLElement) {
     meta = document.createElement('div');
     meta.className = 'uniform-upload-meta';
     meta.innerHTML = '<span class="uniform-drop-hint">or drag &amp; drop files here</span>';
-    element.insertAdjacentElement('beforebegin', meta);
+    element.insertAdjacentElement('afterend', meta);
   } else {
-    if (meta !== previous) element.insertAdjacentElement('beforebegin', meta);
+    if (meta !== next) element.insertAdjacentElement('afterend', meta);
     const hint = meta.querySelector<HTMLElement>('.uniform-drop-hint');
     if (hint && hint.textContent !== 'or drag & drop files here') hint.textContent = 'or drag & drop files here';
     meta.querySelector('.uniform-upload-meta-dot')?.remove();
@@ -130,8 +130,12 @@ function markUploadTriggers(root: Element) {
 }
 
 function normalizeHelperText(root: Element) {
+  root.querySelectorAll<HTMLElement>('.fwo-single-meta').forEach((element) => {
+    element.removeAttribute('data-uniform-upload-helper');
+  });
+
   root.querySelectorAll<HTMLElement>('span,small,p,div').forEach((element) => {
-    if (element.children.length || element.closest('button,label,[role="button"],a,.uniform-upload-meta')) return;
+    if (element.matches('.fwo-single-meta') || element.children.length || element.closest('button,label,[role="button"],a,.uniform-upload-meta')) return;
     const text = textOf(element);
     if (!text || !shortChooseText.test(text)) return;
     element.setAttribute('data-uniform-upload-helper', 'true');
