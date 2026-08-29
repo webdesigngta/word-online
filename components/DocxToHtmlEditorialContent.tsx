@@ -112,6 +112,46 @@ function HowToVisual() {
   );
 }
 
+function RelatedDirectory({ tools }: { tools: typeof allLivePlatformTools }) {
+  const groups = [
+    { title: 'Convert from DOCX', items: [] as typeof allLivePlatformTools },
+    { title: 'Convert to DOCX', items: [] as typeof allLivePlatformTools },
+    { title: 'HTML tools', items: [] as typeof allLivePlatformTools },
+    { title: 'Document tools', items: [] as typeof allLivePlatformTools },
+  ];
+
+  tools.forEach((item) => {
+    const name = item.name.toLowerCase();
+    if (name.includes('html')) {
+      groups[2].items.push(item);
+    } else if (/\b(docx|word)\s+to\b/.test(name)) {
+      groups[0].items.push(item);
+    } else if (/\bto\s+(docx|word)\b/.test(name)) {
+      groups[1].items.push(item);
+    } else {
+      groups[3].items.push(item);
+    }
+  });
+
+  return (
+    <div className={styles.relatedDirectory}>
+      {groups.filter((group) => group.items.length).map((group) => (
+        <div className={styles.relatedGroup} key={group.title}>
+          <h3>{group.title}</h3>
+          <div className={styles.relatedGroupLinks}>
+            {group.items.map((item) => (
+              <Link className={styles.relatedLink} href={item.route} key={item.route}>
+                <ToolVisual tool={item} size="sm" />
+                <span className={styles.relatedName}>{item.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function DocxToHtmlEditorialContent() {
   const current = getAllPlatformToolByRoute('/docx-to-html');
   const relatedTools = current
@@ -119,7 +159,7 @@ export function DocxToHtmlEditorialContent() {
       .filter((item) => item.route !== current.route)
       .filter((item) => /docx|html|word/i.test(`${item.name} ${item.input.join(' ')} ${item.output.join(' ')}`))
       .sort((left, right) => relatedToolScore(current, right) - relatedToolScore(current, left) || left.name.localeCompare(right.name))
-      .slice(0, 12)
+      .slice(0, 16)
     : [];
 
   const summaryItems = [
@@ -260,11 +300,18 @@ export function DocxToHtmlEditorialContent() {
       </section>
 
       <section className={styles.cta} aria-label="Explore all DOC321 tools">
-        <div>
-          <h2>Keep working with DOC321</h2>
-          <p>Finished converting your DOCX file? Open the full DOC321 tool library for your next document, PDF, image, spreadsheet, or writing task.</p>
+        <div className={styles.ctaCopy}>
+          <h2>Document Work Made Easier</h2>
+          <p>Use DOC321 for quick document, PDF, image, spreadsheet, and writing tasks. Pick the tool you need and keep moving without complicated software.</p>
+          <Link className={styles.ctaLink} href="/tools">Browse all tools <ArrowRight size={17} aria-hidden="true" /></Link>
         </div>
-        <Link className={styles.ctaLink} href="/tools">View all tools <ArrowRight size={15} aria-hidden="true" /></Link>
+        <div className={styles.ctaVisual} aria-hidden="true">
+          <span className={`${styles.ctaShape} ${styles.ctaShapeBlue}`} />
+          <span className={`${styles.ctaShape} ${styles.ctaShapeCoral}`} />
+          <span className={`${styles.ctaShape} ${styles.ctaShapeGold}`} />
+          <span className={styles.ctaDot} />
+          <span className={styles.ctaPlus}>+</span>
+        </div>
       </section>
 
       {relatedTools.length ? (
@@ -272,18 +319,10 @@ export function DocxToHtmlEditorialContent() {
           <div className={styles.relatedHead}>
             <div>
               <h2 id="docx-html-related-title">Related DOCX &amp; HTML tools</h2>
-              <p>Quick links to nearby document workflows.</p>
+              <p>Jump straight into another document workflow.</p>
             </div>
           </div>
-          <div className={styles.relatedGrid}>
-            {relatedTools.map((item) => (
-              <Link className={styles.relatedLink} href={item.route} key={item.route}>
-                <ToolVisual tool={item} size="sm" />
-                <span className={styles.relatedName}>{item.name}</span>
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            ))}
-          </div>
+          <RelatedDirectory tools={relatedTools} />
         </section>
       ) : null}
     </div>
