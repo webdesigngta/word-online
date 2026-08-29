@@ -25,6 +25,7 @@ import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTriggers';
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
 import { WordEditorBrandMobilePolish } from '@/components/WordEditorBrandMobilePolish';
+import { WordFormattingSelectionBridge } from '@/components/WordFormattingSelectionBridge';
 import { WordToolbarPolish } from '@/components/WordToolbarPolish';
 import { HydrationReady } from '@/components/HydrationReady';
 import { WordEditorTool } from '@/tools/word/editor';
@@ -57,6 +58,7 @@ export function WordEditorClientRuntime({
       <UnifiedToolbarMenuTriggers />
       <NoLoginToolbarFeatures />
       <WordToolbarPolish />
+      <WordFormattingSelectionBridge />
       <WordEditorBrandMobilePolish />
       <LocalUndoManager />
       <LocalVersionHistory />
