@@ -6,7 +6,8 @@ const OPEN_POPOVER_SELECTOR = [
   '.docs-menu-popover',
   '.fwo-gallery-popover',
   '.fwo-image-menu-popover',
-  '.docs-menu-popover',
+  '.fwo-local-popover',
+  '.fwo-local-panel',
   '[role="menu"]',
   '[role="listbox"]',
 ].join(',');
@@ -26,6 +27,20 @@ export function EditorMenuAutoDismiss() {
       // already close their own popover after the selection is made.
       if (target.closest(OPEN_POPOVER_SELECTOR)) return;
 
+      // The Editing / Suggesting / Viewing popup is owned by
+      // NoLoginToolbarFeatures state. Choosing its already-selected mode is a
+      // harmless state-aware way to close it when the user clicks elsewhere.
+      const localPopover = document.querySelector<HTMLElement>('.fwo-local-popover');
+      const selectedMode = localPopover?.querySelector<HTMLButtonElement>('button.selected');
+      if (localPopover && selectedMode && !localPopover.contains(target)) selectedMode.click();
+
+      // Side panels expose a close button, so use that rather than removing
+      // React-owned DOM directly.
+      const localPanel = document.querySelector<HTMLElement>('.fwo-local-panel');
+      if (localPanel && !localPanel.contains(target)) {
+        localPanel.querySelector<HTMLButtonElement>('.fwo-panel-title button')?.click();
+      }
+
       // The File/Edit/View/Insert/Format/Tools/Help menus live in WordEditor
       // state, so close the active trigger through its existing toggle.
       const expanded = document.querySelector<HTMLButtonElement>('.docs-menu-button[aria-expanded="true"]');
@@ -34,16 +49,14 @@ export function EditorMenuAutoDismiss() {
         if (!activeWrap?.contains(target)) expanded.click();
       }
 
-      // Enhancer menus (toolbar galleries, image menu, font/style menus,
-      // download/history menus) already support Escape. Broadcasting Escape
-      // keeps those independent menu implementations synchronized.
-      const escape = new KeyboardEvent('keydown', {
+      // Enhancer menus already support Escape. Broadcasting Escape keeps those
+      // independent menu implementations synchronized.
+      document.dispatchEvent(new KeyboardEvent('keydown', {
         key: 'Escape',
         code: 'Escape',
         bubbles: true,
         cancelable: true,
-      });
-      document.dispatchEvent(escape);
+      }));
       window.dispatchEvent(new KeyboardEvent('keydown', {
         key: 'Escape',
         code: 'Escape',
