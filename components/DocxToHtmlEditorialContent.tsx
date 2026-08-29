@@ -3,13 +3,18 @@ import {
   ArrowRight,
   CheckCircle2,
   Code2,
-  Sparkles,
+  FileText,
+  Files,
+  MonitorSmartphone,
+  RefreshCw,
+  Workflow,
 } from 'lucide-react';
 import { ToolVisual } from '@/components/ToolVisual';
 import { relatedToolScore } from '@/lib/toolDesign';
 import { allLivePlatformTools, getAllPlatformToolByRoute } from '@/tools/platform/allTools';
 import styles from './DocxToHtmlEditorialContent.module.css';
 import introStyles from './DocxToHtmlIntroSummary.module.css';
+import anywhereStyles from './DocxToHtmlAnywhere.module.css';
 
 export const docxToHtmlFaq: Array<{ question: string; answer: string }> = [
   {
@@ -123,10 +128,37 @@ export function DocxToHtmlEditorialContent() {
     'Upload your DOCX file and convert it to HTML',
   ];
 
-  const workItems = [
-    { title: 'Simple document tools', text: 'DOC321 keeps common document and file tasks focused on one clear job at a time.' },
-    { title: 'Straightforward workflow', text: 'Choose the tool you need, add your file, complete the task, and move on without complicated software.' },
-    { title: 'Made for everyday files', text: 'For DOCX to HTML conversion, upload your Word document and create an HTML version you can continue working with.' },
+  const anywhereItems = [
+    {
+      Icon: RefreshCw,
+      title: 'Conversion Without the Hassle',
+      text: 'No installation or account is needed. Upload your DOCX file and convert it to HTML directly from your browser.',
+    },
+    {
+      Icon: Files,
+      title: 'Works With Word Documents',
+      text: 'Use DOCX files created in Microsoft Word or compatible word processors and turn their document content into HTML.',
+    },
+    {
+      Icon: FileText,
+      title: 'Use the Content You Already Have',
+      text: 'Move articles, reports, notes, guides, and other written material from an existing DOCX file into an HTML workflow without rewriting it.',
+    },
+    {
+      Icon: MonitorSmartphone,
+      title: 'Works Across Modern Devices',
+      text: 'Open DOC321 in a modern browser on desktop, laptop, tablet, or phone and use the converter wherever you need it.',
+    },
+    {
+      Icon: Workflow,
+      title: 'Keep the Process Simple',
+      text: 'Upload, convert, and continue with the generated HTML. The tool stays focused on one task without unnecessary setup or complicated menus.',
+    },
+    {
+      Icon: Code2,
+      title: 'HTML Ready for Your Next Step',
+      text: 'Use the resulting HTML as a starting point for web content, editing, publishing, or another document workflow.',
+    },
   ];
 
   return (
@@ -199,24 +231,18 @@ export function DocxToHtmlEditorialContent() {
         <HowToVisual />
       </section>
 
-      <section className={styles.workflowSection} aria-labelledby="docx-html-workflow-title">
-        <div className={styles.workflowIntro}>
-          <h2 id="docx-html-workflow-title">A Simple DOCX to HTML Workflow</h2>
-          <p>Choose the DOCX to HTML converter, upload your document, run the conversion, and continue with the resulting HTML. DOC321 keeps the workflow easy to understand without adding unnecessary complexity.</p>
-        </div>
-        <div className={styles.workSection}>
-          <h2>Work With Your Documents Using DOC321</h2>
-          <div className={styles.workGrid}>
-            {workItems.map((item) => (
-              <article className={styles.workItem} key={item.title}>
-                <span className={styles.workIcon}><Sparkles aria-hidden="true" /></span>
-                <div className={introStyles.workCopy}>
-                  <h3>{item.title}</h3>
-                  <p>{item.text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+      <section className={anywhereStyles.section} aria-labelledby="docx-html-anywhere-title">
+        <h2 id="docx-html-anywhere-title">Convert DOCX to HTML Anywhere</h2>
+        <div className={anywhereStyles.grid}>
+          {anywhereItems.map(({ Icon, title, text }) => (
+            <article className={anywhereStyles.item} key={title}>
+              <div className={anywhereStyles.itemHead}>
+                <span className={anywhereStyles.icon}><Icon aria-hidden="true" /></span>
+                <h3>{title}</h3>
+              </div>
+              <p>{text}</p>
+            </article>
+          ))}
         </div>
       </section>
 
