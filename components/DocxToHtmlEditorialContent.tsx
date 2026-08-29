@@ -15,6 +15,7 @@ import { allLivePlatformTools, getAllPlatformToolByRoute } from '@/tools/platfor
 import styles from './DocxToHtmlEditorialContent.module.css';
 import introStyles from './DocxToHtmlIntroSummary.module.css';
 import anywhereStyles from './DocxToHtmlAnywhere.module.css';
+import refineStyles from './DocxToHtmlRefinements.module.css';
 
 export const docxToHtmlFaq: Array<{ question: string; answer: string }> = [
   {
@@ -92,10 +93,52 @@ function DocumentStackVisual() {
   );
 }
 
-function ContentDocumentVisual() {
+function ContentToHtmlVisual() {
   return (
-    <div className={styles.articlePaper} aria-hidden="true">
-      <div className={styles.articleLines}><span/><span/><span/><span/><span/><span/></div>
+    <div className={refineStyles.contentTransform} aria-hidden="true">
+      <div className={refineStyles.sourceDocument}>
+        <span className={refineStyles.sourceBadge}>DOCX</span>
+        <span className={refineStyles.docTitleLine} />
+        <span className={refineStyles.docLine} />
+        <span className={refineStyles.docLine} />
+        <span className={refineStyles.docLineShort} />
+        <span className={refineStyles.docLine} />
+      </div>
+      <span className={refineStyles.transformArrow}><ArrowRight /></span>
+      <div className={refineStyles.htmlWindow}>
+        <div className={refineStyles.browserBar}><i/><i/><i/><span>HTML</span></div>
+        <div className={refineStyles.htmlCode}>
+          <span><b>&lt;h1&gt;</b>Document title<b>&lt;/h1&gt;</b></span>
+          <span><b>&lt;p&gt;</b>Written content…<b>&lt;/p&gt;</b></span>
+          <span><b>&lt;p&gt;</b>Ready for the web<b>&lt;/p&gt;</b></span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReuseDocumentVisual() {
+  return (
+    <div className={refineStyles.reuseTransform} aria-hidden="true">
+      <div className={refineStyles.documentPile}>
+        <span className={refineStyles.backSheet} />
+        <span className={refineStyles.midSheet} />
+        <div className={refineStyles.frontSheet}>
+          <span className={refineStyles.sourceBadge}>DOCX</span>
+          <span className={refineStyles.docTitleLine} />
+          <span className={refineStyles.docLine} />
+          <span className={refineStyles.docLineShort} />
+        </div>
+      </div>
+      <span className={refineStyles.reuseArrow}><RefreshCw /></span>
+      <div className={refineStyles.reusedHtml}>
+        <span className={refineStyles.htmlBadge}>HTML</span>
+        <Code2 />
+        <span className={refineStyles.codeLine} />
+        <span className={refineStyles.codeLineShort} />
+        <span className={refineStyles.codeLine} />
+      </div>
+      <span className={refineStyles.reuseLabel}>Reuse existing content</span>
     </div>
   );
 }
@@ -238,7 +281,7 @@ export function DocxToHtmlEditorialContent() {
       <section className={`${styles.editorialRow} ${styles.reverse}`} aria-labelledby="docx-html-content-title">
         <div className={`${styles.visual} ${styles.visualWarm} ${introStyles.editorialVisual}`}>
           <span className={styles.spark}/><span className={styles.sparkAlt}/>
-          <ContentDocumentVisual />
+          <ContentToHtmlVisual />
         </div>
         <div className={`${styles.sectionCopy} ${introStyles.editorialCopy}`}>
           <h2 id="docx-html-content-title">Turn Document Content Into HTML</h2>
@@ -253,7 +296,7 @@ export function DocxToHtmlEditorialContent() {
         </div>
         <div className={`${styles.visual} ${styles.visualMint} ${introStyles.editorialVisual}`}>
           <span className={styles.spark}/><span className={styles.sparkAlt}/>
-          <ContentDocumentVisual />
+          <ReuseDocumentVisual />
         </div>
       </section>
 
@@ -291,13 +334,13 @@ export function DocxToHtmlEditorialContent() {
       <section className={styles.faqSection} aria-labelledby="docx-html-faq-title">
         <h2 id="docx-html-faq-title">FAQs About DOC321&apos;s DOCX to HTML Converter</h2>
         {docxToHtmlFaq.map((item) => (
-          <article className={styles.faqRow} key={item.question}>
-            <div className={styles.faqQuestion}>
+          <details className={`${styles.faqRow} ${refineStyles.faqItem}`} key={item.question} open>
+            <summary className={`${styles.faqQuestion} ${refineStyles.faqSummary}`}>
               <span>{item.question}</span>
-              <span className={styles.faqChevron} aria-hidden="true" />
-            </div>
-            <p className={styles.faqAnswer}>{item.answer}</p>
-          </article>
+              <span className={`${styles.faqChevron} ${refineStyles.faqChevron}`} aria-hidden="true" />
+            </summary>
+            <p className={`${styles.faqAnswer} ${refineStyles.faqAnswer}`}>{item.answer}</p>
+          </details>
         ))}
       </section>
 
