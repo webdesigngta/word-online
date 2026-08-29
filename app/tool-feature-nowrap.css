@@ -1,18 +1,34 @@
-/* Keep the longest benefit label compact on wider screens without shrinking it on mobile. */
-.platform-task-page .platform-task-feature:nth-child(4) strong{
+/* Keep the longest benefit label on one line without changing its typography. */
+.platform-task-page .platform-task-feature:nth-child(4) strong,
+.native-editor-editorial .platform-task-feature:nth-child(4) strong,
+.notepad-native-page .platform-task-feature:nth-child(4) strong{
   white-space:nowrap!important;
-  font-size:12.5px!important;
-  letter-spacing:-.015em!important;
+  font-size:13.5px!important;
+  font-weight:760!important;
+  line-height:1.25!important;
+  letter-spacing:normal!important;
+}
+
+.platform-task-page .platform-task-feature:nth-child(4),
+.native-editor-editorial .platform-task-feature:nth-child(4),
+.notepad-native-page .platform-task-feature:nth-child(4){
+  gap:7px!important;
+  padding-left:7px!important;
+  padding-right:7px!important;
 }
 
 @media(max-width:640px){
-  .platform-task-page .platform-task-feature:nth-child(4) strong,
-  .native-editor-editorial .platform-task-feature:nth-child(4) strong,
-  .notepad-native-page .platform-task-feature:nth-child(4) strong{
-    white-space:normal!important;
-    font-size:14px!important;
-    font-weight:800!important;
-    line-height:1.25!important;
-    letter-spacing:normal!important;
+  .platform-task-page .platform-task-features,
+  .native-editor-editorial .platform-task-features,
+  .notepad-native-page .platform-task-features{
+    grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr)!important;
+  }
+
+  .platform-task-page .platform-task-feature:nth-child(4) .platform-task-feature-icon,
+  .native-editor-editorial .platform-task-feature:nth-child(4) .platform-task-feature-icon,
+  .notepad-native-page .platform-task-feature:nth-child(4) .platform-task-feature-icon{
+    width:30px!important;
+    height:30px!important;
+    flex:0 0 30px!important;
   }
 }
