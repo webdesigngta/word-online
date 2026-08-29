@@ -1,0 +1,266 @@
+.contentTransform,
+.reuseTransform{
+  position:relative;
+  width:min(430px,100%);
+  min-height:290px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:24px;
+}
+
+.sourceDocument,
+.frontSheet,
+.backSheet,
+.midSheet{
+  width:132px;
+  height:176px;
+  border:2px solid #d5dce7;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:0 7px 18px rgba(15,23,42,.07);
+}
+
+.sourceDocument,
+.frontSheet{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:46px 18px 18px;
+}
+
+.sourceBadge,
+.htmlBadge{
+  position:absolute;
+  left:14px;
+  top:14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:48px;
+  height:24px;
+  padding:0 7px;
+  border-radius:6px;
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+
+.sourceBadge{background:#3b82f6;}
+.htmlBadge{background:#16a34a;}
+
+.docTitleLine,
+.docLine,
+.docLineShort,
+.codeLine,
+.codeLineShort{
+  display:block;
+  height:7px;
+  border-radius:999px;
+  background:#cfd8e5;
+}
+
+.docTitleLine{width:66%;height:9px;background:#80b5ee;}
+.docLine{width:100%;}
+.docLineShort{width:72%;}
+
+.transformArrow,
+.reuseArrow{
+  flex:0 0 auto;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:#fff;
+  color:#2563eb;
+  box-shadow:0 8px 20px rgba(37,99,235,.14);
+}
+
+.transformArrow svg,
+.reuseArrow svg{width:21px;height:21px;}
+
+.htmlWindow{
+  width:178px;
+  min-height:188px;
+  overflow:hidden;
+  border:2px solid #cfd8e5;
+  border-radius:10px;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(15,23,42,.08);
+}
+
+.browserBar{
+  height:36px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:0 11px;
+  border-bottom:1px solid #e6ebf2;
+  background:#f8fafc;
+}
+
+.browserBar i{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#cbd5e1;
+}
+
+.browserBar span{
+  margin-left:auto;
+  color:#16a34a;
+  font-size:10px;
+  font-weight:900;
+}
+
+.htmlCode{
+  display:grid;
+  gap:15px;
+  padding:24px 18px;
+  color:#475569;
+  font-size:10px;
+  line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+}
+
+.htmlCode b{color:#2563eb;font-weight:800;}
+
+.documentPile{
+  position:relative;
+  width:156px;
+  height:200px;
+  flex:0 0 auto;
+}
+
+.backSheet,
+.midSheet,
+.frontSheet{
+  position:absolute;
+  left:10px;
+  top:14px;
+}
+
+.backSheet{
+  transform:translate(-12px,7px) rotate(-7deg);
+  background:#f8fbff;
+}
+
+.midSheet{
+  transform:translate(8px,-4px) rotate(5deg);
+  background:#fbfdff;
+}
+
+.frontSheet{
+  left:12px;
+  top:12px;
+  z-index:2;
+}
+
+.reuseArrow{
+  width:46px;
+  height:46px;
+  background:#effcf6;
+  color:#16a34a;
+}
+
+.reusedHtml{
+  position:relative;
+  width:148px;
+  height:174px;
+  display:flex;
+  flex-direction:column;
+  gap:11px;
+  padding:48px 18px 18px;
+  border:2px solid #cde7d8;
+  border-radius:10px;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(22,163,74,.09);
+}
+
+.reusedHtml > svg{
+  position:absolute;
+  right:14px;
+  top:14px;
+  width:23px;
+  height:23px;
+  color:#16a34a;
+}
+
+.codeLine{width:100%;background:#9fd6b5;}
+.codeLineShort{width:68%;background:#bbdfc9;}
+
+.reuseLabel{
+  position:absolute;
+  left:50%;
+  bottom:3px;
+  transform:translateX(-50%);
+  white-space:nowrap;
+  padding:7px 11px;
+  border-radius:999px;
+  background:#fff;
+  color:#37734d;
+  font-size:11px;
+  font-weight:800;
+  box-shadow:0 6px 18px rgba(15,23,42,.07);
+}
+
+.faqItem{
+  overflow:hidden;
+}
+
+.faqSummary{
+  cursor:pointer;
+  list-style:none;
+  user-select:none;
+}
+
+.faqSummary::-webkit-details-marker{display:none;}
+
+.faqSummary:focus-visible{
+  outline:2px solid #93c5fd;
+  outline-offset:6px;
+  border-radius:4px;
+}
+
+.faqChevron{
+  transition:transform .16s ease;
+}
+
+.faqItem:not([open]) .faqChevron{
+  transform:rotate(135deg);
+}
+
+.faqAnswer{
+  padding-right:36px;
+}
+
+@media(max-width:900px){
+  .contentTransform,
+  .reuseTransform{
+    transform:scale(.94);
+  }
+}
+
+@media(max-width:720px){
+  .contentTransform,
+  .reuseTransform{
+    min-height:260px;
+    transform:scale(.9);
+  }
+}
+
+@media(max-width:460px){
+  .contentTransform,
+  .reuseTransform{
+    width:390px;
+    max-width:110%;
+    transform:scale(.76);
+  }
+
+  .faqAnswer{
+    padding-right:12px;
+  }
+}
