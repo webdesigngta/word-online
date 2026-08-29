@@ -19,9 +19,10 @@
 .summaryList{
   display:grid;
   gap:18px;
-  width:100%;
+  width:min(500px,100%);
   max-width:500px;
-  margin-left:-34px;
+  justify-self:end;
+  margin-left:0;
   padding-top:1px;
 }
 
@@ -125,7 +126,8 @@
   }
 
   .summaryList{
-    margin-left:-14px;
+    justify-self:end;
+    margin-left:0;
   }
 }
 
@@ -142,6 +144,7 @@
 
   .summaryList{
     max-width:620px;
+    justify-self:start;
     margin-left:0;
     padding-top:0;
   }
