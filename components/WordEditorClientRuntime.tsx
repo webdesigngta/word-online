@@ -21,6 +21,7 @@ import { RemoveQuickActionRow } from '@/components/RemoveQuickActionRow';
 import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles';
 import { SpellingContextMenu } from '@/components/SpellingContextMenu';
 import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
+import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTriggers';
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
 import { HydrationReady } from '@/components/HydrationReady';
 import { WordEditorTool } from '@/tools/word/editor';
@@ -48,6 +49,7 @@ export function WordEditorClientRuntime({
       <FontMenuEnhancer />
       <CompactStyleMenu />
       <ToolbarGalleryMenus />
+      <UnifiedToolbarMenuTriggers />
       <NoLoginToolbarFeatures />
       <LocalUndoManager />
       <LocalVersionHistory />
