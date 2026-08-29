@@ -1,15 +1,15 @@
 .summaryStrip{
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(410px,.82fr);
+  grid-template-columns:minmax(0,1.08fr) minmax(440px,.92fr);
   align-items:start;
-  gap:76px;
+  gap:28px;
   margin:42px 0 96px;
   padding:0 2px;
 }
 
 .summaryLead{
   margin:0;
-  max-width:700px;
+  max-width:660px;
   color:#202124;
   font-size:19px;
   line-height:1.68;
@@ -20,6 +20,8 @@
   display:grid;
   gap:18px;
   width:100%;
+  max-width:500px;
+  margin-left:-34px;
   padding-top:1px;
 }
 
@@ -119,7 +121,11 @@
 @media(max-width:1000px){
   .summaryStrip{
     grid-template-columns:minmax(0,1fr) minmax(360px,.9fr);
-    gap:48px;
+    gap:28px;
+  }
+
+  .summaryList{
+    margin-left:-14px;
   }
 }
 
@@ -136,6 +142,7 @@
 
   .summaryList{
     max-width:620px;
+    margin-left:0;
     padding-top:0;
   }
 
