@@ -154,7 +154,14 @@ export function WordSingleFileProcessorInterface({
           <FileUp />
           <h2>{title}</h2>
           <p>{description}</p>
-          <button type="button" className="fwo-single-button" disabled={busy} onClick={() => inputRef.current?.click()}>
+          <button
+            type="button"
+            className="fwo-single-button"
+            disabled={busy}
+            aria-busy={busy}
+            data-processing-label={busy ? actionLabel : undefined}
+            onClick={() => inputRef.current?.click()}
+          >
             {busy ? <RefreshCw /> : <FileUp />}{busy ? actionLabel : fileName ? `Choose another ${inputLabel}` : `Choose ${inputLabel}`}
           </button>
           <div className={`fwo-single-meta${busy ? ' is-busy' : ''}`} role="status" aria-live="polite">
