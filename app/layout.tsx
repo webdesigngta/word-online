@@ -22,6 +22,12 @@ const criticalEditorCss = `
   html:not(.fwo-ui-ready) .editor-route .word-app.docs-word-app {
     visibility: hidden !important;
   }
+
+  /* Legacy upload components are normalized after hydration. Keep only that old
+     workspace invisible until its final DOC321 upload UI has been prepared. */
+  html:not(.doc321-tool-ui-ready) .platform-task-page .platform-task-workspace:has(input[type="file"]):not(:has([data-native-upload-ui="true"])) {
+    visibility: hidden !important;
+  }
 `;
 
 export const metadata: Metadata = {
