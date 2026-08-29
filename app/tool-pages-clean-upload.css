@@ -141,6 +141,28 @@
   box-shadow:0 8px 20px rgba(37,99,235,.22)!important;
 }
 
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace [data-uniform-file-picker="true"][aria-busy="true"]{
+  cursor:wait!important;
+  opacity:.9!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace [data-uniform-file-picker="true"][aria-busy="true"]:after{
+  content:attr(data-processing-label)!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace [data-uniform-file-picker="true"][aria-busy="true"]>.uniform-upload-icon{
+  display:none!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace [data-uniform-file-picker="true"][aria-busy="true"]>svg{
+  display:block!important;
+  width:18px!important;
+  height:18px!important;
+  color:#fff!important;
+  stroke:#fff!important;
+  animation:fwo-spin .8s linear infinite!important;
+}
+
 .platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-single-meta{
   display:flex!important;
   margin-top:15px!important;
