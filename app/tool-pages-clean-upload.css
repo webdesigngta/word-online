@@ -6,7 +6,7 @@
   padding:28px 24px 32px!important;
   border:0!important;
   border-radius:0!important;
-  background:#F8FAFC!important;
+  background:#FFFFFF!important;
   box-shadow:none!important;
 }
 
@@ -69,10 +69,12 @@
 .platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace [data-uniform-dropzone="true"]{
   min-height:320px!important;
   padding:48px 24px!important;
-  border:2px dashed #CBD5E1!important;
-  border-radius:18px!important;
-  background:#FFFFFF!important;
-  box-shadow:none!important;
+  border:1.5px dashed color-mix(in srgb,var(--tool-primary) 28%,#D6DEEA)!important;
+  border-radius:20px!important;
+  background:
+    radial-gradient(circle at 50% 0%,color-mix(in srgb,var(--tool-primary) 7%,transparent),transparent 48%),
+    linear-gradient(180deg,#fff,color-mix(in srgb,var(--tool-soft) 56%,#fff))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
   display:grid!important;
   place-items:center!important;
   text-align:center!important;
@@ -95,7 +97,7 @@
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
-  margin:0 0 18px!important;
+  margin:13px 0 0!important;
   min-height:0!important;
   gap:0!important;
   text-align:center!important;
@@ -139,11 +141,20 @@
   box-shadow:0 8px 20px rgba(37,99,235,.22)!important;
 }
 
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-single-meta{
+  display:flex!important;
+  margin-top:15px!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace .fwo-single-meta.is-busy{
+  color:#2563EB!important;
+}
+
 .platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace.is-uniform-dragover [data-uniform-dropzone="true"],
 .platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell)) .platform-task-workspace[data-uniform-dropzone="true"].is-uniform-dragover{
   border-color:#2563EB!important;
-  background:#EFF6FF!important;
-  box-shadow:0 0 0 4px rgba(37,99,235,.10)!important;
+  background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--tool-soft) 90%,#fff))!important;
+  box-shadow:0 0 0 5px rgba(37,99,235,.10)!important;
 }
 
 @media(max-width:900px){
