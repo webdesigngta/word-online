@@ -6,6 +6,7 @@ const uploadText = /^(choose|select|upload|open|add|browse|pick|load|import|atta
 const shortChooseText = /^(choose|select|upload|open|add|browse|pick|load|import|attach)\b[\s\S]{0,88}(file|files|pdf|pdfs|docx|doc|document|documents|word|image|images|photo|photos|scan|scans|xlsx|xls|csv|pptx|ppt|presentation|presentations|rtf|odt|html|epub|markdown|md|txt)[.!]?$/i;
 const explicitUploadAction = /^(choose|select|upload|open|add|browse|pick|load|import|attach)\b/i;
 const nonUploadAction = /\b(convert|process|download|save|merge|split|compare|extract|repair|compress|remove|protect|unlock|rotate|crop|run|create|generate|apply|submit|reset|copy)\b/i;
+const readyClass = 'doc321-tool-ui-ready';
 
 const dropSurfaceSelector = [
   '.fwo-single-drop',
@@ -150,14 +151,25 @@ function refresh(root: Element) {
 
 export function UploadButtonNormalizer() {
   useEffect(() => {
+    const html = document.documentElement;
+    html.classList.remove(readyClass);
+
     const card = document.querySelector<HTMLElement>('.platform-task-card');
-    if (!card) return;
+    if (!card) {
+      html.classList.add(readyClass);
+      return () => html.classList.remove(readyClass);
+    }
 
-    // Native editors and native upload interfaces own their controls and visual system.
-    // Avoid any post-hydration rewriting so the first frame matches the final UI.
-    if (card.querySelector('.editor-route, .notepad-is-shell, [data-native-editor="true"], [data-native-upload-ui="true"]')) return;
+    // Native editors and native upload interfaces already render their final controls on the server.
+    if (card.querySelector('.editor-route, .notepad-is-shell, [data-native-editor="true"], [data-native-upload-ui="true"]')) {
+      html.classList.add(readyClass);
+      return () => html.classList.remove(readyClass);
+    }
 
+    // Normalize before revealing the legacy upload workspace so an old design never flashes first.
     refresh(card);
+    html.classList.add(readyClass);
+
     let dragDepth = 0;
     let refreshFrame = 0;
 
@@ -175,13 +187,14 @@ export function UploadButtonNormalizer() {
     };
     const onDragLeave = (event: DragEvent) => {
       if (!event.dataTransfer?.types.includes('Files')) return;
+      event.preventDefault();
       dragDepth = Math.max(0, dragDepth - 1);
       if (!dragDepth) card.classList.remove('is-uniform-dragover');
     };
     const onDrop = (event: DragEvent) => {
       const files = Array.from(event.dataTransfer?.files || []);
-      if (!files.length) return;
       event.preventDefault();
+      if (!files.length) return;
       dragDepth = 0;
       card.classList.remove('is-uniform-dragover');
       const input = firstMatchingInput(card, files);
@@ -207,6 +220,7 @@ export function UploadButtonNormalizer() {
     observer.observe(card, { childList: true, subtree: true });
 
     return () => {
+      html.classList.remove(readyClass);
       cancelAnimationFrame(refreshFrame);
       observer.disconnect();
       card.removeEventListener('dragenter', onDragEnter);
