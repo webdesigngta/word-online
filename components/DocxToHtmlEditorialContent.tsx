@@ -3,7 +3,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Code2,
-  RefreshCw,
   Sparkles,
 } from 'lucide-react';
 import { ToolVisual } from '@/components/ToolVisual';
@@ -144,30 +143,30 @@ export function DocxToHtmlEditorialContent() {
         </div>
       </section>
 
-      <section className={`${styles.intro} ${introStyles.introCentered}`} aria-labelledby="docx-html-intro-title">
+      <section className={`${styles.intro} ${introStyles.introCentered} ${introStyles.titleIntro}`} aria-labelledby="docx-html-intro-title">
         <h2 id="docx-html-intro-title">Free Online DOCX to HTML Converter</h2>
-        <div className={styles.introBody}>
+        <div className={`${styles.introBody} ${introStyles.titleIntroBody}`}>
           <p>Need to convert a Word document to HTML? Upload your DOCX file to DOC321 and generate an HTML version in a few simple steps, ready for your next web, editing, or document task.</p>
         </div>
       </section>
 
       <section className={styles.editorialRow} aria-labelledby="docx-html-convert-title">
-        <div className={styles.sectionCopy}>
+        <div className={`${styles.sectionCopy} ${introStyles.editorialCopy}`}>
           <h2 id="docx-html-convert-title">Convert DOCX Files to HTML With DOC321</h2>
           <p>DOCX is made for word-processing, while HTML structures content for the web. DOC321 converts the content of your Word document into HTML so you can move it into a web-friendly format without rebuilding it by hand.</p>
         </div>
-        <div className={styles.visual}>
+        <div className={`${styles.visual} ${introStyles.editorialVisual}`}>
           <span className={styles.spark}/><span className={styles.sparkAlt}/>
           <DocumentStackVisual />
         </div>
       </section>
 
       <section className={`${styles.editorialRow} ${styles.reverse}`} aria-labelledby="docx-html-content-title">
-        <div className={`${styles.visual} ${styles.visualWarm}`}>
+        <div className={`${styles.visual} ${styles.visualWarm} ${introStyles.editorialVisual}`}>
           <span className={styles.spark}/><span className={styles.sparkAlt}/>
           <ContentDocumentVisual />
         </div>
-        <div className={styles.sectionCopy}>
+        <div className={`${styles.sectionCopy} ${introStyles.editorialCopy}`}>
           <h2 id="docx-html-content-title">Turn Document Content Into HTML</h2>
           <p>Already have the content written in Word? Convert the DOCX file to HTML and keep working from what you already created instead of starting over.</p>
           <div className={styles.subSection}>
@@ -178,7 +177,7 @@ export function DocxToHtmlEditorialContent() {
       </section>
 
       <section className={styles.editorialRow} aria-labelledby="docx-html-existing-title">
-        <div className={styles.sectionCopy}>
+        <div className={`${styles.sectionCopy} ${introStyles.editorialCopy}`}>
           <h2 id="docx-html-existing-title">Convert Existing Documents Instead of Recreating Them</h2>
           <p>When a DOCX file already contains the writing you need, converting it can save the extra work of manually recreating the same content as HTML.</p>
           <div className={styles.subSection}>
@@ -186,7 +185,7 @@ export function DocxToHtmlEditorialContent() {
             <p>Use the converter for articles, reports, instructions, notes, guides, documentation, assignments, business documents, reference material, and written drafts that need an HTML version.</p>
           </div>
         </div>
-        <div className={`${styles.visual} ${styles.visualMint}`}>
+        <div className={`${styles.visual} ${styles.visualMint} ${introStyles.editorialVisual}`}>
           <span className={styles.spark}/><span className={styles.sparkAlt}/>
           <ContentDocumentVisual />
         </div>
@@ -219,7 +218,7 @@ export function DocxToHtmlEditorialContent() {
             {workItems.map((item) => (
               <article className={styles.workItem} key={item.title}>
                 <span className={styles.workIcon}><Sparkles aria-hidden="true" /></span>
-                <div>
+                <div className={introStyles.workCopy}>
                   <h3>{item.title}</h3>
                   <p>{item.text}</p>
                 </div>
