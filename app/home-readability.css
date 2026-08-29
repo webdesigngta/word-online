@@ -1,0 +1,142 @@
+/* Final homepage readability pass.
+   Keep the visual hierarchy compact, but match the comfortable type scale used
+   across DOC321 individual tool pages. */
+
+body .doc-home .dh-eyebrow{
+  font-size:14px!important;
+  line-height:1.35!important;
+}
+
+body .doc-home .hts-result strong{
+  font-size:16px!important;
+  line-height:1.35!important;
+}
+body .doc-home .hts-result small{
+  font-size:14px!important;
+  line-height:1.45!important;
+}
+body .doc-home .hts-quick>span,
+body .doc-home .hts-quick a{
+  font-size:13px!important;
+  line-height:1.25!important;
+}
+body .doc-home .hts-quick a{
+  min-height:34px!important;
+  padding-inline:13px!important;
+}
+
+body .doc-home .dh-feature{
+  min-height:72px!important;
+  gap:10px!important;
+}
+body .doc-home .dh-feature strong{
+  font-size:14.5px!important;
+  line-height:1.28!important;
+}
+body .doc-home .dh-feature small{
+  margin-top:3px!important;
+  font-size:13px!important;
+  line-height:1.4!important;
+  color:#657189!important;
+}
+
+body .doc-home .dh-section-kicker{
+  font-size:14px!important;
+  line-height:1.3!important;
+}
+body .doc-home .dh-section-head p{
+  font-size:17px!important;
+  line-height:1.65!important;
+}
+
+body .doc-home .dh-tool-card{
+  min-height:112px!important;
+}
+body .doc-home .dh-tool-card strong{
+  font-size:16px!important;
+  line-height:1.32!important;
+}
+body .doc-home .dh-tool-card small{
+  margin-top:6px!important;
+  font-size:14px!important;
+  line-height:1.48!important;
+  color:#5F6E86!important;
+}
+
+body .doc-home .dh-outline-link,
+body .doc-home .dh-solid-link,
+body .doc-home .dh-text-link{
+  font-size:15px!important;
+  line-height:1.25!important;
+}
+body .doc-home .dh-story-copy p{
+  font-size:17px!important;
+  line-height:1.68!important;
+}
+
+body .doc-home .dh-reason h3{
+  font-size:18px!important;
+  line-height:1.3!important;
+}
+body .doc-home .dh-reason p{
+  font-size:15.5px!important;
+  line-height:1.62!important;
+  color:#5F6E86!important;
+}
+body .doc-home .dh-cta p{
+  font-size:17px!important;
+  line-height:1.62!important;
+}
+
+@media(max-width:680px){
+  body .doc-home .dh-eyebrow{
+    font-size:13px!important;
+  }
+  body .doc-home .dh-hero-copy{
+    font-size:17px!important;
+    line-height:1.58!important;
+  }
+  body .doc-home .hts-form input{
+    font-size:16px!important;
+  }
+  body .doc-home .hts-quick>span,
+  body .doc-home .hts-quick a{
+    font-size:12.5px!important;
+  }
+  body .doc-home .hts-quick a{
+    min-height:34px!important;
+    padding-inline:12px!important;
+  }
+  body .doc-home .dh-feature{
+    min-height:68px!important;
+    padding:10px 11px!important;
+  }
+  body .doc-home .dh-feature strong{
+    font-size:14px!important;
+  }
+  body .doc-home .dh-feature small{
+    font-size:12.5px!important;
+  }
+  body .doc-home .dh-section-kicker{
+    font-size:13px!important;
+  }
+  body .doc-home .dh-section-head p,
+  body .doc-home .dh-story-copy p,
+  body .doc-home .dh-cta p{
+    font-size:16.5px!important;
+    line-height:1.62!important;
+  }
+  body .doc-home .dh-tool-card strong{
+    font-size:16px!important;
+  }
+  body .doc-home .dh-tool-card small{
+    font-size:14px!important;
+    line-height:1.45!important;
+  }
+  body .doc-home .dh-reason h3{
+    font-size:17px!important;
+  }
+  body .doc-home .dh-reason p{
+    font-size:15px!important;
+  }
+}
