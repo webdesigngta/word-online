@@ -14,8 +14,8 @@ import { pageMetadata } from '@/lib/seo';
 import { allLivePlatformTools } from '@/tools/platform/allTools';
 
 export const metadata = pageMetadata({
-  title: 'All Document Tools – PDF, Word, Excel, OCR & More',
-  description: 'Browse every free DOC321 document tool in one place. Search PDF, Word, spreadsheet, presentation, image, OCR, text and document creation tools by task.',
+  title: 'Free Online Document Tools – PDF, Word, Excel, OCR & More',
+  description: 'Browse all free online DOC321 document tools in one place. Use PDF, Word, spreadsheet, presentation, image, OCR, text and document creation tools directly in your browser.',
   path: '/tools',
 });
 
