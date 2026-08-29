@@ -142,6 +142,8 @@ export function PlatformTaskPage({
   tool,
   details,
   faq,
+  customContent,
+  customHowToSteps,
 }: {
   route: string;
   title: string;
@@ -149,6 +151,8 @@ export function PlatformTaskPage({
   tool: ReactNode;
   details: Array<{ title: string; text: string }>;
   faq: Array<{ question: string; answer: string }>;
+  customContent?: ReactNode;
+  customHowToSteps?: Array<{ title: string; text: string }>;
 }) {
   const current = getAllPlatformToolByRoute(route);
   const palette = current ? toolPalette(current) : fallbackPalette;
@@ -163,6 +167,7 @@ export function PlatformTaskPage({
     ? [...current.input, ...current.output].some((type) => /pdf/i.test(type)) || /pdf/i.test(current.route)
     : /pdf/i.test(route));
   const steps = current ? howToSteps(current) : [];
+  const structuredSteps = customHowToSteps ?? steps;
   const inputTypes = current ? formatTypes(current.input) : [];
   const outputTypes = current ? formatTypes(current.output) : [];
   const displayName = cleanHeading(current, title);
@@ -213,113 +218,117 @@ export function PlatformTaskPage({
             ))}
           </section>
 
-          {details.length ? (
-            <section className="platform-task-section" aria-labelledby="platform-task-benefits-title">
-              <div className="platform-task-section-head">
-                <span className="platform-task-section-kicker">Everything you need</span>
-                <h2 id="platform-task-benefits-title">Why use {displayName}?</h2>
-                <p>The working tool stays at the top of the page. These details explain what it does well and what to expect before you process an important file.</p>
-              </div>
-              <div className="platform-task-grid">
-                {details.map((item) => (
-                  <article className="platform-task-detail" key={item.title}>
-                    <h3>{item.title}</h3>
-                    <p>{item.text}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ) : null}
+          {customContent ?? (
+            <>
+              {details.length ? (
+                <section className="platform-task-section" aria-labelledby="platform-task-benefits-title">
+                  <div className="platform-task-section-head">
+                    <span className="platform-task-section-kicker">Everything you need</span>
+                    <h2 id="platform-task-benefits-title">Why use {displayName}?</h2>
+                    <p>The working tool stays at the top of the page. These details explain what it does well and what to expect before you process an important file.</p>
+                  </div>
+                  <div className="platform-task-grid">
+                    {details.map((item) => (
+                      <article className="platform-task-detail" key={item.title}>
+                        <h3>{item.title}</h3>
+                        <p>{item.text}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
 
-          {steps.length ? (
-            <section className="platform-task-journey" aria-labelledby="platform-task-how-title">
-              <div className="platform-task-section-head">
-                <span className="platform-task-section-kicker">Simple from start to finish</span>
-                <h2 id="platform-task-how-title">How to use {displayName}</h2>
-                <p>Every tool keeps the main job obvious: add what you have, make the needed choice, run the task, and leave with a usable result.</p>
-              </div>
-              {steps.map((step, index) => {
-                const Icon = journeyIcons[index] ?? Sparkles;
-                return (
-                  <article className="platform-task-journey-row" key={step.title}>
-                    <div className="platform-task-journey-copy">
-                      <span className="platform-task-journey-num">0{index + 1}</span>
-                      <h3>{step.title}</h3>
-                      <p>{step.text}</p>
-                    </div>
-                    <div className="platform-task-journey-visual" aria-hidden="true">
-                      <div className="platform-task-journey-window">
-                        <div className="platform-task-journey-window-head">
-                          <span className="platform-task-journey-badge"><Icon size={15}/>{index === 0 ? inputLabel : index === 3 ? outputLabel : displayName}</span>
-                          <Check size={18}/>
+              {steps.length ? (
+                <section className="platform-task-journey" aria-labelledby="platform-task-how-title">
+                  <div className="platform-task-section-head">
+                    <span className="platform-task-section-kicker">Simple from start to finish</span>
+                    <h2 id="platform-task-how-title">How to use {displayName}</h2>
+                    <p>Every tool keeps the main job obvious: add what you have, make the needed choice, run the task, and leave with a usable result.</p>
+                  </div>
+                  {steps.map((step, index) => {
+                    const Icon = journeyIcons[index] ?? Sparkles;
+                    return (
+                      <article className="platform-task-journey-row" key={step.title}>
+                        <div className="platform-task-journey-copy">
+                          <span className="platform-task-journey-num">0{index + 1}</span>
+                          <h3>{step.title}</h3>
+                          <p>{step.text}</p>
                         </div>
-                        <div className="platform-task-journey-lines"><span className="platform-task-journey-line"/><span className="platform-task-journey-line"/><span className="platform-task-journey-line"/></div>
-                        <div className="platform-task-journey-action"><Icon size={16}/>{journeyActions[index] ?? 'Continue'}</div>
-                      </div>
+                        <div className="platform-task-journey-visual" aria-hidden="true">
+                          <div className="platform-task-journey-window">
+                            <div className="platform-task-journey-window-head">
+                              <span className="platform-task-journey-badge"><Icon size={15}/>{index === 0 ? inputLabel : index === 3 ? outputLabel : displayName}</span>
+                              <Check size={18}/>
+                            </div>
+                            <div className="platform-task-journey-lines"><span className="platform-task-journey-line"/><span className="platform-task-journey-line"/><span className="platform-task-journey-line"/></div>
+                            <div className="platform-task-journey-action"><Icon size={16}/>{journeyActions[index] ?? 'Continue'}</div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </section>
+              ) : null}
+
+              {current ? (
+                <section className="platform-task-context" aria-label={`${displayName} workflow details`}>
+                  <article className="platform-task-context-card is-accent">
+                    <span className="platform-task-section-kicker">What this solves</span>
+                    <h2>{current.primaryIntent}</h2>
+                    <p>{current.description}</p>
+                  </article>
+                  <article className="platform-task-context-card">
+                    <span className="platform-task-section-kicker">Supported workflow</span>
+                    <h2>Know what goes in and comes out</h2>
+                    <p>Clear input and output expectations make it easier to choose the right tool before you begin.</p>
+                    <div className="platform-task-workflow">
+                      {inputTypes.map((type) => <span className="platform-task-chip" key={`input-${type}`}>{type} input</span>)}
+                      {outputTypes.map((type) => <span className="platform-task-chip is-primary" key={`output-${type}`}>{type} output</span>)}
                     </div>
                   </article>
-                );
-              })}
-            </section>
-          ) : null}
+                </section>
+              ) : null}
 
-          {current ? (
-            <section className="platform-task-context" aria-label={`${displayName} workflow details`}>
-              <article className="platform-task-context-card is-accent">
-                <span className="platform-task-section-kicker">What this solves</span>
-                <h2>{current.primaryIntent}</h2>
-                <p>{current.description}</p>
-              </article>
-              <article className="platform-task-context-card">
-                <span className="platform-task-section-kicker">Supported workflow</span>
-                <h2>Know what goes in and comes out</h2>
-                <p>Clear input and output expectations make it easier to choose the right tool before you begin.</p>
-                <div className="platform-task-workflow">
-                  {inputTypes.map((type) => <span className="platform-task-chip" key={`input-${type}`}>{type} input</span>)}
-                  {outputTypes.map((type) => <span className="platform-task-chip is-primary" key={`output-${type}`}>{type} output</span>)}
-                </div>
-              </article>
-            </section>
-          ) : null}
+              {current ? <ToolSeoContent tool={current} relatedTools={relatedTools} /> : null}
 
-          {current ? <ToolSeoContent tool={current} relatedTools={relatedTools} /> : null}
+              {relatedTools.length ? (
+                <section className="platform-task-related" aria-labelledby="related-platform-tools">
+                  <div className="platform-task-related-head">
+                    <div><h2 id="related-platform-tools">Related tools for the next step</h2><p>Selected from the same file family and nearby workflows.</p></div>
+                    <Link className="platform-task-related-all" href="/tools">Explore all {allLivePlatformTools.length} tools<ArrowRight size={14}/></Link>
+                  </div>
+                  <div className="platform-task-related-grid">
+                    {relatedTools.map((item) => (
+                      <Link className="platform-task-related-link" href={item.route} key={item.route}>
+                        <ToolVisual tool={item} size="sm" />
+                        <span className="platform-task-related-copy"><strong>{item.name}</strong><small>{item.primaryIntent}</small></span>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
 
-          {relatedTools.length ? (
-            <section className="platform-task-related" aria-labelledby="related-platform-tools">
-              <div className="platform-task-related-head">
-                <div><h2 id="related-platform-tools">Related tools for the next step</h2><p>Selected from the same file family and nearby workflows.</p></div>
-                <Link className="platform-task-related-all" href="/tools">Explore all {allLivePlatformTools.length} tools<ArrowRight size={14}/></Link>
-              </div>
-              <div className="platform-task-related-grid">
-                {relatedTools.map((item) => (
-                  <Link className="platform-task-related-link" href={item.route} key={item.route}>
-                    <ToolVisual tool={item} size="sm" />
-                    <span className="platform-task-related-copy"><strong>{item.name}</strong><small>{item.primaryIntent}</small></span>
-                  </Link>
+              <section className="platform-task-faq">
+                <div className="platform-task-faq-head"><h2>{displayName} FAQs</h2><p>Answers to common questions before you start.</p></div>
+                {faq.map((item) => (
+                  <details key={item.question}>
+                    <summary>{item.question}</summary>
+                    <p>{item.answer}</p>
+                  </details>
                 ))}
-              </div>
-            </section>
-          ) : null}
+              </section>
 
-          <section className="platform-task-faq">
-            <div className="platform-task-faq-head"><h2>{displayName} FAQs</h2><p>Answers to common questions before you start.</p></div>
-            {faq.map((item) => (
-              <details key={item.question}>
-                <summary>{item.question}</summary>
-                <p>{item.answer}</p>
-              </details>
-            ))}
-          </section>
-
-          <section className="tool-page-bottom-cta" aria-label="Explore more DOC321 tools">
-            <div><h2>Get the rest of your document work done here.</h2><p>When this task is finished, DOC321 has the next PDF, Word, image, spreadsheet, presentation, or writing tool ready.</p></div>
-            <Link href="/tools">Explore all tools<ArrowRight size={15}/></Link>
-          </section>
+              <section className="tool-page-bottom-cta" aria-label="Explore more DOC321 tools">
+                <div><h2>Get the rest of your document work done here.</h2><p>When this task is finished, DOC321 has the next PDF, Word, image, spreadsheet, presentation, or writing tool ready.</p></div>
+                <Link href="/tools">Explore all tools<ArrowRight size={15}/></Link>
+              </section>
+            </>
+          )}
         </div>
       </main>
       <SiteFooter />
       <FaqJsonLd items={faq} />
-      {current && steps.length ? <HowToJsonLd name={`How to use ${displayName}`} description={description} steps={steps} path={current.route} /> : null}
+      {current && structuredSteps.length ? <HowToJsonLd name={`How to use ${displayName}`} description={description} steps={structuredSteps} path={current.route} /> : null}
     </>
   );
 }
