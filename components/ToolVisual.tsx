@@ -3,9 +3,12 @@ import {
   Accessibility,
   ArrowDown,
   ArrowRightLeft,
+  Asterisk,
+  CircleDot,
   Code2,
   Copy,
   Crop,
+  Diamond,
   Eraser,
   Eye,
   FilePlus2,
@@ -21,6 +24,7 @@ import {
   Minimize2,
   Pencil,
   PenLine,
+  Plus,
   Presentation,
   RefreshCw,
   RotateCw,
@@ -29,12 +33,15 @@ import {
   Search,
   Settings,
   Shield,
+  Sparkles,
   Stamp,
+  Star,
   Table2,
   Trash2,
   Type,
   Unlock,
   Wrench,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import type { PlatformToolDefinition } from '@/tools/platform/catalog';
@@ -44,6 +51,9 @@ type VisualMeta = {
   icon: LucideIcon;
   accent: string;
 };
+
+const MINI_ICONS: readonly LucideIcon[] = [Sparkles, CircleDot, Diamond, Plus, Star, Zap, Asterisk];
+const MINI_COLORS = ['#00B4FC', '#FF7200', '#9A01FA', '#18A66A', '#F0447A', '#006CFD', '#7C35F2'] as const;
 
 function visualMeta(tool: PlatformToolDefinition): VisualMeta {
   const value = `${tool.id} ${tool.route} ${tool.name} ${tool.kind} ${tool.primaryIntent}`.toLowerCase();
@@ -99,9 +109,9 @@ function stableHash(value: string) {
 }
 
 const sizeMap = {
-  sm: { box: 38, icon: 18, radius: 11, dot: 2.2 },
-  md: { box: 50, icon: 24, radius: 14, dot: 2.7 },
-  lg: { box: 66, icon: 32, radius: 18, dot: 3.2 },
+  sm: { box: 38, icon: 18, radius: 11, badge: 15 },
+  md: { box: 50, icon: 24, radius: 14, badge: 18 },
+  lg: { box: 66, icon: 32, radius: 18, badge: 22 },
 } as const;
 
 export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition; size?: 'sm' | 'md' | 'lg' }) {
@@ -113,7 +123,9 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
   const rotation = ((signature >>> 20) % 5 - 2) * 1.5;
   const glowX = 18 + (signature % 58);
   const glowY = 12 + ((signature >>> 6) % 44);
-  const dots = Array.from({ length: 6 }, (_, index) => Boolean(signature & (1 << index)));
+  const MiniIcon = MINI_ICONS[signature % MINI_ICONS.length];
+  const miniColor = MINI_COLORS[(signature >>> 4) % MINI_COLORS.length];
+  const badgeRotation = ((signature >>> 10) % 7 - 3) * 3;
 
   const style = {
     '--tool-primary': palette.primary,
@@ -162,8 +174,8 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
           strokeWidth: 2.15,
           position: 'absolute',
           zIndex: 2,
-          left: '50%',
-          top: '48%',
+          left: '48%',
+          top: '47%',
           transform: `translate(-50%,-50%) rotate(${rotation}deg)`,
           filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.10))',
         }}
@@ -171,30 +183,28 @@ export function ToolVisual({ tool, size = 'md' }: { tool: PlatformToolDefinition
       <span
         style={{
           position: 'absolute',
-          right: dimensions.box * 0.13,
-          bottom: dimensions.box * 0.12,
+          right: dimensions.box * 0.08,
+          bottom: dimensions.box * 0.08,
           zIndex: 3,
+          width: dimensions.badge,
+          height: dimensions.badge,
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: Math.max(1, dimensions.dot * 0.55),
-          padding: Math.max(2, dimensions.dot * 0.7),
-          borderRadius: dimensions.dot * 2.3,
-          background: 'rgba(17,24,39,.18)',
-          backdropFilter: 'blur(2px)',
+          placeItems: 'center',
+          borderRadius: signature % 2 === 0 ? '50%' : dimensions.badge * 0.3,
+          background: miniColor,
+          border: '1.5px solid rgba(255,255,255,.88)',
+          boxShadow: '0 2px 6px rgba(1,24,85,.18)',
+          transform: `rotate(${badgeRotation}deg)`,
         }}
       >
-        {dots.map((active, index) => (
-          <span
-            key={index}
-            style={{
-              width: dimensions.dot,
-              height: dimensions.dot,
-              borderRadius: index % 2 === 0 ? '50%' : dimensions.dot * 0.35,
-              background: active ? '#fff' : 'rgba(255,255,255,.34)',
-              opacity: active ? 1 : 0.56,
-            }}
-          />
-        ))}
+        <MiniIcon
+          style={{
+            width: dimensions.badge * 0.58,
+            height: dimensions.badge * 0.58,
+            color: '#fff',
+            strokeWidth: 2.4,
+          }}
+        />
       </span>
     </span>
   );
