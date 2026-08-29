@@ -1,11 +1,8 @@
 import Link from 'next/link';
 import {
   ArrowRight,
-  BookOpen,
   CheckCircle2,
   Code2,
-  FileText,
-  Layers3,
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
@@ -91,20 +88,11 @@ function DocumentStackVisual() {
   );
 }
 
-function ContentDocumentVisual({ withChips = false }: { withChips?: boolean }) {
+function ContentDocumentVisual() {
   return (
-    <>
-      <div className={styles.articlePaper} aria-hidden="true">
-        <div className={styles.articleLines}><span/><span/><span/><span/><span/><span/></div>
-      </div>
-      {withChips ? (
-        <>
-          <span className={`${styles.floatChip} ${styles.chipOne}`}><BookOpen />Articles</span>
-          <span className={`${styles.floatChip} ${styles.chipTwo}`}><Layers3 />Reports</span>
-          <span className={`${styles.floatChip} ${styles.chipThree}`}><FileText />Drafts</span>
-        </>
-      ) : null}
-    </>
+    <div className={styles.articlePaper} aria-hidden="true">
+      <div className={styles.articleLines}><span/><span/><span/><span/><span/><span/></div>
+    </div>
   );
 }
 
@@ -137,9 +125,9 @@ export function DocxToHtmlEditorialContent() {
   ];
 
   const workItems = [
-    { Icon: Sparkles, text: 'DOC321 provides online tools for common document and file tasks.' },
-    { Icon: CheckCircle2, text: 'Each tool is focused on a specific job so you can choose what you need and complete the task without navigating through complicated software.' },
-    { Icon: RefreshCw, text: 'For DOCX to HTML conversion, simply provide your DOCX file and use the converter to create an HTML version.' },
+    { title: 'Simple document tools', text: 'DOC321 keeps common document and file tasks focused on one clear job at a time.' },
+    { title: 'Straightforward workflow', text: 'Choose the tool you need, add your file, complete the task, and move on without complicated software.' },
+    { title: 'Made for everyday files', text: 'For DOCX to HTML conversion, upload your Word document and create an HTML version you can continue working with.' },
   ];
 
   return (
@@ -159,18 +147,14 @@ export function DocxToHtmlEditorialContent() {
       <section className={`${styles.intro} ${introStyles.introCentered}`} aria-labelledby="docx-html-intro-title">
         <h2 id="docx-html-intro-title">Free Online DOCX to HTML Converter</h2>
         <div className={styles.introBody}>
-          <p>Need to convert a DOCX file to HTML?</p>
-          <p>DOC321 provides a simple online DOCX to HTML converter that helps you turn content from a Word document into HTML.</p>
-          <p>Upload your DOCX document, run the conversion, and use the resulting HTML for your next task.</p>
+          <p>Need to convert a Word document to HTML? Upload your DOCX file to DOC321 and generate an HTML version in a few simple steps, ready for your next web, editing, or document task.</p>
         </div>
       </section>
 
       <section className={styles.editorialRow} aria-labelledby="docx-html-convert-title">
         <div className={styles.sectionCopy}>
           <h2 id="docx-html-convert-title">Convert DOCX Files to HTML With DOC321</h2>
-          <p>DOCX is a common format for creating and sharing documents, while HTML is commonly used to structure content for the web.</p>
-          <p>DOC321 helps you convert between these formats without having to manually recreate the entire document as HTML.</p>
-          <p>Upload your DOCX file and let the converter process its content into HTML.</p>
+          <p>DOCX is made for word-processing, while HTML structures content for the web. DOC321 converts the content of your Word document into HTML so you can move it into a web-friendly format without rebuilding it by hand.</p>
         </div>
         <div className={styles.visual}>
           <span className={styles.spark}/><span className={styles.sparkAlt}/>
@@ -185,14 +169,10 @@ export function DocxToHtmlEditorialContent() {
         </div>
         <div className={styles.sectionCopy}>
           <h2 id="docx-html-content-title">Turn Document Content Into HTML</h2>
-          <p>If you already have text written inside a DOCX document, converting it to HTML can give you a useful starting point for working with that content in HTML format.</p>
-          <p>Instead of manually creating HTML from the document, you can upload the file to DOC321 and generate an HTML version.</p>
+          <p>Already have the content written in Word? Convert the DOCX file to HTML and keep working from what you already created instead of starting over.</p>
           <div className={styles.subSection}>
             <h3>Why Convert DOCX to HTML?</h3>
-            <p>DOCX and HTML are designed for different purposes.</p>
-            <p>DOCX is commonly used for creating documents in word-processing applications.</p>
-            <p>HTML is a markup language used to structure content.</p>
-            <p>Converting DOCX to HTML can be useful when you need the contents of an existing document in HTML format.</p>
+            <p>DOCX is ideal for editable documents, while HTML is designed for structured digital content. Converting between them is useful when text from a Word file needs to move into an HTML workflow.</p>
           </div>
         </div>
       </section>
@@ -200,21 +180,15 @@ export function DocxToHtmlEditorialContent() {
       <section className={styles.editorialRow} aria-labelledby="docx-html-existing-title">
         <div className={styles.sectionCopy}>
           <h2 id="docx-html-existing-title">Convert Existing Documents Instead of Recreating Them</h2>
-          <p>A DOCX document may already contain a large amount of written content.</p>
-          <p>Recreating that content manually as HTML can take extra work.</p>
-          <p>DOC321&apos;s DOCX to HTML converter provides a simpler way to create an HTML version from an existing DOCX file.</p>
+          <p>When a DOCX file already contains the writing you need, converting it can save the extra work of manually recreating the same content as HTML.</p>
           <div className={styles.subSection}>
             <h3>Useful for Written Content</h3>
-            <p>You may have content stored in DOCX format such as:</p>
-            <ul className={styles.contentList}>
-              <li>Articles</li><li>Reports</li><li>Instructions</li><li>Notes</li><li>Guides</li><li>Documentation</li><li>Assignments</li><li>Business documents</li><li>Reference material</li><li>Written drafts</li>
-            </ul>
-            <p>DOC321 allows you to convert the DOCX file when you need that content in HTML format.</p>
+            <p>Use the converter for articles, reports, instructions, notes, guides, documentation, assignments, business documents, reference material, and written drafts that need an HTML version.</p>
           </div>
         </div>
         <div className={`${styles.visual} ${styles.visualMint}`}>
           <span className={styles.spark}/><span className={styles.sparkAlt}/>
-          <ContentDocumentVisual withChips />
+          <ContentDocumentVisual />
         </div>
       </section>
 
@@ -237,17 +211,18 @@ export function DocxToHtmlEditorialContent() {
       <section className={styles.workflowSection} aria-labelledby="docx-html-workflow-title">
         <div className={styles.workflowIntro}>
           <h2 id="docx-html-workflow-title">A Simple DOCX to HTML Workflow</h2>
-          <p>DOC321 is designed around straightforward document tools.</p>
-          <p>Choose the DOCX to HTML converter, upload your document, run the conversion, and work with the resulting file or content.</p>
-          <p>The goal is to keep common document tasks easy to understand without adding unnecessary complexity.</p>
+          <p>Choose the DOCX to HTML converter, upload your document, run the conversion, and continue with the resulting HTML. DOC321 keeps the workflow easy to understand without adding unnecessary complexity.</p>
         </div>
         <div className={styles.workSection}>
           <h2>Work With Your Documents Using DOC321</h2>
           <div className={styles.workGrid}>
-            {workItems.map(({ Icon, text }) => (
-              <article className={styles.workItem} key={text}>
-                <span className={styles.workIcon}><Icon aria-hidden="true" /></span>
-                <p>{text}</p>
+            {workItems.map((item) => (
+              <article className={styles.workItem} key={item.title}>
+                <span className={styles.workIcon}><Sparkles aria-hidden="true" /></span>
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </div>
               </article>
             ))}
           </div>
