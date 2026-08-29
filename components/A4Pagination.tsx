@@ -3,16 +3,15 @@
 import { useEffect } from 'react';
 
 const PAGE_SELECTOR = ':scope > .fwo-page-sheet';
-const MAX_PAGES = 500;
 
-function makePage() {
+function makePage(): HTMLDivElement {
   const page = document.createElement('div');
   page.className = 'fwo-page-sheet';
   page.setAttribute('data-fwo-page', 'true');
   return page;
 }
 
-function appendPage(root: HTMLElement) {
+function appendPage(root: HTMLElement): HTMLDivElement {
   const page = makePage();
   root.append(page);
   return page;
@@ -29,12 +28,12 @@ function canSplitAcrossPages(node: Node): node is HTMLElement {
   return !node.querySelector('img,table,ul,ol,figure,pre');
 }
 
-function fitTextAcrossPages(root: HTMLElement, startPage: HTMLElement, source: HTMLElement) {
+function fitTextAcrossPages(root: HTMLElement, startPage: HTMLDivElement, source: HTMLElement): HTMLDivElement {
   let page = startPage;
   let remaining = source.textContent ?? '';
-  let pageGuard = root.querySelectorAll(PAGE_SELECTOR).length;
 
-  while (remaining && pageGuard <= MAX_PAGES) {
+  while (remaining) {
+    const before = remaining;
     const piece = source.cloneNode(false) as HTMLElement;
     page.append(piece);
 
@@ -55,14 +54,16 @@ function fitTextAcrossPages(root: HTMLElement, startPage: HTMLElement, source: H
 
     if (best === 0) {
       piece.remove();
+
+      // If this sheet already contains earlier content, continue on a fresh A4 page
+      // and measure the same remaining text again there.
       if (page.childNodes.length) {
         page = appendPage(root);
-        pageGuard += 1;
         continue;
       }
 
-      // An unbreakable object or pathological layout should never stop later pages
-      // from being created. Keep it on this page and continue pagination afterward.
+      // A pathological unbreakable element should not lock the pagination loop.
+      // Keep it on one page and allow later document blocks to continue after it.
       piece.textContent = remaining;
       page.append(piece);
       remaining = '';
@@ -82,10 +83,13 @@ function fitTextAcrossPages(root: HTMLElement, startPage: HTMLElement, source: H
     piece.textContent = remaining.slice(0, cut).replace(/\s+$/u, '');
     remaining = remaining.slice(cut).replace(/^\s+/u, '');
 
-    if (remaining) {
-      page = appendPage(root);
-      pageGuard += 1;
+    // Safety is based on forward progress, not a page-count ceiling.
+    if (remaining === before) {
+      remaining = '';
+      break;
     }
+
+    if (remaining) page = appendPage(root);
   }
 
   return page;
@@ -136,7 +140,7 @@ export function A4Pagination() {
 
       try {
         const caret = caretOffset(root);
-        const existingPages = Array.from(root.querySelectorAll<HTMLElement>(PAGE_SELECTOR));
+        const existingPages = Array.from(root.querySelectorAll<HTMLDivElement>(PAGE_SELECTOR));
         const nodes = existingPages.length
           ? existingPages.flatMap((page) => Array.from(page.childNodes))
           : Array.from(root.childNodes);
@@ -144,7 +148,7 @@ export function A4Pagination() {
         // Empty text nodes between pages are layout artefacts, not document content.
         const content = nodes.filter((node) => node.nodeType !== Node.TEXT_NODE || Boolean(node.textContent?.trim()));
         root.replaceChildren();
-        let page = appendPage(root);
+        let page: HTMLDivElement = appendPage(root);
 
         for (const node of content) {
           page.append(node);
@@ -166,7 +170,7 @@ export function A4Pagination() {
         root.dataset.pageCount = String(root.querySelectorAll(PAGE_SELECTOR).length);
         root.dispatchEvent(new CustomEvent('fwo:pages', { bubbles: true }));
       } finally {
-        observer.observe(root, { childList: true, subtree: true });
+        observer.observe(root, { childList: true, subtree: true, characterData: true });
         paginating = false;
       }
     };
@@ -176,7 +180,7 @@ export function A4Pagination() {
       frame = requestAnimationFrame(paginate);
     };
 
-    observer.observe(root, { childList: true, subtree: true });
+    observer.observe(root, { childList: true, subtree: true, characterData: true });
     root.addEventListener('input', schedule);
     window.addEventListener('resize', schedule);
     schedule();
