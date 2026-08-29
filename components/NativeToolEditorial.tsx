@@ -3,6 +3,8 @@ import { ToolFeatureStrip } from '@/components/ToolFeatureStrip';
 import { UniversalToolEditorialContent } from '@/components/UniversalToolEditorialContent';
 import { getAllPlatformToolByRoute } from '@/tools/platform/allTools';
 
+const routesWithoutEditorial = new Set(['/word-online', '/online-notepad']);
+
 export function NativeToolEditorial({
   route,
   description,
@@ -16,6 +18,8 @@ export function NativeToolEditorial({
   faq: Array<{ question: string; answer: string }>;
   steps: Array<{ title: string; text: string }>;
 }) {
+  if (routesWithoutEditorial.has(route)) return null;
+
   const tool = getAllPlatformToolByRoute(route);
   if (!tool) return null;
 
