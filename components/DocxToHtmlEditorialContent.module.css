@@ -47,7 +47,7 @@
   margin:20px auto 0;
   max-width:720px;
   color:#334155;
-  font-size:18px;
+  font-size:19px;
   line-height:1.7;
 }
 
@@ -68,7 +68,7 @@
   border-radius:999px;
   background:#fff;
   color:#475569;
-  font-size:13px;
+  font-size:14px;
   font-weight:700;
 }
 
@@ -76,7 +76,7 @@
   display:grid;
   gap:10px;
   margin:24px auto 0;
-  max-width:680px;
+  max-width:700px;
 }
 
 .introBody p,
@@ -87,9 +87,9 @@
 .faqAnswer,
 .cta p{
   margin:0;
-  color:#526071;
-  font-size:15.5px;
-  line-height:1.78;
+  color:#465467;
+  font-size:17px;
+  line-height:1.74;
 }
 
 .editorialRow{
@@ -109,16 +109,16 @@
 }
 
 .sectionCopy{
-  max-width:520px;
+  max-width:540px;
 }
 
 .sectionCopy h2{
-  font-size:31px;
+  font-size:32px;
   line-height:1.18;
 }
 
 .sectionCopy p{
-  margin-top:16px;
+  margin-top:18px;
 }
 
 .subSection{
@@ -154,7 +154,7 @@
   border-radius:10px;
   background:#f7f9fc;
   color:#3d4b5f;
-  font-size:12.5px;
+  font-size:13px;
   font-weight:750;
   text-align:center;
 }
@@ -363,7 +363,7 @@
 .howPanel{
   display:grid;
   grid-template-columns:minmax(0,1.16fr) minmax(320px,.84fr);
-  min-height:330px;
+  min-height:350px;
   margin:10px 0 112px;
   overflow:hidden;
   border:1px solid #dbe9fb;
@@ -374,32 +374,32 @@
 }
 
 .howCopy{
-  padding:46px 50px;
+  padding:48px 50px;
 }
 
 .howCopy h2{
-  font-size:30px;
+  font-size:31px;
   line-height:1.18;
 }
 
 .steps{
   display:grid;
-  gap:17px;
-  margin:26px 0 0;
+  gap:18px;
+  margin:28px 0 0;
   padding:0;
   list-style:none;
 }
 
 .step{
   display:grid;
-  grid-template-columns:30px minmax(0,1fr);
+  grid-template-columns:31px minmax(0,1fr);
   align-items:start;
-  gap:12px;
+  gap:13px;
 }
 
 .stepNum{
-  width:27px;
-  height:27px;
+  width:28px;
+  height:28px;
   border-radius:50%;
   display:grid;
   place-items:center;
@@ -411,7 +411,8 @@
 
 .step p{
   padding-top:1px;
-  font-size:14px;
+  font-size:16px;
+  line-height:1.6;
 }
 
 .howVisual{
@@ -478,7 +479,7 @@
 .workflowIntro h2,
 .workSection h2,
 .faqSection h2{
-  font-size:34px;
+  font-size:35px;
   line-height:1.16;
 }
 
@@ -519,21 +520,21 @@
 }
 
 .workIcon svg{width:16px;height:16px;}
-.workItem p{font-size:13.5px;line-height:1.65;}
+.workItem p{font-size:15px;line-height:1.68;}
 
 .faqSection{
-  width:min(900px,100%);
-  margin:0 auto 94px;
+  width:min(940px,100%);
+  margin:0 auto 106px;
 }
 
 .faqSection h2{
-  max-width:710px;
-  margin:0 auto 40px;
+  max-width:740px;
+  margin:0 auto 42px;
   text-align:center;
 }
 
 .faqRow{
-  padding:21px 4px 22px;
+  padding:23px 4px 24px;
   border-bottom:1px solid #e5e9ef;
 }
 
@@ -543,14 +544,14 @@
   justify-content:space-between;
   gap:20px;
   color:#1f2937;
-  font-size:15px;
+  font-size:16.5px;
   font-weight:800;
   line-height:1.45;
 }
 
 .faqChevron{
   flex:0 0 auto;
-  margin-top:4px;
+  margin-top:5px;
   width:8px;
   height:8px;
   border-top:2px solid #94a3b8;
@@ -559,54 +560,131 @@
 }
 
 .faqAnswer{
-  max-width:790px;
-  margin-top:10px;
-  font-size:13.5px;
-  line-height:1.72;
+  max-width:840px;
+  margin-top:11px;
+  font-size:15.5px;
+  line-height:1.74;
 }
 
 .cta{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:30px;
-  margin:0 0 34px;
-  padding:34px 38px;
-  border:1px solid #d9e8fb;
-  border-radius:20px;
-  background:linear-gradient(135deg,#f8fbff 0%,#edf5ff 100%);
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1.3fr) minmax(320px,.7fr);
+  align-items:stretch;
+  min-height:330px;
+  margin:0 0 54px;
+  overflow:hidden;
+  border:1px solid #eceff3;
+  border-radius:18px;
+  background:#f6f6f7;
+}
+
+.ctaCopy{
+  position:relative;
+  z-index:2;
+  align-self:center;
+  padding:56px 58px;
 }
 
 .cta h2{
-  font-size:26px;
-  line-height:1.18;
+  font-size:39px;
+  line-height:1.12;
 }
 
 .cta p{
-  margin-top:8px;
-  max-width:680px;
-  font-size:14px;
+  max-width:670px;
+  margin-top:16px;
+  color:#343b46;
+  font-size:17px;
+  line-height:1.7;
 }
 
 .ctaLink{
-  flex:0 0 auto;
-  min-height:46px;
-  padding:0 18px;
-  border-radius:11px;
+  width:max-content;
+  min-height:48px;
+  margin-top:28px;
+  padding:0 19px;
+  border-radius:7px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   gap:8px;
-  background:#2563eb;
+  background:#1167e8;
   color:#fff;
   text-decoration:none;
-  font-size:14px;
+  font-size:15px;
   font-weight:850;
-  box-shadow:0 8px 18px rgba(37,99,235,.18);
+  box-shadow:0 8px 18px rgba(17,103,232,.14);
+  transition:background-color .14s ease,box-shadow .14s ease;
+}
+
+.ctaLink:hover{
+  background:#0b58cc;
+  box-shadow:0 10px 22px rgba(17,103,232,.18);
+}
+
+.ctaVisual{
+  position:relative;
+  min-height:330px;
+  overflow:hidden;
+}
+
+.ctaShape{
+  position:absolute;
+  display:block;
+  border-radius:18px;
+}
+
+.ctaShapeBlue{
+  width:118px;
+  height:118px;
+  left:18%;
+  top:28px;
+  background:#1167e8;
+  transform:rotate(-27deg);
+}
+
+.ctaShapeCoral{
+  width:190px;
+  height:148px;
+  right:-44px;
+  top:-36px;
+  background:#df6377;
+  transform:rotate(17deg);
+}
+
+.ctaShapeGold{
+  width:330px;
+  height:230px;
+  right:-34px;
+  bottom:-95px;
+  background:#f4b858;
+  transform:rotate(-27deg);
+}
+
+.ctaDot{
+  position:absolute;
+  left:4%;
+  top:43%;
+  width:13px;
+  height:13px;
+  border:3px solid #1167e8;
+  border-radius:50%;
+}
+
+.ctaPlus{
+  position:absolute;
+  right:6%;
+  top:46%;
+  color:#f4b858;
+  font-size:34px;
+  font-weight:700;
+  line-height:1;
 }
 
 .relatedSection{
-  margin:0 0 78px;
+  margin:0 0 86px;
+  padding-top:8px;
 }
 
 .relatedHead{
@@ -614,62 +692,84 @@
   align-items:end;
   justify-content:space-between;
   gap:24px;
-  margin-bottom:17px;
+  margin-bottom:30px;
 }
 
 .relatedSection h2{
-  font-size:24px;
+  font-size:30px;
   line-height:1.2;
 }
 
 .relatedHead p{
-  margin:6px 0 0;
+  margin:8px 0 0;
   color:#64748b;
-  font-size:13px;
+  font-size:15px;
+  line-height:1.55;
 }
 
-.relatedGrid{
+.relatedDirectory{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:38px;
+  padding:28px 0 6px;
+  border-top:1px solid #e6e9ed;
+}
+
+.relatedGroup{
+  min-width:0;
+}
+
+.relatedGroup h3{
+  margin:0 0 13px;
+  color:#7a8089;
+  font-size:13px;
+  font-weight:650;
+  line-height:1.4;
+  letter-spacing:.01em;
+}
+
+.relatedGroupLinks{
+  display:grid;
   gap:9px;
 }
 
 .relatedLink{
   min-width:0;
-  min-height:58px;
-  padding:9px 11px;
-  border:1px solid #e7ebf1;
-  border-radius:12px;
+  min-height:36px;
+  padding:2px 0;
   display:flex;
   align-items:center;
   gap:9px;
-  background:#fff;
-  color:#1f2937;
+  color:#202124;
   text-decoration:none;
-  transition:border-color .14s ease,box-shadow .14s ease,transform .14s ease;
+  transition:color .14s ease;
 }
 
 .relatedLink:hover{
-  border-color:#cfdced;
-  box-shadow:0 7px 18px rgba(15,23,42,.055);
-  transform:translateY(-1px);
+  color:#1167e8;
+}
+
+.relatedLink > :first-child{
+  flex:0 0 auto;
 }
 
 .relatedName{
   min-width:0;
-  flex:1;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  font-size:12.5px;
-  font-weight:800;
+  font-size:14px;
+  font-weight:650;
+  line-height:1.35;
 }
 
-.relatedLink svg:last-child{
-  width:13px;
-  height:13px;
-  color:#94a3b8;
-  flex:0 0 auto;
+@media(max-width:1000px){
+  .cta{
+    grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);
+  }
+  .ctaCopy{padding:48px 44px;}
+  .cta h2{font-size:35px;}
+  .relatedDirectory{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;}
 }
 
 @media(max-width:900px){
@@ -677,19 +777,23 @@
   .intro{margin-bottom:88px;}
   .intro h2{font-size:35px;}
   .editorialRow{gap:48px;margin-bottom:96px;}
-  .sectionCopy h2{font-size:28px;}
+  .sectionCopy h2{font-size:29px;}
   .visual{min-height:330px;}
   .howPanel{grid-template-columns:1fr 330px;}
-  .howCopy{padding:38px 34px;}
+  .howCopy{padding:40px 34px;}
   .workGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .relatedGrid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .cta{
+    grid-template-columns:1fr 280px;
+    min-height:300px;
+  }
+  .ctaVisual{min-height:300px;}
 }
 
 @media(max-width:720px){
   .content{margin-top:50px;}
   .intro{margin-bottom:72px;}
   .intro h2{font-size:30px;}
-  .lead{font-size:16px;}
+  .lead{font-size:17px;}
   .editorialRow,
   .editorialRow.reverse{
     grid-template-columns:1fr;
@@ -701,23 +805,33 @@
   .editorialRow.reverse .sectionCopy,
   .editorialRow.reverse .visual{order:initial;}
   .sectionCopy{max-width:none;}
-  .sectionCopy h2{font-size:26px;}
+  .sectionCopy h2{font-size:27px;}
   .visual{min-height:300px;}
   .contentList{grid-template-columns:repeat(2,minmax(0,1fr));}
   .howPanel{grid-template-columns:1fr;margin-bottom:82px;}
-  .howCopy{padding:32px 24px;}
-  .howCopy h2{font-size:26px;}
+  .howCopy{padding:34px 24px;}
+  .howCopy h2{font-size:27px;}
   .howVisual{min-height:285px;}
   .workflowSection{margin-bottom:82px;}
   .workflowIntro h2,
   .workSection h2,
-  .faqSection h2{font-size:29px;}
+  .faqSection h2{font-size:30px;}
   .workGrid{grid-template-columns:1fr;gap:20px;}
-  .faqSection{margin-bottom:72px;}
-  .cta{align-items:flex-start;flex-direction:column;padding:28px 24px;}
+  .faqSection{margin-bottom:78px;}
+  .cta{
+    grid-template-columns:1fr;
+    min-height:auto;
+  }
+  .ctaCopy{padding:38px 28px 32px;}
+  .cta h2{font-size:31px;}
+  .cta p{font-size:16px;}
   .ctaLink{width:100%;}
+  .ctaVisual{min-height:190px;}
+  .ctaShapeBlue{left:18%;top:22px;width:90px;height:90px;}
+  .ctaShapeCoral{width:145px;height:115px;}
+  .ctaShapeGold{width:250px;height:170px;bottom:-88px;}
   .relatedHead{align-items:flex-start;flex-direction:column;}
-  .relatedGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .relatedDirectory{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 30px;}
 }
 
 @media(max-width:460px){
@@ -726,5 +840,7 @@
   .contentList{grid-template-columns:1fr 1fr;}
   .visual::before{width:235px;height:205px;}
   .stack{transform:scale(.9);}
-  .relatedGrid{grid-template-columns:1fr;}
+  .relatedDirectory{grid-template-columns:1fr;gap:24px;}
+  .relatedSection h2{font-size:27px;}
+  .relatedName{font-size:14.5px;}
 }
