@@ -4,7 +4,6 @@ import { ChecklistVisibilityFix } from '@/components/ChecklistVisibilityFix';
 import { ChromeStatusAndZoom } from '@/components/ChromeStatusAndZoom';
 import { CompactStyleMenu } from '@/components/CompactStyleMenu';
 import { DelayedTooltips } from '@/components/DelayedTooltips';
-import { DisableEditorContextMenu } from '@/components/DisableEditorContextMenu';
 import { DocumentOutline } from '@/components/DocumentOutline';
 import { EditorIntentPrompt, type EditorIntentMode } from '@/components/EditorIntentPrompt';
 import { EditorKeyboardScope } from '@/components/EditorKeyboardScope';
@@ -50,7 +49,6 @@ export function WordEditorClientRuntime({
       <A4Pagination />
       <EditorKeyboardScope />
       <EditorMenuAutoDismiss />
-      <DisableEditorContextMenu />
       <DocumentOutline />
       <GracefulEditorDialogs />
       <FontMenuEnhancer />
