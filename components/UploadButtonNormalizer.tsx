@@ -26,49 +26,6 @@ function textOf(element: Element) {
   return (element.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
-function acceptedLabels(input: HTMLInputElement | null) {
-  if (!input) return [] as string[];
-  const accept = (input.accept || '').toLowerCase();
-  const labels: string[] = [];
-  const add = (label: string) => { if (!labels.includes(label)) labels.push(label); };
-
-  if (/\.docx\b|officedocument\.wordprocessingml/.test(accept)) add('DOCX');
-  if (/(^|,)\.doc\b|msword/.test(accept)) add('DOC');
-  if (/\.pdf\b|application\/pdf/.test(accept)) add('PDF');
-  if (/\.xlsx\b|spreadsheetml/.test(accept)) add('XLSX');
-  if (/(^|,)\.xls\b|application\/vnd\.ms-excel/.test(accept)) add('XLS');
-  if (/\.csv\b|text\/csv/.test(accept)) add('CSV');
-  if (/\.pptx\b|presentationml/.test(accept)) add('PPTX');
-  if (/(^|,)\.ppt\b|application\/vnd\.ms-powerpoint/.test(accept)) add('PPT');
-  if (/\.odt\b|opendocument\.text/.test(accept)) add('ODT');
-  if (/\.rtf\b|application\/rtf|text\/rtf/.test(accept)) add('RTF');
-  if (/\.html?\b|text\/html/.test(accept)) add('HTML');
-  if (/\.txt\b|text\/plain/.test(accept)) add('TXT');
-  if (/\.md\b|markdown/.test(accept)) add('Markdown');
-  if (/image\/jpeg|\.jpe?g\b/.test(accept)) add('JPG');
-  if (/image\/png|\.png\b/.test(accept)) add('PNG');
-  if (/image\/webp|\.webp\b/.test(accept)) add('WEBP');
-  if (/image\//.test(accept) && !labels.some((label) => ['JPG', 'PNG', 'WEBP'].includes(label))) add('Images');
-
-  return labels;
-}
-
-function compactAcceptedLabel(input: HTMLInputElement | null) {
-  const labels = acceptedLabels(input);
-  if (!labels.length) return 'Supported files';
-  if (labels.length === 1) return `${labels[0]} only`;
-  if (labels.length === 2) return `${labels[0]} or ${labels[1]}`;
-  return `${labels.slice(0, -1).join(', ')} or ${labels.at(-1)}`;
-}
-
-function helperAcceptedLabel(input: HTMLInputElement | null) {
-  const labels = acceptedLabels(input);
-  if (!labels.length) return 'Supported files only.';
-  if (labels.length === 1) return `${labels[0]} files only.`;
-  if (labels.length === 2) return `${labels[0]} or ${labels[1]} files only.`;
-  return `${labels.slice(0, -1).join(', ')}, or ${labels.at(-1)} files only.`;
-}
-
 function acceptMatches(input: HTMLInputElement, file: File) {
   const accept = (input.accept || '').trim().toLowerCase();
   if (!accept) return true;
@@ -131,22 +88,25 @@ function ensureUploadMeta(root: Element, element: HTMLElement) {
 
   if (!element.querySelector(':scope > .uniform-upload-icon')) element.prepend(buildUploadIcon());
 
-  let meta = element.nextElementSibling instanceof HTMLElement && element.nextElementSibling.classList.contains('uniform-upload-meta')
+  const previous = element.previousElementSibling instanceof HTMLElement && element.previousElementSibling.classList.contains('uniform-upload-meta')
+    ? element.previousElementSibling
+    : null;
+  const next = element.nextElementSibling instanceof HTMLElement && element.nextElementSibling.classList.contains('uniform-upload-meta')
     ? element.nextElementSibling
     : null;
+  let meta = previous || next;
 
   if (!meta) {
     meta = document.createElement('div');
     meta.className = 'uniform-upload-meta';
-    meta.innerHTML = '<span class="uniform-drop-hint">Drag & drop files here</span><span class="uniform-upload-meta-dot" aria-hidden="true">•</span><span class="uniform-upload-format"></span>';
-    element.insertAdjacentElement('afterend', meta);
-  }
-
-  const format = meta.querySelector<HTMLElement>('.uniform-upload-format');
-  if (format) {
-    const compact = compactAcceptedLabel(input);
-    format.textContent = compact;
-    format.setAttribute('aria-label', `Accepted file types: ${compact}`);
+    meta.innerHTML = '<span class="uniform-drop-hint">or drag &amp; drop files here</span>';
+    element.insertAdjacentElement('beforebegin', meta);
+  } else {
+    if (meta !== previous) element.insertAdjacentElement('beforebegin', meta);
+    const hint = meta.querySelector<HTMLElement>('.uniform-drop-hint');
+    if (hint && hint.textContent !== 'or drag & drop files here') hint.textContent = 'or drag & drop files here';
+    meta.querySelector('.uniform-upload-meta-dot')?.remove();
+    meta.querySelector('.uniform-upload-format')?.remove();
   }
 }
 
@@ -170,13 +130,10 @@ function markUploadTriggers(root: Element) {
 }
 
 function normalizeHelperText(root: Element) {
-  const input = root.querySelector<HTMLInputElement>('input[type="file"]');
-  const label = helperAcceptedLabel(input);
   root.querySelectorAll<HTMLElement>('span,small,p,div').forEach((element) => {
     if (element.children.length || element.closest('button,label,[role="button"],a,.uniform-upload-meta')) return;
     const text = textOf(element);
     if (!text || !shortChooseText.test(text)) return;
-    element.textContent = label;
     element.setAttribute('data-uniform-upload-helper', 'true');
   });
 }
@@ -198,6 +155,7 @@ export function UploadButtonNormalizer() {
 
     refresh(card);
     let dragDepth = 0;
+    let refreshFrame = 0;
 
     const onDragEnter = (event: DragEvent) => {
       if (!event.dataTransfer?.types.includes('Files') || !card.querySelector('input[type="file"]')) return;
@@ -238,10 +196,14 @@ export function UploadButtonNormalizer() {
     card.addEventListener('dragleave', onDragLeave);
     card.addEventListener('drop', onDrop);
 
-    const observer = new MutationObserver(() => refresh(card));
-    observer.observe(card, { childList: true, subtree: true, characterData: true });
+    const observer = new MutationObserver(() => {
+      cancelAnimationFrame(refreshFrame);
+      refreshFrame = requestAnimationFrame(() => refresh(card));
+    });
+    observer.observe(card, { childList: true, subtree: true });
 
     return () => {
+      cancelAnimationFrame(refreshFrame);
       observer.disconnect();
       card.removeEventListener('dragenter', onDragEnter);
       card.removeEventListener('dragover', onDragOver);
