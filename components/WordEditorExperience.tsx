@@ -63,6 +63,16 @@ export function WordEditorExperience({
           border-left: 0 !important;
         }
 
+        .editor-route[data-word-interface="word-online"] .docs-editor-workspace .fwo-page-sheet > p {
+          margin-top: 0;
+          margin-bottom: 6px;
+          line-height: 1.4;
+        }
+
+        .editor-route[data-word-interface="word-online"] .docs-editor-workspace .fwo-page-sheet > p:last-child {
+          margin-bottom: 0;
+        }
+
         .fwo-editor-loading {
           min-height: 100vh;
           min-height: 100dvh;
