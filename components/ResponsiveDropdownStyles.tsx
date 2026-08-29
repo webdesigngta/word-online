@@ -38,6 +38,19 @@ export function ResponsiveDropdownStyles() {
         overflow-y: auto;
       }
 
+      .fwo-menu-layer,
+      .fwo-font-menu,
+      .fwo-style-menu,
+      .fwo-gallery-popover,
+      .fwo-header-download-menu,
+      .fwo-local-popover,
+      .fwo-local-panel,
+      .fwo-download-menu,
+      .docs-menu-popover {
+        z-index: 8000 !important;
+        pointer-events: auto !important;
+      }
+
       .editor-route .docs-menu-popover::-webkit-scrollbar,
       .editor-route .fwo-local-popover::-webkit-scrollbar,
       .editor-route .fwo-local-panel::-webkit-scrollbar,
