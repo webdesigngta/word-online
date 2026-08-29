@@ -7,6 +7,7 @@ import { DelayedTooltips } from '@/components/DelayedTooltips';
 import { DocumentOutline } from '@/components/DocumentOutline';
 import { EditorIntentPrompt, type EditorIntentMode } from '@/components/EditorIntentPrompt';
 import { EditorKeyboardScope } from '@/components/EditorKeyboardScope';
+import { EditorMenuAutoDismiss } from '@/components/EditorMenuAutoDismiss';
 import { FontMenuEnhancer } from '@/components/FontMenuEnhancer';
 import { FunctionalMainMenus } from '@/components/FunctionalMainMenus';
 import { GracefulEditorDialogs } from '@/components/GracefulEditorDialogs';
@@ -44,6 +45,7 @@ export function WordEditorClientRuntime({
       <WordEditorTool {...runtimeOptions} />
       <A4Pagination />
       <EditorKeyboardScope />
+      <EditorMenuAutoDismiss />
       <DocumentOutline />
       <GracefulEditorDialogs />
       <FontMenuEnhancer />
