@@ -5,7 +5,6 @@ import { ChromeStatusAndZoom } from '@/components/ChromeStatusAndZoom';
 import { CompactStyleMenu } from '@/components/CompactStyleMenu';
 import { DelayedTooltips } from '@/components/DelayedTooltips';
 import { DocumentOutline } from '@/components/DocumentOutline';
-import { EditorContextMenu } from '@/components/EditorContextMenu';
 import { EditorIntentPrompt, type EditorIntentMode } from '@/components/EditorIntentPrompt';
 import { FontMenuEnhancer } from '@/components/FontMenuEnhancer';
 import { FunctionalMainMenus } from '@/components/FunctionalMainMenus';
@@ -56,7 +55,6 @@ export function WordEditorClientRuntime({
       <ResponsiveDropdownStyles />
       <DelayedTooltips />
       <SpellingContextMenu />
-      <EditorContextMenu />
       <ChromeStatusAndZoom />
       <FunctionalMainMenus />
       <ChecklistVisibilityFix />
