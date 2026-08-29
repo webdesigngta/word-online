@@ -9,6 +9,7 @@ import './tool-pages.css';
 import './tool-pages-special.css';
 import './tool-interface-uniformity.css';
 import './tool-pages-readability.css';
+import './tool-pages-clean-upload.css';
 import './home-typography.css';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
