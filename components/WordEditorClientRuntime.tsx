@@ -17,7 +17,6 @@ import { LocalUndoManager } from '@/components/LocalUndoManager';
 import { LocalVersionHistory } from '@/components/LocalVersionHistory';
 import { NoLoginToolbarFeatures } from '@/components/NoLoginToolbarFeatures';
 import { PageStructureFeatures } from '@/components/PageStructureFeatures';
-import { PersistentFormattingSelection } from '@/components/PersistentFormattingSelection';
 import { RemoveLegacyDesign } from '@/components/RemoveLegacyDesign';
 import { RemoveQuickActionRow } from '@/components/RemoveQuickActionRow';
 import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles';
@@ -58,7 +57,6 @@ export function WordEditorClientRuntime({
       <NoLoginToolbarFeatures />
       <WordToolbarPolish />
       <WordFormattingSelectionBridge />
-      <PersistentFormattingSelection />
       <WordEditorBrandMobilePolish />
       <LocalUndoManager />
       <LocalVersionHistory />
