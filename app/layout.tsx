@@ -15,6 +15,7 @@ import './tool-upload-spacing.css';
 import './text-tool-uniformity.css';
 import './docx-to-html-compact.css';
 import './home-typography.css';
+import './home-readability.css';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
 
