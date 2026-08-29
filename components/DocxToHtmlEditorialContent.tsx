@@ -169,10 +169,6 @@ export function DocxToHtmlEditorialContent() {
         <div className={`${styles.sectionCopy} ${introStyles.editorialCopy}`}>
           <h2 id="docx-html-content-title">Turn Document Content Into HTML</h2>
           <p>Already have the content written in Word? Convert the DOCX file to HTML and keep working from what you already created instead of starting over.</p>
-          <div className={styles.subSection}>
-            <h3>Why Convert DOCX to HTML?</h3>
-            <p>DOCX is ideal for editable documents, while HTML is designed for structured digital content. Converting between them is useful when text from a Word file needs to move into an HTML workflow.</p>
-          </div>
         </div>
       </section>
 
@@ -180,10 +176,6 @@ export function DocxToHtmlEditorialContent() {
         <div className={`${styles.sectionCopy} ${introStyles.editorialCopy}`}>
           <h2 id="docx-html-existing-title">Convert Existing Documents Instead of Recreating Them</h2>
           <p>When a DOCX file already contains the writing you need, converting it can save the extra work of manually recreating the same content as HTML.</p>
-          <div className={styles.subSection}>
-            <h3>Useful for Written Content</h3>
-            <p>Use the converter for articles, reports, instructions, notes, guides, documentation, assignments, business documents, reference material, and written drafts that need an HTML version.</p>
-          </div>
         </div>
         <div className={`${styles.visual} ${styles.visualMint} ${introStyles.editorialVisual}`}>
           <span className={styles.spark}/><span className={styles.sparkAlt}/>
