@@ -24,11 +24,27 @@
     grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr)!important;
   }
 
+  .platform-task-page .platform-task-feature:nth-child(4),
+  .native-editor-editorial .platform-task-feature:nth-child(4),
+  .notepad-native-page .platform-task-feature:nth-child(4){
+    gap:5px!important;
+    padding-left:3px!important;
+    padding-right:3px!important;
+  }
+
   .platform-task-page .platform-task-feature:nth-child(4) .platform-task-feature-icon,
   .native-editor-editorial .platform-task-feature:nth-child(4) .platform-task-feature-icon,
   .notepad-native-page .platform-task-feature:nth-child(4) .platform-task-feature-icon{
-    width:30px!important;
-    height:30px!important;
-    flex:0 0 30px!important;
+    width:26px!important;
+    height:26px!important;
+    flex:0 0 26px!important;
+    border-radius:8px!important;
+  }
+
+  .platform-task-page .platform-task-feature:nth-child(4) .platform-task-feature-icon svg,
+  .native-editor-editorial .platform-task-feature:nth-child(4) .platform-task-feature-icon svg,
+  .notepad-native-page .platform-task-feature:nth-child(4) .platform-task-feature-icon svg{
+    width:17px!important;
+    height:17px!important;
   }
 }
