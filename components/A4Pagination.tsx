@@ -3,11 +3,91 @@
 import { useEffect } from 'react';
 
 const PAGE_SELECTOR = ':scope > .fwo-page-sheet';
+const MAX_PAGES = 500;
 
 function makePage() {
   const page = document.createElement('div');
   page.className = 'fwo-page-sheet';
   page.setAttribute('data-fwo-page', 'true');
+  return page;
+}
+
+function appendPage(root: HTMLElement) {
+  const page = makePage();
+  root.append(page);
+  return page;
+}
+
+function pageOverflows(page: HTMLElement) {
+  return page.scrollHeight > page.clientHeight + 1;
+}
+
+function canSplitAcrossPages(node: Node): node is HTMLElement {
+  if (!(node instanceof HTMLElement)) return false;
+  if (!node.textContent?.trim()) return false;
+  if (node.matches('img,table,ul,ol,figure,pre,hr')) return false;
+  return !node.querySelector('img,table,ul,ol,figure,pre');
+}
+
+function fitTextAcrossPages(root: HTMLElement, startPage: HTMLElement, source: HTMLElement) {
+  let page = startPage;
+  let remaining = source.textContent ?? '';
+  let pageGuard = root.querySelectorAll(PAGE_SELECTOR).length;
+
+  while (remaining && pageGuard <= MAX_PAGES) {
+    const piece = source.cloneNode(false) as HTMLElement;
+    page.append(piece);
+
+    let low = 1;
+    let high = remaining.length;
+    let best = 0;
+
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      piece.textContent = remaining.slice(0, middle);
+      if (!pageOverflows(page)) {
+        best = middle;
+        low = middle + 1;
+      } else {
+        high = middle - 1;
+      }
+    }
+
+    if (best === 0) {
+      piece.remove();
+      if (page.childNodes.length) {
+        page = appendPage(root);
+        pageGuard += 1;
+        continue;
+      }
+
+      // An unbreakable object or pathological layout should never stop later pages
+      // from being created. Keep it on this page and continue pagination afterward.
+      piece.textContent = remaining;
+      page.append(piece);
+      remaining = '';
+      break;
+    }
+
+    let cut = best;
+    if (cut < remaining.length) {
+      const boundary = Math.max(
+        remaining.lastIndexOf(' ', cut),
+        remaining.lastIndexOf('\n', cut),
+        remaining.lastIndexOf('\t', cut),
+      );
+      if (boundary > Math.floor(cut * 0.6)) cut = boundary + 1;
+    }
+
+    piece.textContent = remaining.slice(0, cut).replace(/\s+$/u, '');
+    remaining = remaining.slice(cut).replace(/^\s+/u, '');
+
+    if (remaining) {
+      page = appendPage(root);
+      pageGuard += 1;
+    }
+  }
+
   return page;
 }
 
@@ -40,7 +120,7 @@ function restoreCaret(root: HTMLElement, offset: number | null) {
   }
 }
 
-/** Turns the editable document into real, independently bounded A4 sheets. */
+/** Turns the editable document into as many independently bounded A4 sheets as the content requires. */
 export function A4Pagination() {
   useEffect(() => {
     const root = document.querySelector<HTMLElement>('.editor-page');
@@ -53,65 +133,54 @@ export function A4Pagination() {
       if (paginating) return;
       paginating = true;
       observer.disconnect();
-      const caret = caretOffset(root);
-      const existingPages = Array.from(root.querySelectorAll<HTMLElement>(PAGE_SELECTOR));
-      const nodes = existingPages.length
-        ? existingPages.flatMap((page) => Array.from(page.childNodes))
-        : Array.from(root.childNodes);
 
-      // Empty text nodes between pages are layout artefacts, not document content.
-      const content = nodes.filter((node) => node.nodeType !== Node.TEXT_NODE || Boolean(node.textContent?.trim()));
-      root.replaceChildren();
-      let page = makePage();
-      root.append(page);
+      try {
+        const caret = caretOffset(root);
+        const existingPages = Array.from(root.querySelectorAll<HTMLElement>(PAGE_SELECTOR));
+        const nodes = existingPages.length
+          ? existingPages.flatMap((page) => Array.from(page.childNodes))
+          : Array.from(root.childNodes);
 
-      for (let index = 0; index < content.length; index += 1) {
-        const node = content[index];
-        page.append(node);
-        if (page.scrollHeight <= page.clientHeight + 1) continue;
-        // Split a very large plain paragraph (common after a multi-page paste) at a word boundary.
-        if (page.childNodes.length === 1 && node instanceof HTMLElement && !node.querySelector('img,table,ul,ol')) {
-          const words = (node.textContent ?? '').split(/(\s+)/);
-          if (words.length > 2) {
-            let low = 1;
-            let high = words.length;
-            while (low < high) {
-              const middle = Math.ceil((low + high) / 2);
-              node.textContent = words.slice(0, middle).join('');
-              if (page.scrollHeight <= page.clientHeight + 1) low = middle;
-              else high = middle - 1;
-            }
-            node.textContent = words.slice(0, low).join('');
-            const continuation = node.cloneNode(false) as HTMLElement;
-            continuation.textContent = words.slice(low).join('').replace(/^\s+/, '');
-            if (continuation.textContent) content.splice(index + 1, 0, continuation);
+        // Empty text nodes between pages are layout artefacts, not document content.
+        const content = nodes.filter((node) => node.nodeType !== Node.TEXT_NODE || Boolean(node.textContent?.trim()));
+        root.replaceChildren();
+        let page = appendPage(root);
+
+        for (const node of content) {
+          page.append(node);
+          if (!pageOverflows(page)) continue;
+
+          node.remove();
+
+          if (canSplitAcrossPages(node)) {
+            page = fitTextAcrossPages(root, page, node);
             continue;
           }
-          // Keep an intrinsically oversized object on one sheet rather than making a blank page.
-          continue;
-        }
-        page.removeChild(node);
-        page = makePage();
-        root.append(page);
-        page.append(node);
-      }
 
-      if (!content.length) page.innerHTML = '<p><br></p>';
-      restoreCaret(root, caret);
-      root.dataset.pageCount = String(root.querySelectorAll(PAGE_SELECTOR).length);
-      root.dispatchEvent(new CustomEvent('fwo:pages', { bubbles: true }));
-      observer.observe(root, { childList: true });
-      paginating = false;
+          if (page.childNodes.length) page = appendPage(root);
+          page.append(node);
+        }
+
+        if (!content.length) page.innerHTML = '<p><br></p>';
+        restoreCaret(root, caret);
+        root.dataset.pageCount = String(root.querySelectorAll(PAGE_SELECTOR).length);
+        root.dispatchEvent(new CustomEvent('fwo:pages', { bubbles: true }));
+      } finally {
+        observer.observe(root, { childList: true, subtree: true });
+        paginating = false;
+      }
     };
 
     const schedule = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(paginate);
     };
-    observer.observe(root, { childList: true });
+
+    observer.observe(root, { childList: true, subtree: true });
     root.addEventListener('input', schedule);
     window.addEventListener('resize', schedule);
     schedule();
+
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
