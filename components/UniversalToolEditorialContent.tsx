@@ -3,7 +3,6 @@ import {
   ArrowRight,
   BarChart3,
   CheckCircle2,
-  Code2,
   Crop,
   Eye,
   FileOutput,
@@ -90,9 +89,21 @@ function naturalList(values: readonly string[]) {
   return `${values.slice(0, -1).join(', ')}, and ${values.at(-1)}`;
 }
 
+function choiceList(values: readonly string[]) {
+  if (!values.length) return 'file';
+  if (values.length === 1) return values[0];
+  if (values.length === 2) return `${values[0]} or ${values[1]}`;
+  return `${values.slice(0, -1).join(', ')}, or ${values.at(-1)}`;
+}
+
 function sentenceIntent(value: string) {
   const text = value.trim().replace(/[.!]+$/, '');
   return text ? `${text.charAt(0).toLowerCase()}${text.slice(1)}` : 'finish the task';
+}
+
+function titleIntent(value: string) {
+  const text = value.trim().replace(/[.!]+$/, '');
+  return text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : 'Finish the Task Online';
 }
 
 function routeText(tool: PlatformToolDefinition) {
@@ -144,9 +155,75 @@ function actionIcon(mode: VisualMode) {
   return Workflow;
 }
 
-function summaryItems(tool: PlatformToolDefinition, inputLabel: string, outputLabel: string) {
-  const input = readableType(inputLabel);
-  const output = readableType(outputLabel);
+function formatPhrase(values: readonly string[]) {
+  const readable = values.map(readableType);
+  return choiceList(readable);
+}
+
+function introHeading(tool: PlatformToolDefinition, inputTypes: readonly string[], outputTypes: readonly string[]) {
+  const input = formatPhrase(inputTypes.length ? inputTypes : ['FILE']);
+  const output = formatPhrase(outputTypes.length ? outputTypes : ['RESULT']);
+  const mode = visualMode(tool);
+
+  if (tool.kind === 'converter') {
+    const converterName = /converter$/i.test(tool.name) ? tool.name : `${tool.name} Converter`;
+    return `Free ${converterName}: Convert ${input} to ${output}`;
+  }
+  if (tool.kind === 'editor') return `Free ${tool.name}: Edit ${input} Online`;
+  if (tool.kind === 'viewer') return `Free ${tool.name}: View ${input} Online`;
+  if (tool.kind === 'creator') return `Free ${tool.name}: Create ${output} Online`;
+  if (mode === 'merge') return `Free ${tool.name}: Combine ${input} Files Online`;
+  if (mode === 'split') return `Free ${tool.name}: Split ${input} Files Online`;
+  if (mode === 'compress') return `Free ${tool.name}: Reduce ${input} File Size Online`;
+  if (mode === 'ocr') return `Free ${tool.name}: Extract Text Online`;
+  if (mode === 'security') return `Free ${tool.name}: Protect ${input} Online`;
+  if (mode === 'unlock') return `Free ${tool.name}: Remove File Protection Online`;
+  return `Free Online ${tool.name}: ${titleIntent(tool.primaryIntent)}`;
+}
+
+function normalizeKeywordText(value: string) {
+  return value
+    .trim()
+    .replace(/\b(pdf|docx|doc|jpg|jpeg|png|html|rtf|txt|xlsx|xls|csv|pptx|ppt|odt|epub|ocr)\b/gi, (match) => match.toUpperCase())
+    .replace(/\s+/g, ' ');
+}
+
+function keywordTask(value: string) {
+  const term = normalizeKeywordText(value)
+    .replace(/^free\s+/i, '')
+    .replace(/^online\s+/i, '')
+    .replace(/\s+online$/i, '')
+    .replace(/\s+converter$/i, '')
+    .trim();
+
+  let match = term.match(/^convert\s+(.+?)\s+to\s+(.+)$/i);
+  if (match) return `converting ${match[1]} to ${match[2]}`;
+  match = term.match(/^(.+?)\s+to\s+(.+)$/i);
+  if (match) return `converting ${match[1]} to ${match[2]}`;
+  match = term.match(/^edit\s+(.+)$/i);
+  if (match) return `editing ${match[1]}`;
+  match = term.match(/^merge\s+(.+)$/i);
+  if (match) return `merging ${match[1]}`;
+  match = term.match(/^split\s+(.+)$/i);
+  if (match) return `splitting ${match[1]}`;
+  match = term.match(/^compress\s+(.+)$/i);
+  if (match) return `compressing ${match[1]}`;
+  match = term.match(/^view\s+(.+)$/i);
+  if (match) return `viewing ${match[1]}`;
+  match = term.match(/^create\s+(.+)$/i);
+  if (match) return `creating ${match[1]}`;
+  return '';
+}
+
+function keywordContext(tool: PlatformToolDefinition) {
+  const tasks = unique(tool.secondaryKeywords.map(keywordTask).filter(Boolean)).slice(0, 3);
+  if (!tasks.length) return '';
+  return ` It is also useful for ${naturalList(tasks)} when you want the same task handled in one straightforward browser workflow.`;
+}
+
+function summaryItems(tool: PlatformToolDefinition, inputTypes: readonly string[], outputTypes: readonly string[]) {
+  const input = formatPhrase(inputTypes.length ? inputTypes : ['FILE']);
+  const output = formatPhrase(outputTypes.length ? outputTypes : ['RESULT']);
   if (tool.kind === 'converter') return [
     `Free ${tool.name} tool`,
     `Simple ${input} to ${output} workflow`,
@@ -179,13 +256,6 @@ function summaryItems(tool: PlatformToolDefinition, inputLabel: string, outputLa
   ];
 }
 
-function searchIntentCopy(tool: PlatformToolDefinition) {
-  const terms = unique(tool.secondaryKeywords.map((value) => value.trim()).filter(Boolean)).slice(0, 5);
-  if (!terms.length) return '';
-  const quoted = terms.map((term) => `“${term}”`);
-  return `Related searches such as ${naturalList(quoted)} describe closely connected versions of the same task, so DOC321 keeps them on one focused page instead of creating duplicate tools.`;
-}
-
 function generatedEditorial(tool: PlatformToolDefinition, inputLabel: string, outputLabel: string): Detail[] {
   const input = readableType(inputLabel);
   const output = readableType(outputLabel);
@@ -195,14 +265,14 @@ function generatedEditorial(tool: PlatformToolDefinition, inputLabel: string, ou
   if (tool.kind === 'converter') return [
     {
       title: `${tool.name} With DOC321`,
-      text: `${tool.name} is for the moment when you already have ${input} but the next app, person, upload form, website, or workflow needs ${output}. DOC321 keeps the conversion focused on that format change so you can ${intent} without rebuilding the source by hand.`,
+      text: `${tool.name} is useful when you already have ${input} but the next app, person, upload form, website, or workflow needs ${output}. DOC321 keeps the conversion focused on that format change so you can ${intent} without rebuilding the source by hand.`,
     },
     {
       title: `Move Existing ${input} Content Into ${output}`,
       text: `If the source file already contains the content you need, converting it is usually faster than recreating the same material from the beginning. Upload the ${input}, run the conversion, then review the ${output} result before you use it elsewhere.`,
     },
     {
-      title: `Finish the Format Change Without Extra Software`,
+      title: 'Finish the Format Change Without Extra Software',
       text: `Use the browser workflow when the job is simply to get from ${input} to ${output}. The page keeps the upload, conversion, result, guidance, and nearby next-step tools together so the task stays easy to understand.`,
     },
   ];
@@ -227,7 +297,7 @@ function generatedEditorial(tool: PlatformToolDefinition, inputLabel: string, ou
 
   if (tool.kind === 'editor') return [
     { title: `Edit ${input} Without a Full Desktop Workflow`, text: `${tool.name} keeps the document and the controls together in the browser so you can ${intent}. That is useful for corrections, quick updates, shared computers, and one-off edits.` },
-    { title: 'Focus on the Change You Came to Make', text: 'A smaller tool is easier when you do not need a complete office suite. Open the file, make the necessary change, review it, and save the result.' },
+    { title: 'Focus on the Change You Came to Make', text: 'A focused tool is easier when you do not need a complete office suite. Open the file, make the necessary change, review it, and save the result.' },
     { title: 'Review Important Formatting Before Saving', text: 'For documents with tables, fonts, images, page breaks, annotations, or other layout details, quickly check the areas that matter before you use the edited file.' },
   ];
 
@@ -285,20 +355,13 @@ function faqItems(tool: PlatformToolDefinition, supplied: readonly Faq[], inputL
   const extras: Faq[] = [
     {
       question: `What does ${tool.name} do?`,
-      answer: `${tool.name} is designed to ${sentenceIntent(tool.primaryIntent)}. The page keeps that single task, the supported ${input} input, and the ${output} result together in one browser workflow.`,
+      answer: `${tool.name} is designed to ${sentenceIntent(tool.primaryIntent)}. The page keeps that task, the supported ${input} input, and the ${output} result together in one browser workflow.`,
     },
     {
-      question: `Can I use ${tool.name} online?`,
-      answer: `Yes. DOC321 provides ${tool.name} as an online browser tool so you can start the supported workflow from the page without installing a separate desktop application.`,
+      question: `Can I use ${tool.name} online for free?`,
+      answer: `Yes. DOC321 provides ${tool.name} as a free online browser tool so you can start the supported workflow from the page without installing a separate desktop application.`,
     },
   ];
-  const remainingKeywords = unique(tool.secondaryKeywords.map((value) => value.trim()).filter(Boolean)).slice(3, 5);
-  if (remainingKeywords.length) {
-    extras.push({
-      question: `Does this tool cover related ${tool.name.toLowerCase()} searches?`,
-      answer: `Yes. Closely related phrases such as ${naturalList(remainingKeywords.map((term) => `“${term}”`))} describe the same or a very similar user goal, so they belong on this page rather than on duplicate versions of the tool.`,
-    });
-  }
   extras.forEach((item) => {
     if (!items.some((existing) => existing.question.toLowerCase() === item.question.toLowerCase())) items.push(item);
   });
@@ -306,29 +369,35 @@ function faqItems(tool: PlatformToolDefinition, supplied: readonly Faq[], inputL
 }
 
 function relatedGroups(tool: PlatformToolDefinition) {
-  const related = allLivePlatformTools
+  const candidates = allLivePlatformTools
     .filter((item) => item.route !== tool.route)
-    .sort((left, right) => relatedToolScore(tool, right) - relatedToolScore(tool, left) || left.name.localeCompare(right.name))
-    .slice(0, 16);
+    .sort((left, right) => relatedToolScore(tool, right) - relatedToolScore(tool, left) || left.name.localeCompare(right.name));
+
+  const used = new Set<string>();
+  const take = (predicate: (item: PlatformToolDefinition) => boolean, count: number) => {
+    const items: PlatformToolDefinition[] = [];
+    for (const item of candidates) {
+      if (items.length >= count) break;
+      if (used.has(item.route) || !predicate(item)) continue;
+      used.add(item.route);
+      items.push(item);
+    }
+    return items;
+  };
 
   const groups: Array<{ title: string; items: PlatformToolDefinition[] }> = [
-    { title: 'Same file family', items: [] },
-    { title: 'Convert', items: [] },
-    { title: 'Edit & organize', items: [] },
-    { title: 'More document tools', items: [] },
+    { title: 'Related tools', items: take(() => true, 4) },
+    { title: 'Convert', items: take((item) => item.kind === 'converter', 4) },
+    { title: 'Edit & organize', items: take((item) => ['editor', 'pdf', 'viewer', 'ocr'].includes(item.kind), 4) },
+    { title: 'More document tools', items: take(() => true, 4) },
   ];
 
-  related.forEach((item) => {
-    if (item.cluster === tool.cluster || item.input.some((type) => tool.input.includes(type)) || item.output.some((type) => tool.output.includes(type))) groups[0].items.push(item);
-    else if (item.kind === 'converter') groups[1].items.push(item);
-    else if (['editor', 'pdf', 'viewer', 'ocr'].includes(item.kind)) groups[2].items.push(item);
-    else groups[3].items.push(item);
+  groups.forEach((group) => {
+    if (group.items.length >= 4) return;
+    group.items.push(...take(() => true, 4 - group.items.length));
   });
 
-  const seen = new Set<string>();
-  return groups
-    .map((group) => ({ ...group, items: group.items.filter((item) => !seen.has(item.route) && seen.add(item.route)).slice(0, 5) }))
-    .filter((group) => group.items.length);
+  return groups.filter((group) => group.items.length);
 }
 
 function ToolScene({ tool, mode, inputLabel, outputLabel }: { tool: PlatformToolDefinition; mode: VisualMode; inputLabel: string; outputLabel: string }) {
@@ -409,13 +478,14 @@ export function UniversalToolEditorialContent({
   const outputLabel = outputTypes[0] ?? 'RESULT';
   const mode = visualMode(tool);
   const sections = [...details, ...generatedEditorial(tool, inputLabel, outputLabel)].slice(0, 3);
-  const bullets = summaryItems(tool, inputLabel, outputLabel);
+  const bullets = summaryItems(tool, inputTypes, outputTypes);
   const benefitItems = benefits(tool, inputLabel, outputLabel);
   const faqList = faqItems(tool, faq, inputLabel, outputLabel);
   const groups = relatedGroups(tool);
-  const searchCopy = searchIntentCopy(tool);
   const input = readableType(inputLabel);
   const output = readableType(outputLabel);
+  const heading = introHeading(tool, inputTypes, outputTypes);
+  const naturalKeywordCopy = keywordContext(tool);
 
   return (
     <div className={styles.content}>
@@ -429,9 +499,8 @@ export function UniversalToolEditorialContent({
       </section>
 
       <section className={styles.intro} aria-labelledby={`${tool.id}-intro`}>
-        <h2 id={`${tool.id}-intro`}>Free Online {tool.name}</h2>
-        <p>{tool.description}</p>
-        {searchCopy ? <p className={styles.intentTerms}>{searchCopy}</p> : null}
+        <h2 id={`${tool.id}-intro`}>{heading}</h2>
+        <p>{tool.description}{naturalKeywordCopy}</p>
       </section>
 
       {sections.map((section, index) => (
