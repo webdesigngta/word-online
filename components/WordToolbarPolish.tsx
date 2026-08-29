@@ -306,6 +306,20 @@ export function WordToolbarPolish() {
         background-size: 12px 12px !important;
         padding-right: 23px !important;
       }
+      .fwo-font-caret,
+      .fwo-style-caret {
+        box-sizing: border-box;
+        width: 6px !important;
+        height: 6px !important;
+        margin: -3px 2px 0 3px !important;
+        border-right: 1.4px solid #5f6368 !important;
+        border-bottom: 1.4px solid #5f6368 !important;
+        color: transparent !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        transform: rotate(45deg);
+        flex: 0 0 6px !important;
+      }
 
       .docs-toolbar-mode-group .docs-toolbar-combo[data-fwo-single-trigger='true'] {
         min-width: 92px;
@@ -332,16 +346,19 @@ export function WordToolbarPolish() {
         transition: background-color .12s ease;
       }
       .docs-color-tool:hover { background: #e2e7ec !important; }
+      .docs-color-tool .material-symbols-rounded,
       .docs-color-tool .material-symbols-outlined,
       .docs-color-tool .material-icons {
         position: relative;
         z-index: 1;
         font-size: 20px !important;
       }
+      .docs-color-tool:not(.highlight) .material-symbols-rounded,
       .docs-color-tool:not(.highlight) .material-symbols-outlined,
       .docs-color-tool:not(.highlight) .material-icons {
         color: var(--fwo-selected-color) !important;
       }
+      .docs-color-tool.highlight .material-symbols-rounded,
       .docs-color-tool.highlight .material-symbols-outlined,
       .docs-color-tool.highlight .material-icons {
         color: #3c4043 !important;
