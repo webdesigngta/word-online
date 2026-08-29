@@ -6,7 +6,7 @@
   margin:0;
   color:#171717;
   text-align:center;
-  font-size:36px;
+  font-size:37px;
   font-weight:800;
   line-height:1.15;
   letter-spacing:-.035em;
@@ -16,8 +16,8 @@
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
   column-gap:72px;
-  row-gap:54px;
-  margin-top:52px;
+  row-gap:56px;
+  margin-top:54px;
 }
 
 .item{
@@ -27,13 +27,13 @@
 .itemHead{
   display:flex;
   align-items:center;
-  gap:11px;
+  gap:12px;
 }
 
 .icon{
   flex:0 0 auto;
-  width:29px;
-  height:29px;
+  width:31px;
+  height:31px;
   display:grid;
   place-items:center;
   border-radius:8px;
@@ -48,32 +48,32 @@
 .item:nth-child(6) .icon{background:#eff6ff;color:#1d4ed8;}
 
 .icon svg{
-  width:17px;
-  height:17px;
+  width:18px;
+  height:18px;
   stroke-width:2;
 }
 
 .item h3{
   margin:0;
   color:#202124;
-  font-size:18px;
+  font-size:19px;
   font-weight:800;
   line-height:1.28;
   letter-spacing:-.018em;
 }
 
 .item p{
-  margin:10px 0 0;
-  max-width:570px;
-  color:#3f4650;
-  font-size:15px;
+  margin:11px 0 0;
+  max-width:580px;
+  color:#39424e;
+  font-size:16.5px;
   line-height:1.72;
 }
 
 @media(max-width:900px){
   .grid{
     column-gap:44px;
-    row-gap:42px;
+    row-gap:44px;
   }
 }
 
@@ -83,30 +83,31 @@
   }
 
   .section > h2{
-    font-size:29px;
+    font-size:30px;
   }
 
   .grid{
     grid-template-columns:1fr;
-    row-gap:32px;
-    margin-top:38px;
+    row-gap:34px;
+    margin-top:40px;
   }
 
   .item p{
     max-width:none;
+    font-size:16px;
   }
 }
 
 @media(max-width:460px){
   .section > h2{
-    font-size:27px;
+    font-size:28px;
   }
 
   .item h3{
-    font-size:17px;
+    font-size:18px;
   }
 
   .item p{
-    font-size:14.5px;
+    font-size:15.5px;
   }
 }
