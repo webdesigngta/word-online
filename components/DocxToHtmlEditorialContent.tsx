@@ -200,11 +200,15 @@ function RelatedDirectory({ tools }: { tools: readonly RelatedTool[] }) {
 export function DocxToHtmlEditorialContent() {
   const current = getAllPlatformToolByRoute('/docx-to-html');
   const relatedTools = current
-    ? allLivePlatformTools
-      .filter((item) => item.route !== current.route)
-      .filter((item) => /docx|html|word/i.test(`${item.name} ${item.input.join(' ')} ${item.output.join(' ')}`))
-      .sort((left, right) => relatedToolScore(current, right) - relatedToolScore(current, left) || left.name.localeCompare(right.name))
-      .slice(0, 16)
+    ? (() => {
+      const ranked = allLivePlatformTools
+        .filter((item) => item.route !== current.route)
+        .sort((left, right) => relatedToolScore(current, right) - relatedToolScore(current, left) || left.name.localeCompare(right.name));
+      const preferred = ranked.filter((item) => /docx|html|word/i.test(`${item.name} ${item.input.join(' ')} ${item.output.join(' ')}`));
+      const preferredRoutes = new Set(preferred.map((item) => item.route));
+      const fallback = ranked.filter((item) => !preferredRoutes.has(item.route));
+      return [...preferred, ...fallback].slice(0, 16);
+    })()
     : [];
 
   const summaryItems = [
@@ -261,7 +265,7 @@ export function DocxToHtmlEditorialContent() {
       </section>
 
       <section className={`${styles.intro} ${introStyles.introCentered} ${introStyles.titleIntro}`} aria-labelledby="docx-html-intro-title">
-        <h2 id="docx-html-intro-title">Free Online DOCX to HTML Converter</h2>
+        <h2 id="docx-html-intro-title">Free DOCX to HTML Converter: Convert DOCX to HTML</h2>
         <div className={`${styles.introBody} ${introStyles.titleIntroBody}`}>
           <p>Need to convert a Word document to HTML? Upload your DOCX file to DOC321 and generate an HTML version in a few simple steps, ready for your next web, editing, or document task.</p>
         </div>
