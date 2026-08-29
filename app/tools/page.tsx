@@ -44,64 +44,79 @@ export default function ToolsPage() {
             position:relative;
             isolation:isolate;
             overflow:hidden;
-            padding:22px 20px 46px;
-            background-image:
-              url('/home-hero-vectors.svg'),
-              radial-gradient(circle at 12% 8%,rgba(0,180,252,.13),transparent 28%),
-              radial-gradient(circle at 88% 10%,rgba(154,1,250,.10),transparent 28%),
-              radial-gradient(circle at 58% 96%,rgba(255,114,0,.07),transparent 26%),
-              linear-gradient(180deg,#FBFDFF 0%,#FFFFFF 100%);
-            background-repeat:no-repeat;
-            background-position:center top,center,center,center,center;
-            background-size:min(1440px,100%) auto,auto,auto,auto,auto;
-            border-bottom:1px solid rgba(1,24,85,.06);
+            padding:22px 20px 52px;
+            background:
+              radial-gradient(circle at 14% 32%,rgba(0,167,232,.13),transparent 25%),
+              radial-gradient(circle at 86% 18%,rgba(124,53,242,.10),transparent 23%),
+              linear-gradient(135deg,#F4FBFF 0%,#F9F7FF 48%,#FFF9F3 100%);
+            border-bottom:1px solid rgba(1,24,85,.07);
+          }
+          .tools-page-top:before{
+            content:'';
+            position:absolute;
+            width:420px;
+            height:180px;
+            left:-125px;
+            bottom:-105px;
+            border:1px solid rgba(0,108,253,.08);
+            border-radius:80px;
+            background:rgba(255,255,255,.34);
+            transform:rotate(-11deg);
+            z-index:-1;
+          }
+          .tools-page-top:after{
+            content:'';
+            position:absolute;
+            width:260px;
+            height:260px;
+            right:-95px;
+            top:-125px;
+            border-radius:50%;
+            border:38px solid rgba(154,1,250,.035);
+            z-index:-1;
           }
           .tools-page-wrap{width:min(1200px,100%);margin:0 auto}
-          .tools-page-hero{max-width:900px;margin:58px auto 24px;text-align:center}
+          .tools-page-hero{max-width:1040px;margin:54px auto 18px;text-align:center}
           .tools-page-kicker{
             display:inline-flex;
             align-items:center;
-            min-height:32px;
-            padding:0 12px;
-            margin:0 0 16px;
-            border:1px solid rgba(0,108,253,.17);
+            min-height:34px;
+            padding:0 13px;
+            margin:0 0 18px;
+            border:1px solid rgba(0,108,253,.14);
             border-radius:999px;
-            background:rgba(255,255,255,.84);
+            background:rgba(255,255,255,.78);
             color:#1643A7;
-            box-shadow:0 8px 24px rgba(0,83,215,.06);
-            backdrop-filter:blur(8px);
+            box-shadow:0 8px 22px rgba(0,83,215,.05);
             font-size:12px;
             font-weight:800;
             letter-spacing:.075em;
             text-transform:uppercase;
           }
           .tools-page-hero h1{
-            max-width:830px;
+            max-width:1030px;
             margin:0 auto;
             color:var(--doc-navy);
-            font-size:clamp(46px,5.6vw,68px);
-            line-height:1;
-            letter-spacing:-.052em;
+            font-size:clamp(42px,5vw,64px);
+            line-height:1.03;
+            letter-spacing:-.048em;
             text-wrap:balance;
           }
           .tools-page-hero p{
-            max-width:740px;
-            margin:18px auto 0;
-            color:var(--doc-muted);
+            max-width:760px;
+            margin:20px auto 0;
+            color:#59677F;
             font-size:19px;
-            line-height:1.58;
+            line-height:1.62;
             text-wrap:balance;
           }
-          .tools-page-hero strong{color:#29395F}
+          .tools-page-hero strong{color:#233766}
           .tools-page-directory{
-            padding:38px 20px 86px;
-            background:
-              radial-gradient(circle at 0 14%,rgba(0,180,252,.055),transparent 20%),
-              radial-gradient(circle at 100% 72%,rgba(154,1,250,.045),transparent 22%),
-              #fff;
+            padding:42px 20px 88px;
+            background:#fff;
           }
           .tools-page-assurance{
-            margin:4px 0 0;
+            margin:0;
             padding:0 20px 86px;
             background:#fff;
           }
@@ -110,7 +125,7 @@ export default function ToolsPage() {
             overflow:hidden;
             width:min(1200px,100%);
             margin:0 auto;
-            padding:30px;
+            padding:32px;
             border:1px solid var(--doc-line);
             border-radius:22px;
             background:var(--doc-soft-gradient);
@@ -126,42 +141,44 @@ export default function ToolsPage() {
             border-radius:50%;
             background:linear-gradient(135deg,rgba(0,180,252,.16),rgba(154,1,250,.10));
           }
-          .tools-assurance-head{position:relative;z-index:1;text-align:center;margin-bottom:22px}
-          .tools-assurance-head h2{margin:0;color:var(--doc-navy);font-size:clamp(27px,3vw,36px);letter-spacing:-.035em}
-          .tools-assurance-head p{margin:8px auto 0;max-width:670px;color:var(--doc-muted);font-size:15px;line-height:1.55}
+          .tools-assurance-head{position:relative;z-index:1;text-align:center;margin-bottom:24px}
+          .tools-assurance-head h2{margin:0;color:var(--doc-navy);font-size:clamp(28px,3vw,37px);letter-spacing:-.035em}
+          .tools-assurance-head p{margin:9px auto 0;max-width:700px;color:#60708A;font-size:16px;line-height:1.6}
           .tools-assurance-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
           .tools-assurance-item{
             min-width:0;
-            min-height:94px;
-            padding:13px 12px;
+            min-height:100px;
+            padding:14px 12px;
             border:1px solid rgba(1,24,85,.08);
             border-radius:15px;
-            background:rgba(255,255,255,.82);
+            background:rgba(255,255,255,.84);
             box-shadow:0 6px 18px rgba(1,24,85,.035);
             text-align:center;
           }
-          .tools-assurance-icon{width:34px;height:34px;display:grid;place-items:center;margin:0 auto 9px;border-radius:10px;background:#EDF7FF;color:var(--doc-blue)}
+          .tools-assurance-icon{width:36px;height:36px;display:grid;place-items:center;margin:0 auto 9px;border-radius:10px;background:#EDF7FF;color:var(--doc-blue)}
           .tools-assurance-item:nth-child(2) .tools-assurance-icon{background:#F5EEFF;color:var(--doc-purple)}
           .tools-assurance-item:nth-child(3) .tools-assurance-icon{background:#FFF3E7;color:#E86500}
           .tools-assurance-item:nth-child(4) .tools-assurance-icon{background:#EAFBFF;color:#008ECB}
           .tools-assurance-item:nth-child(5) .tools-assurance-icon{background:#F3F1FF;color:#6E32E8}
           .tools-assurance-item:nth-child(6) .tools-assurance-icon{background:#EEF6FF;color:#005FE8}
-          .tools-assurance-item strong{display:block;color:#17244A;font-size:13px;line-height:1.25}
-          .tools-assurance-item small{display:block;margin-top:3px;color:#758096;font-size:11px;line-height:1.3}
+          .tools-assurance-item strong{display:block;color:#17244A;font-size:14px;line-height:1.3}
+          .tools-assurance-item small{display:block;margin-top:4px;color:#66748D;font-size:12px;line-height:1.35}
           @media(max-width:980px){
             .tools-assurance-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
           }
           @media(max-width:680px){
-            .tools-page-top{padding:18px 12px 34px;background-image:radial-gradient(circle at 12% 8%,rgba(0,180,252,.11),transparent 28%),radial-gradient(circle at 88% 10%,rgba(154,1,250,.08),transparent 28%),linear-gradient(180deg,#FBFDFF 0%,#FFFFFF 100%)}
-            .tools-page-hero{margin:38px auto 18px}
-            .tools-page-kicker{font-size:10px;min-height:29px;margin-bottom:13px}
-            .tools-page-hero h1{font-size:clamp(40px,11vw,52px)}
-            .tools-page-hero p{font-size:16px;line-height:1.55}
-            .tools-page-directory{padding:26px 12px 62px}
+            .tools-page-top{padding:18px 12px 38px}
+            .tools-page-top:before{width:280px;height:120px;left:-120px;bottom:-72px}
+            .tools-page-top:after{width:190px;height:190px;right:-92px;top:-96px;border-width:30px}
+            .tools-page-hero{margin:36px auto 16px}
+            .tools-page-kicker{font-size:10px;min-height:30px;margin-bottom:14px}
+            .tools-page-hero h1{font-size:clamp(36px,10.2vw,48px);line-height:1.06}
+            .tools-page-hero p{font-size:17px;line-height:1.58}
+            .tools-page-directory{padding:28px 12px 64px}
             .tools-page-assurance{padding:0 12px 62px}
             .tools-assurance-card{padding:24px 14px;border-radius:18px}
             .tools-assurance-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-            .tools-assurance-item{min-height:88px;padding:11px 8px}
+            .tools-assurance-item{min-height:92px;padding:12px 8px}
           }
         `}</style>
 
@@ -170,8 +187,8 @@ export default function ToolsPage() {
             <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools' }]} />
             <div className="tools-page-hero">
               <span className="tools-page-kicker">All {allLivePlatformTools.length} live document tools</span>
-              <h1>Every document tool. One easy place.</h1>
-              <p>Search or browse every DOC321 tool for PDF, Word, spreadsheets, presentations, images, OCR, text and more. <strong>No sign-up. No ads. No limits.</strong></p>
+              <h1>100% Free PDF, Word &amp; OCR Tools: Fast, Private &amp; Unlimited</h1>
+              <p>Find the tool you need, finish the task, and download the result. PDF, Word, OCR, image, spreadsheet and document utilities are all here. <strong>No sign-up. No ads. No limits.</strong></p>
             </div>
           </div>
         </section>
@@ -191,7 +208,7 @@ export default function ToolsPage() {
             <div className="tools-assurance-grid">
               {assurances.map(({ title, detail, Icon }) => (
                 <div className="tools-assurance-item" key={title}>
-                  <span className="tools-assurance-icon"><Icon size={17} aria-hidden="true" /></span>
+                  <span className="tools-assurance-icon"><Icon size={18} aria-hidden="true" /></span>
                   <strong>{title}</strong>
                   <small>{detail}</small>
                 </div>
