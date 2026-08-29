@@ -9,9 +9,10 @@ import {
 } from '@/components/DocxToHtmlEditorialContent';
 
 const tool = getWordInterface('docx-to-html');
-const description = 'Convert DOCX to HTML online for free with DOC321. Upload a Word document and turn its content into HTML using a simple online converter.';
+const seoTitle = 'Free Online DOCX to HTML Converter';
+const description = 'Free online DOCX to HTML converter from DOC321. Upload a Word document and convert its content into HTML quickly with a simple browser-based tool.';
 
-export const metadata = pageMetadata({ title: tool.title, description, path: tool.route });
+export const metadata = pageMetadata({ title: seoTitle, description, path: tool.route });
 
 export default function Page() {
   return (
