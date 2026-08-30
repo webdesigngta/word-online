@@ -16,7 +16,6 @@ import { LegacyDocDownload } from '@/components/LegacyDocDownload';
 import { LocalUndoManager } from '@/components/LocalUndoManager';
 import { LocalVersionHistory } from '@/components/LocalVersionHistory';
 import { NoLoginToolbarFeatures } from '@/components/NoLoginToolbarFeatures';
-import { PageBreakKeyboardPolish } from '@/components/PageBreakKeyboardPolish';
 import { PageStructureFeatures } from '@/components/PageStructureFeatures';
 import { RemoveLegacyDesign } from '@/components/RemoveLegacyDesign';
 import { RemoveQuickActionRow } from '@/components/RemoveQuickActionRow';
@@ -63,7 +62,6 @@ export function WordEditorClientRuntime({
       <LocalVersionHistory />
       <VersionHistoryToolbarButton />
       <PageStructureFeatures />
-      <PageBreakKeyboardPolish />
       {intentPrompt ? <EditorIntentPrompt mode={intentPrompt} /> : null}
       <ResponsiveDropdownStyles />
       <DelayedTooltips />
