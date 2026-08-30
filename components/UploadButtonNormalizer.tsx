@@ -12,10 +12,12 @@ const dropSurfaceSelector = [
   '.fwo-single-drop',
   '.fwo-merge-picker',
   '.fwo-viewer-empty',
+  '.document-viewer-empty',
   '.fwo-split-picker',
   '.fwo-compare-picker',
   '.fwo-image-picker',
   '.fwo-info-picker',
+  '.rr-empty',
   '.swt-drop',
   '.iwt-drop',
   '.pdf-tool-input',
@@ -66,21 +68,57 @@ function isAssociatedFileLabel(root: Element, element: HTMLElement) {
   return target?.type === 'file';
 }
 
-function markDropSurfaces(root: Element) {
-  const surfaces = Array.from(root.querySelectorAll<HTMLElement>(dropSurfaceSelector));
-  if (!surfaces.length && root.querySelector('input[type="file"]')) {
-    (root as HTMLElement).setAttribute('data-uniform-dropzone', 'true');
-    return;
-  }
-  surfaces.forEach((surface) => surface.setAttribute('data-uniform-dropzone', 'true'));
-}
-
 function buildUploadIcon() {
   const icon = document.createElement('span');
   icon.className = 'uniform-upload-icon';
   icon.setAttribute('aria-hidden', 'true');
   icon.innerHTML = '<svg class="uniform-upload-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14a2 2 0 0 0 2-2v-3"/><path d="M3 15v3a2 2 0 0 0 2 2"/></svg>';
   return icon;
+}
+
+function normalizeStandaloneEmptyPicker(surface: HTMLElement) {
+  if (!(surface instanceof HTMLButtonElement)) return;
+  if (!surface.matches('.document-viewer-empty,.rr-empty')) return;
+
+  surface.setAttribute('data-uniform-empty-picker', 'true');
+  surface.setAttribute('aria-label', 'Choose Files');
+
+  if (surface.matches('.rr-empty')) {
+    const strong = surface.querySelector<HTMLElement>(':scope > strong');
+    const hint = surface.querySelector<HTMLElement>(':scope > span:not(.uniform-upload-icon)');
+    if (strong) strong.textContent = 'Choose Files';
+    if (hint) hint.textContent = 'or drag & drop files here';
+    if (!surface.querySelector(':scope > .uniform-upload-icon')) surface.prepend(buildUploadIcon());
+    return;
+  }
+
+  const inner = surface.querySelector<HTMLElement>(':scope > div');
+  if (!inner) return;
+  const strong = inner.querySelector<HTMLElement>(':scope > strong');
+  const hint = Array.from(inner.children).find((child) => child instanceof HTMLElement && child.tagName === 'DIV') as HTMLElement | undefined;
+  if (strong) strong.textContent = 'Choose Files';
+  if (hint) hint.textContent = 'or drag & drop files here';
+  if (!inner.querySelector(':scope > .uniform-upload-icon')) inner.prepend(buildUploadIcon());
+}
+
+function markDropSurfaces(root: Element) {
+  if (root instanceof HTMLElement) root.removeAttribute('data-uniform-dropzone');
+
+  const surfaces = Array.from(root.querySelectorAll<HTMLElement>(dropSurfaceSelector));
+  if (!surfaces.length && root.querySelector('input[type="file"]')) {
+    // The legacy DOC tools and the document viewer have a real empty-state upload
+    // surface while empty and compact file controls after a file has been loaded.
+    // Never turn the whole task card into a dropzone after that empty state disappears.
+    if (!root.querySelector('.rr-tool,.document-viewer-tool')) {
+      (root as HTMLElement).setAttribute('data-uniform-dropzone', 'true');
+    }
+    return;
+  }
+
+  surfaces.forEach((surface) => {
+    surface.setAttribute('data-uniform-dropzone', 'true');
+    normalizeStandaloneEmptyPicker(surface);
+  });
 }
 
 function ensureUploadMeta(root: Element, element: HTMLElement) {
@@ -112,22 +150,36 @@ function ensureUploadMeta(root: Element, element: HTMLElement) {
 }
 
 function shouldNormalizeTrigger(root: Element, element: HTMLElement) {
+  if (element.hasAttribute('data-uniform-empty-picker')) return false;
   const text = textOf(element);
   if (!text) return isAssociatedFileLabel(root, element);
   if (uploadText.test(text) || isAssociatedFileLabel(root, element)) return true;
 
   const dropzone = element.closest<HTMLElement>('[data-uniform-dropzone="true"]');
-  if (!dropzone || !dropzone.querySelector('input[type="file"]')) return false;
+  if (!dropzone || !root.querySelector('input[type="file"]')) return false;
   return explicitUploadAction.test(text) && !nonUploadAction.test(text) && text.length <= 64;
 }
 
 function markUploadTriggers(root: Element) {
+  root.querySelectorAll<HTMLElement>('[data-uniform-file-picker="true"]').forEach((element) => element.removeAttribute('data-uniform-file-picker'));
+  root.querySelectorAll<HTMLElement>('[data-uniform-redundant-picker="true"]').forEach((element) => element.removeAttribute('data-uniform-redundant-picker'));
+
   root.querySelectorAll<HTMLElement>('button,label,[role="button"],a').forEach((element) => {
     if (!shouldNormalizeTrigger(root, element)) return;
     element.setAttribute('data-uniform-file-picker', 'true');
     element.setAttribute('aria-label', 'Choose Files');
-    ensureUploadMeta(root, element);
+
+    // Only the large upload surface gets the DOC321 upload icon and drag/drop hint.
+    // Compact "open another" controls keep their native icon and do not gain a second hint.
+    if (element.closest('[data-uniform-dropzone="true"]')) ensureUploadMeta(root, element);
   });
+
+  const emptyPicker = root.querySelector<HTMLElement>('[data-uniform-empty-picker="true"]');
+  if (emptyPicker) {
+    root.querySelectorAll<HTMLElement>('[data-uniform-file-picker="true"]').forEach((element) => {
+      if (!emptyPicker.contains(element)) element.setAttribute('data-uniform-redundant-picker', 'true');
+    });
+  }
 }
 
 function normalizeHelperText(root: Element) {
@@ -230,5 +282,83 @@ export function UploadButtonNormalizer() {
     };
   }, []);
 
-  return null;
+  return (
+    <style jsx global>{`
+      .platform-task-page [data-uniform-redundant-picker="true"] {
+        display: none !important;
+      }
+
+      .platform-task-page [data-uniform-empty-picker="true"] {
+        width: 100% !important;
+        cursor: pointer !important;
+        align-content: center !important;
+        gap: 14px !important;
+        color: #0f172a !important;
+      }
+
+      .platform-task-page [data-uniform-empty-picker="true"] > div {
+        display: grid !important;
+        place-items: center !important;
+        gap: 14px !important;
+      }
+
+      .platform-task-page [data-uniform-empty-picker="true"] > svg,
+      .platform-task-page [data-uniform-empty-picker="true"] > div > svg {
+        display: none !important;
+      }
+
+      .platform-task-page [data-uniform-empty-picker="true"] .uniform-upload-icon {
+        width: 54px !important;
+        height: 54px !important;
+        border-radius: 16px !important;
+        display: grid !important;
+        place-items: center !important;
+        background: #eef4ff !important;
+        color: #2563eb !important;
+      }
+
+      .platform-task-page [data-uniform-empty-picker="true"] .uniform-upload-icon-svg {
+        width: 26px !important;
+        height: 26px !important;
+        display: block !important;
+      }
+
+      .platform-task-page [data-uniform-empty-picker="true"] strong {
+        min-width: 208px !important;
+        min-height: 56px !important;
+        padding: 0 28px !important;
+        border-radius: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #2563eb !important;
+        color: #fff !important;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, .20) !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        line-height: 1 !important;
+      }
+
+      .platform-task-page [data-uniform-empty-picker="true"]:hover strong {
+        transform: translateY(-1px);
+        box-shadow: 0 11px 26px rgba(37, 99, 235, .25) !important;
+      }
+
+      .platform-task-page [data-uniform-empty-picker="true"] > span:not(.uniform-upload-icon),
+      .platform-task-page [data-uniform-empty-picker="true"] > div > div:last-child {
+        color: #64748b !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        line-height: 1.5 !important;
+      }
+
+      @media (max-width: 640px) {
+        .platform-task-page [data-uniform-empty-picker="true"] strong {
+          min-width: 190px !important;
+          min-height: 54px !important;
+          padding: 0 22px !important;
+        }
+      }
+    `}</style>
+  );
 }
