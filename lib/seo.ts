@@ -47,8 +47,9 @@ function formatTypes(values: readonly string[]) {
   const ignored = new Set(['blank', 'preview', 'summary', 'statistics', 'clipboard', 'templates']);
   return values
     .map((value) => value.trim())
-    .filter((value, index, list) => value && !ignored.has(value.toLowerCase()) && list.indexOf(value) === index)
-    .map(readableType);
+    .filter((value) => value && !ignored.has(value.toLowerCase()))
+    .map(readableType)
+    .filter((value, index, list) => list.indexOf(value) === index);
 }
 
 function choiceList(values: readonly string[]) {
