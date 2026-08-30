@@ -10,7 +10,7 @@ export const metadata = pageMetadata({ title: tool.title, description: tool.desc
 
 const details = [
   { title: 'Open DOCX First', text: 'Start with the Word file you actually need to change. The DOCX-first workflow keeps the existing document at the center instead of sending you through a generic editor landing page.' },
-  { title: 'Make Practical Word Document Edits', text: 'Update text, headings, lists, tables, images, links, page breaks, headers, footers and other everyday document content directly in the browser editor.' },
+  { title: 'Make Practical Word Document Edits', text: 'Update text, headings, lists, tables, images, links, headers, footers and other everyday document content directly in the browser editor.' },
   { title: 'Download a New DOCX Copy', text: 'Review the edited document and export a new Word file when you are finished, keeping the original source separate.' },
 ];
 
