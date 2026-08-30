@@ -4,6 +4,12 @@ import { useEffect } from 'react';
 
 const PAGE_SELECTOR = ':scope > .fwo-page-sheet';
 
+type CaretSnapshot = {
+  node: Node;
+  offset: number;
+  textOffset: number | null;
+};
+
 function makePage(): HTMLDivElement {
   const page = document.createElement('div');
   page.className = 'fwo-page-sheet';
@@ -95,7 +101,7 @@ function fitTextAcrossPages(root: HTMLElement, startPage: HTMLDivElement, source
   return page;
 }
 
-function caretOffset(root: HTMLElement) {
+function caretTextOffset(root: HTMLElement) {
   const selection = window.getSelection();
   if (!selection?.rangeCount || !root.contains(selection.anchorNode)) return null;
   const range = document.createRange();
@@ -104,7 +110,20 @@ function caretOffset(root: HTMLElement) {
   return range.toString().length;
 }
 
-function restoreCaret(root: HTMLElement, offset: number | null) {
+function captureCaret(root: HTMLElement): CaretSnapshot | null {
+  const selection = window.getSelection();
+  if (!selection?.rangeCount) return null;
+  const range = selection.getRangeAt(0);
+  if (!root.contains(range.startContainer)) return null;
+
+  return {
+    node: range.startContainer,
+    offset: range.startOffset,
+    textOffset: caretTextOffset(root),
+  };
+}
+
+function restoreTextOffset(root: HTMLElement, offset: number | null) {
   if (offset === null) return;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let remaining = offset;
@@ -124,6 +143,30 @@ function restoreCaret(root: HTMLElement, offset: number | null) {
   }
 }
 
+function restoreCaret(root: HTMLElement, snapshot: CaretSnapshot | null) {
+  if (!snapshot) return;
+
+  // Normal editing moves the same paragraph/text nodes between A4 wrappers.
+  // Restoring against the original node preserves structurally distinct positions,
+  // including a newly created empty paragraph after pressing Enter.
+  if (root.contains(snapshot.node)) {
+    const maxOffset = snapshot.node.nodeType === Node.TEXT_NODE
+      ? snapshot.node.textContent?.length ?? 0
+      : snapshot.node.childNodes.length;
+    const range = document.createRange();
+    range.setStart(snapshot.node, Math.min(snapshot.offset, maxOffset));
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    return;
+  }
+
+  // Overflow splitting can replace a source node with clones. In that case,
+  // fall back to the previous text-offset behavior.
+  restoreTextOffset(root, snapshot.textOffset);
+}
+
 /** Turns the editable document into as many independently bounded A4 sheets as the content requires. */
 export function A4Pagination() {
   useEffect(() => {
@@ -139,7 +182,7 @@ export function A4Pagination() {
       observer.disconnect();
 
       try {
-        const caret = caretOffset(root);
+        const caret = captureCaret(root);
         const existingPages = Array.from(root.querySelectorAll<HTMLDivElement>(PAGE_SELECTOR));
         const nodes = existingPages.length
           ? existingPages.flatMap((page) => Array.from(page.childNodes))
