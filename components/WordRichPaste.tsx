@@ -55,7 +55,6 @@ const SAFE_STYLE_PROPERTIES = new Set([
   'text-decoration-color',
   'text-decoration-line',
   'text-decoration-style',
-  'text-indent',
   'vertical-align',
 ]);
 
@@ -200,53 +199,102 @@ function tableColumnCount(table: HTMLTableElement) {
   }, 0);
 }
 
-function unwrapSingleColumnTable(table: HTMLTableElement) {
-  const documentRef = table.ownerDocument;
-  const fragment = documentRef.createDocumentFragment();
+function cellHasMeaningfulContent(cell: HTMLTableCellElement) {
+  const text = (cell.textContent ?? '').replace(/\s+/g, ' ').trim();
+  return Boolean(text || cell.querySelector('img,hr,table'));
+}
+
+function tableLooksLikeRealData(table: HTMLTableElement, plainText: string) {
+  const columnCount = tableColumnCount(table);
+  if (columnCount < 2) return false;
+
+  const rows = Array.from(table.rows);
+  const hasTabbedClipboardText = /\t/.test(plainText);
+  const headerCells = table.querySelectorAll('th').length;
+  const denseRows = rows.filter((row) => Array.from(row.cells).filter(cellHasMeaningfulContent).length >= 2).length;
+
+  // Word, Excel, Google Docs and other document apps normally expose copied table
+  // cells as tab-separated plain text. Keep those as real tables. Also keep obvious
+  // semantic tables with multiple headers or multiple populated rows.
+  return hasTabbedClipboardText || headerCells >= 2 || denseRows >= 2;
+}
+
+function appendCellAsDocumentContent(fragment: DocumentFragment, cell: HTMLTableCellElement) {
+  if (!cellHasMeaningfulContent(cell)) return;
+
+  const hasBlockChild = Array.from(cell.children).some((child) => BLOCK_TAGS.has(child.tagName));
+  if (hasBlockChild) {
+    fragment.append(...Array.from(cell.childNodes));
+    return;
+  }
+
+  const paragraph = cell.ownerDocument.createElement('p');
+  while (cell.firstChild) paragraph.appendChild(cell.firstChild);
+  if (!paragraph.childNodes.length) paragraph.appendChild(cell.ownerDocument.createElement('br'));
+  fragment.appendChild(paragraph);
+}
+
+function unwrapLayoutTable(table: HTMLTableElement) {
+  const fragment = table.ownerDocument.createDocumentFragment();
 
   Array.from(table.rows).forEach((row) => {
-    const cell = row.cells[0];
-    if (!cell) return;
-
-    const hasBlockChild = Array.from(cell.children).some((child) => BLOCK_TAGS.has(child.tagName));
-    if (hasBlockChild) {
-      fragment.append(...Array.from(cell.childNodes));
-      return;
-    }
-
-    const paragraph = documentRef.createElement('p');
-    while (cell.firstChild) paragraph.appendChild(cell.firstChild);
-    if (!paragraph.childNodes.length) paragraph.appendChild(documentRef.createElement('br'));
-    fragment.appendChild(paragraph);
+    Array.from(row.cells).forEach((cell) => appendCellAsDocumentContent(fragment, cell));
   });
 
-  if (!fragment.childNodes.length) fragment.appendChild(documentRef.createElement('p'));
+  if (!fragment.childNodes.length) {
+    const paragraph = table.ownerDocument.createElement('p');
+    paragraph.appendChild(table.ownerDocument.createElement('br'));
+    fragment.appendChild(paragraph);
+  }
+
   table.replaceWith(fragment);
 }
 
-function normalizePastedTables(root: HTMLElement) {
-  Array.from(root.querySelectorAll<HTMLTableElement>('table')).forEach((table) => {
-    // Clipboard HTML from websites and chat apps often uses a one-cell table only
-    // for layout. In an editable document that table can collapse to a few pixels
-    // and make URLs/text wrap one or two characters per line. Convert those layout
-    // tables back to normal document paragraphs while keeping their inline content.
-    if (tableColumnCount(table) <= 1) {
-      unwrapSingleColumnTable(table);
+function normalizePastedTables(root: HTMLElement, plainText: string) {
+  // Work from the deepest table outward so nested clipboard layout is cleaned
+  // before its parent is evaluated.
+  Array.from(root.querySelectorAll<HTMLTableElement>('table')).reverse().forEach((table) => {
+    if (!tableLooksLikeRealData(table, plainText)) {
+      unwrapLayoutTable(table);
       return;
     }
 
-    // Real multi-column tables should use the document width rather than the
-    // source page's geometry. This prevents narrow/collapsed pasted columns.
     table.style.width = '100%';
     table.style.maxWidth = '100%';
     table.style.tableLayout = 'auto';
+
+    Array.from(table.rows).forEach((row) => {
+      Array.from(row.cells).forEach((cell) => {
+        cell.style.width = 'auto';
+        cell.style.minWidth = '0';
+        cell.style.maxWidth = '100%';
+      });
+    });
   });
 }
 
-function sanitizedClipboardHtml(html: string) {
+function normalizeLooseTopLevelContent(root: HTMLElement, plainText: string) {
+  const hasBlockChild = Array.from(root.children).some((child) => BLOCK_TAGS.has(child.tagName));
+  if (hasBlockChild || !/[\r\n]/.test(plainText)) return;
+
+  const paragraph = root.ownerDocument.createElement('p');
+  while (root.firstChild) paragraph.appendChild(root.firstChild);
+  root.appendChild(paragraph);
+}
+
+function normalizePastedBlocks(root: HTMLElement) {
+  root.querySelectorAll<HTMLElement>('p,h1,h2,h3,h4,h5,h6,blockquote,pre,ul,ol').forEach((element) => {
+    element.style.maxWidth = '100%';
+    element.style.minWidth = '0';
+  });
+}
+
+function sanitizedClipboardHtml(html: string, plainText: string) {
   const parsed = new DOMParser().parseFromString(html, 'text/html');
   Array.from(parsed.body.childNodes).forEach((node) => sanitizeNode(node));
-  normalizePastedTables(parsed.body);
+  normalizePastedTables(parsed.body, plainText);
+  normalizeLooseTopLevelContent(parsed.body, plainText);
+  normalizePastedBlocks(parsed.body);
 
   // Never allow copied layout dimensions to make the document wider/taller than
   // the DOC321 editing surface. Formatting survives; foreign page geometry does not.
@@ -271,7 +319,7 @@ function insertClipboardContent(editor: HTMLElement, html: string, text: string,
   if (plainText || !html.trim()) {
     document.execCommand('insertText', false, text);
   } else {
-    const clean = sanitizedClipboardHtml(html);
+    const clean = sanitizedClipboardHtml(html, text);
     if (clean.trim()) document.execCommand('insertHTML', false, clean);
     else document.execCommand('insertText', false, text);
   }
@@ -346,13 +394,23 @@ export function WordRichPaste() {
         overflow-wrap: anywhere;
       }
       .docs-editor-workspace .editor-page p,
+      .docs-editor-workspace .editor-page h1,
+      .docs-editor-workspace .editor-page h2,
+      .docs-editor-workspace .editor-page h3,
+      .docs-editor-workspace .editor-page h4,
+      .docs-editor-workspace .editor-page h5,
+      .docs-editor-workspace .editor-page h6,
       .docs-editor-workspace .editor-page li,
       .docs-editor-workspace .editor-page blockquote {
-        overflow-wrap: anywhere;
+        max-width: 100%;
+        min-width: 0;
+        overflow-wrap: break-word;
+        word-break: normal;
       }
       .docs-editor-workspace .editor-page td,
       .docs-editor-workspace .editor-page th {
         min-width: 0;
+        max-width: 100%;
         overflow-wrap: break-word;
         word-break: normal;
       }
