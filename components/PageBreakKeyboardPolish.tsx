@@ -114,21 +114,34 @@ export function PageBreakKeyboardPolish() {
 
   return (
     <style jsx global>{`
+      /* Google-Docs-like visual page break: a single quiet divider across the full sheet. */
       .editor-route .editor-page [data-fwo-page-break] {
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
         box-sizing: border-box;
-        width: 100%;
-        height: 30px;
-        margin: 18px 0 20px;
-        border: 0;
-        background: linear-gradient(to bottom, transparent 14px, #d5d9df 14px, #d5d9df 15px, transparent 15px);
+        width: calc(100% + (2 * var(--paper-padding)));
+        height: 48px;
+        margin: 26px calc(-1 * var(--paper-padding));
+        border-top: 1px solid #c9cdd3;
+        border-bottom: 1px solid #c9cdd3;
+        background: #f1f3f4;
         break-after: page;
         page-break-after: always;
         cursor: default;
         user-select: none;
+      }
+
+      .editor-route .editor-page [data-fwo-page-break]::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 1px;
+        background: #c7cbd1;
+        transform: translateY(-0.5px);
       }
 
       .editor-route .editor-page [data-fwo-page-break] span {
@@ -139,14 +152,16 @@ export function PageBreakKeyboardPolish() {
         z-index: 1;
         display: inline-flex;
         align-items: center;
-        min-height: 20px;
-        padding: 1px 9px;
-        border: 1px solid #dfe3e8;
+        justify-content: center;
+        min-height: 22px;
+        padding: 2px 10px;
+        border: 1px solid #d9dde2;
         border-radius: 999px;
         background: #fff;
         color: #6f757d;
         font: 500 10px/16px Arial, Helvetica, sans-serif;
-        box-shadow: none;
+        white-space: nowrap;
+        box-shadow: 0 1px 1px rgba(60, 64, 67, .04);
       }
 
       @media print {
@@ -159,6 +174,7 @@ export function PageBreakKeyboardPolish() {
           background: transparent;
         }
 
+        .editor-route .editor-page [data-fwo-page-break]::before,
         .editor-route .editor-page [data-fwo-page-break] span {
           display: none;
         }
