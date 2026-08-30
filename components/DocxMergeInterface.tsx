@@ -62,7 +62,7 @@ export function DocxMergeInterface() {
         <Files />
         <h2>Combine DOCX files</h2>
         <p>The files are merged in the same order you select them.</p>
-        <button type="button" className="fwo-merge-button secondary" onClick={() => inputRef.current?.click()}>Choose DOCX files</button>
+        <button type="button" className="fwo-merge-button secondary" onClick={() => inputRef.current?.click()}>Choose Files</button>
       </div>
       {files.length > 0 ? <div className="fwo-merge-list">{files.map((file, index) => <div className="fwo-merge-file" key={`${file.name}-${file.lastModified}-${index}`}><span className="fwo-merge-file-index">{index + 1}</span><span className="fwo-merge-file-name">{file.name}</span></div>)}</div> : null}
       <div className="fwo-merge-actions">
