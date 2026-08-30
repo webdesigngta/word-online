@@ -50,7 +50,9 @@ export function DocumentFormatPage({ route, mode }: { route: string; mode: Docum
   const page = content[mode];
   const interfaceNode = mode === 'document-viewer'
     ? <DocumentViewerInterface toolId={tool.id} />
-    : <SimpleDocumentToPdfInterface mode={mode === 'txt-to-pdf' ? 'txt' : 'rtf'} toolId={tool.id} />;
+    : mode === 'txt-to-pdf'
+      ? <div data-native-upload-ui="true"><SimpleDocumentToPdfInterface mode="txt" toolId={tool.id} /></div>
+      : <SimpleDocumentToPdfInterface mode="rtf" toolId={tool.id} />;
 
   return <PlatformTaskPage route={route} title={tool.title} description={tool.description} tool={interfaceNode} details={page.details} faq={page.faq} />;
 }
