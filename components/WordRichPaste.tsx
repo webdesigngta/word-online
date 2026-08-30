@@ -187,7 +187,7 @@ function sanitizeElement(element: HTMLElement) {
 
 function sanitizeNode(node: Node) {
   if (node.nodeType === Node.COMMENT_NODE) {
-    node.remove();
+    node.parentNode?.removeChild(node);
     return;
   }
   if (node instanceof HTMLElement) sanitizeElement(node);
