@@ -123,11 +123,15 @@ export function DocumentOutline() {
     heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // Do not reserve a blank sidebar. The outline appears only after the
+  // document actually contains a Title or heading with visible text.
+  if (!items.length) return null;
+
   return (
     <aside className="fwo-outline" aria-label="Document outline">
       <div className="fwo-outline-label">Outline</div>
       <div className="fwo-outline-tree">
-        {items.length ? items.map((item) => (
+        {items.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -139,7 +143,7 @@ export function DocumentOutline() {
           >
             <span className="fwo-outline-item-text">{item.text}</span>
           </button>
-        )) : <p className="fwo-outline-empty">Add a Title or headings to your document<br />to build an outline.</p>}
+        ))}
       </div>
       <style jsx global>{`
         .fwo-outline { position:absolute; top:94px; left:0; bottom:0; z-index:22; width:236px; box-sizing:border-box; padding:16px 10px; background:#f8fafd; color:#3c4043; font-family:Arial,Helvetica,sans-serif; overflow-y:auto; overflow-x:hidden; border:0; }
@@ -154,7 +158,6 @@ export function DocumentOutline() {
         .fwo-outline-item:hover { background:#eef3fb; color:#174ea6; }
         .fwo-outline-item.is-active { color:#0b57d0; font-weight:600; }
         .fwo-outline-item.is-active::before { content:''; position:absolute; left:0; top:6px; bottom:6px; width:2px; border-radius:2px; background:#0b57d0; }
-        .fwo-outline-empty { margin:8px 10px; color:#5f6368; font-size:12px; line-height:1.35; }
         @media(max-width:1120px) { .fwo-outline { display:none; } }
         @media print { .fwo-outline { display:none!important; } }
       `}</style>
