@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 const SINGLE_TRIGGER_COMBOS = [
   ['Image options', 'Insert image'],
@@ -9,95 +9,11 @@ const SINGLE_TRIGGER_COMBOS = [
   ['Editing mode options', 'Editing mode'],
 ] as const;
 
-const PRESERVE_SELECTION_LABELS = new Set([
-  'Bold',
-  'Italic',
-  'Underline',
-  'Clear formatting',
-  'Paint format',
-  'Insert link',
-  'Add comment',
-  'Insert image',
-  'Image options',
-  'Align left',
-  'Alignment options',
-  'Line spacing',
-  'Checklist',
-  'Checklist options',
-  'Bulleted list',
-  'Numbered list',
-  'Decrease indent',
-  'Increase indent',
-  'Decrease font size',
-  'Increase font size',
-]);
-
 function getEditor() {
   return document.querySelector<HTMLElement>('.editor-page');
 }
 
-function rangeInsideEditor(editor: HTMLElement) {
-  const selection = window.getSelection();
-  if (!selection?.rangeCount) return null;
-  const range = selection.getRangeAt(0);
-  return editor.contains(range.commonAncestorContainer) ? range : null;
-}
-
-function restoreRange(editor: HTMLElement, range: Range | null) {
-  if (!range) return;
-  try {
-    const selection = window.getSelection();
-    editor.focus({ preventScroll: true });
-    selection?.removeAllRanges();
-    selection?.addRange(range.cloneRange());
-  } catch {
-    // A formatting action can replace the selected DOM. In that case the
-    // browser keeps the closest valid caret position and the editor continues.
-  }
-}
-
-function selectionElement(editor: HTMLElement) {
-  const selection = window.getSelection();
-  let node = selection?.anchorNode ?? null;
-  if (!node || !editor.contains(node)) return null;
-  if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-  return node instanceof HTMLElement ? node : null;
-}
-
-function rgbToHex(value: string) {
-  if (!value || value === 'transparent' || value === 'rgba(0, 0, 0, 0)') return null;
-  if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
-  const match = value.match(/rgba?\((\d+)[, ]+\s*(\d+)[, ]+\s*(\d+)/i);
-  if (!match) return null;
-  return `#${[match[1], match[2], match[3]].map((part) => Number(part).toString(16).padStart(2, '0')).join('')}`;
-}
-
-function highlightColor(element: HTMLElement | null, editor: HTMLElement) {
-  let current: HTMLElement | null = element;
-  while (current && current !== editor) {
-    const color = rgbToHex(getComputedStyle(current).backgroundColor);
-    if (color) return color;
-    current = current.parentElement;
-  }
-  return '#ffffff';
-}
-
-function setReactInputValue(input: HTMLInputElement, value: string) {
-  if (input.value === value || document.activeElement === input) return;
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-  setter?.call(input, value);
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-function toolbarLabel(target: HTMLElement | null) {
-  const control = target?.closest<HTMLElement>('button,label,select,input');
-  if (!control) return '';
-  return (control.getAttribute('aria-label') || control.getAttribute('title') || '').trim();
-}
-
 export function WordToolbarPolish() {
-  const preservedRangeRef = useRef<Range | null>(null);
-
   useEffect(() => {
     const toolbar = document.querySelector<HTMLElement>('.docs-toolbar');
     const editor = getEditor();
@@ -118,6 +34,17 @@ export function WordToolbarPolish() {
       if (text) text.textContent = mode === 'suggesting' ? 'Suggesting' : mode === 'viewing' ? 'Viewing' : 'Editing';
     };
 
+    const polishColorIcon = (label: 'Text color' | 'Highlight color', glyph: string, kind: 'text' | 'highlight') => {
+      const input = toolbar.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`);
+      const tool = toolbar.querySelector<HTMLElement>(`label[title="${label}"]`) ?? input?.closest<HTMLElement>('.docs-color-tool');
+      if (!tool) return;
+      tool.dataset.fwoColorKind = kind;
+      const icon = tool.querySelector<HTMLElement>('.material-symbols-rounded,.material-symbols-outlined,.material-icons');
+      if (!icon) return;
+      if (icon.textContent?.trim() !== glyph) icon.textContent = glyph;
+      icon.style.setProperty('color', '#3c4043', 'important');
+    };
+
     const polishCombos = () => {
       for (const [arrowLabel, mainLabel] of SINGLE_TRIGGER_COMBOS) {
         const arrow = toolbar.querySelector<HTMLButtonElement>(`button[aria-label="${arrowLabel}"]`);
@@ -127,105 +54,25 @@ export function WordToolbarPolish() {
       }
       const hideToolbar = toolbar.querySelector<HTMLElement>('[aria-label="Hide toolbar"]');
       if (hideToolbar) hideToolbar.dataset.fwoRemovedControl = 'true';
+
+      // Keep the formatting colors visually distinct from Editing mode.
+      // Text color uses an A/text glyph; highlight uses a paint-fill glyph.
+      polishColorIcon('Text color', 'format_color_text', 'text');
+      polishColorIcon('Highlight color', 'format_color_fill', 'highlight');
       syncMode();
     };
 
-    const syncColors = () => {
-      const textLabel = toolbar.querySelector<HTMLElement>('label[title="Text color"]');
-      const highlightLabel = toolbar.querySelector<HTMLElement>('label[title="Highlight color"]');
-      const textInput = textLabel?.querySelector<HTMLInputElement>('input[type="color"]');
-      const highlightInput = highlightLabel?.querySelector<HTMLInputElement>('input[type="color"]');
-      if (textLabel && textInput) textLabel.style.setProperty('--fwo-selected-color', textInput.value || '#202124');
-      if (highlightLabel && highlightInput) highlightLabel.style.setProperty('--fwo-selected-color', highlightInput.value || '#fdd663');
-    };
-
-    const syncSelectionState = () => {
-      const range = rangeInsideEditor(editor);
-      if (!range) return;
-      preservedRangeRef.current = range.cloneRange();
-
-      const element = selectionElement(editor);
-      if (!element) return;
-      const style = getComputedStyle(element);
-
-      const sizeInput = toolbar.querySelector<HTMLInputElement>('input[aria-label="Font size"]');
-      const px = Number.parseFloat(style.fontSize);
-      if (sizeInput && Number.isFinite(px) && px > 0) {
-        const points = Math.round((px * 72 / 96) * 2) / 2;
-        const display = Number.isInteger(points) ? String(points) : points.toFixed(1);
-        setReactInputValue(sizeInput, display);
-      }
-
-      const textInput = toolbar.querySelector<HTMLInputElement>('input[aria-label="Text color"]');
-      const textLabel = textInput?.closest<HTMLElement>('.docs-color-tool');
-      const selectedTextColor = rgbToHex(style.color);
-      if (textInput && textLabel && selectedTextColor) {
-        textInput.value = selectedTextColor;
-        textLabel.style.setProperty('--fwo-selected-color', selectedTextColor);
-      }
-
-      const highInput = toolbar.querySelector<HTMLInputElement>('input[aria-label="Highlight color"]');
-      const highLabel = highInput?.closest<HTMLElement>('.docs-color-tool');
-      const selectedHighlight = highlightColor(element, editor);
-      if (highInput && highLabel) {
-        highInput.value = selectedHighlight;
-        highLabel.style.setProperty('--fwo-selected-color', selectedHighlight);
-      }
-    };
-
-    const saveBeforeToolbarAction = (event: Event) => {
-      const target = event.target as HTMLElement | null;
-      if (!target || !toolbar.contains(target)) return;
-      const range = rangeInsideEditor(editor);
-      if (range) preservedRangeRef.current = range.cloneRange();
-    };
-
-    const restoreForToolbarAction = (event: Event) => {
-      const target = event.target as HTMLElement | null;
-      if (!target || !toolbar.contains(target)) return;
-      const label = toolbarLabel(target);
-      if (PRESERVE_SELECTION_LABELS.has(label)) restoreRange(editor, preservedRangeRef.current);
-    };
-
-    const restoreForFieldChange = (event: Event) => {
-      const target = event.target as HTMLElement | null;
-      if (!target || !toolbar.contains(target)) return;
-      const label = toolbarLabel(target);
-      if (label === 'Text color' || label === 'Highlight color' || label === 'Font family' || label === 'Paragraph style') {
-        restoreRange(editor, preservedRangeRef.current);
-      }
-      if (label === 'Text color' || label === 'Highlight color') {
-        window.setTimeout(syncColors, 0);
-      }
-    };
-
     polishCombos();
-    syncColors();
-    syncSelectionState();
 
-    const toolbarObserver = new MutationObserver(() => {
-      polishCombos();
-      syncColors();
-    });
+    const toolbarObserver = new MutationObserver(polishCombos);
     toolbarObserver.observe(toolbar, { childList: true, subtree: true });
 
     const modeObserver = new MutationObserver(syncMode);
     modeObserver.observe(editor, { attributes: true, attributeFilter: ['data-fwo-mode'] });
 
-    document.addEventListener('selectionchange', syncSelectionState);
-    toolbar.addEventListener('mousedown', saveBeforeToolbarAction, true);
-    toolbar.addEventListener('pointerdown', saveBeforeToolbarAction, true);
-    toolbar.addEventListener('click', restoreForToolbarAction, true);
-    toolbar.addEventListener('change', restoreForFieldChange, true);
-
     return () => {
       toolbarObserver.disconnect();
       modeObserver.disconnect();
-      document.removeEventListener('selectionchange', syncSelectionState);
-      toolbar.removeEventListener('mousedown', saveBeforeToolbarAction, true);
-      toolbar.removeEventListener('pointerdown', saveBeforeToolbarAction, true);
-      toolbar.removeEventListener('click', restoreForToolbarAction, true);
-      toolbar.removeEventListener('change', restoreForFieldChange, true);
     };
   }, []);
 
@@ -334,55 +181,13 @@ export function WordToolbarPolish() {
         white-space: nowrap;
       }
 
-      .docs-color-tool {
-        --fwo-selected-color: #202124;
-        position: relative;
-        width: 31px !important;
-        height: 30px !important;
-        border-radius: 8px !important;
-        display: grid !important;
-        place-items: center !important;
-        cursor: pointer;
-        transition: background-color .12s ease;
-      }
-      .docs-color-tool:hover { background: #e2e7ec !important; }
-      .docs-color-tool .material-symbols-rounded,
-      .docs-color-tool .material-symbols-outlined,
-      .docs-color-tool .material-icons {
-        position: relative;
-        z-index: 1;
-        font-size: 20px !important;
-      }
-      .docs-color-tool:not(.highlight) .material-symbols-rounded,
-      .docs-color-tool:not(.highlight) .material-symbols-outlined,
-      .docs-color-tool:not(.highlight) .material-icons {
-        color: var(--fwo-selected-color) !important;
-      }
-      .docs-color-tool.highlight .material-symbols-rounded,
-      .docs-color-tool.highlight .material-symbols-outlined,
-      .docs-color-tool.highlight .material-icons {
+      .docs-color-tool[data-fwo-color-kind='text'] .material-symbols-rounded,
+      .docs-color-tool[data-fwo-color-kind='text'] .material-symbols-outlined,
+      .docs-color-tool[data-fwo-color-kind='text'] .material-icons,
+      .docs-color-tool[data-fwo-color-kind='highlight'] .material-symbols-rounded,
+      .docs-color-tool[data-fwo-color-kind='highlight'] .material-symbols-outlined,
+      .docs-color-tool[data-fwo-color-kind='highlight'] .material-icons {
         color: #3c4043 !important;
-      }
-      .docs-color-tool::after {
-        content: '';
-        position: absolute;
-        left: 7px;
-        right: 7px;
-        bottom: 3px;
-        height: 3px;
-        border: 1px solid rgba(60,64,67,.22);
-        border-radius: 3px;
-        background: var(--fwo-selected-color);
-        box-sizing: border-box;
-      }
-      .docs-color-tool input[type='color'] {
-        position: absolute !important;
-        inset: 0 !important;
-        z-index: 3;
-        width: 100% !important;
-        height: 100% !important;
-        opacity: 0 !important;
-        cursor: pointer !important;
       }
 
       .fwo-outline {
