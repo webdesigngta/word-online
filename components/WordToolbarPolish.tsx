@@ -25,6 +25,8 @@ export function WordToolbarPolish() {
       const mode = editor.dataset.fwoMode || 'editing';
       combo.dataset.fwoMode = mode;
       const main = combo.querySelector<HTMLButtonElement>('button[aria-label="Editing mode"]');
+      const menuTrigger = combo.querySelector<HTMLButtonElement>('button[aria-label="Editing mode options"]');
+      menuTrigger?.setAttribute('aria-haspopup', 'menu');
       if (main && !main.querySelector('.fwo-editing-mode-text')) {
         const text = document.createElement('span');
         text.className = 'fwo-editing-mode-text';
@@ -55,8 +57,6 @@ export function WordToolbarPolish() {
       const hideToolbar = toolbar.querySelector<HTMLElement>('[aria-label="Hide toolbar"]');
       if (hideToolbar) hideToolbar.dataset.fwoRemovedControl = 'true';
 
-      // Keep the formatting colors visually distinct from Editing mode.
-      // Text color uses an A/text glyph; highlight uses a paint-fill glyph.
       polishColorIcon('Text color', 'format_color_text', 'text');
       polishColorIcon('Highlight color', 'format_color_fill', 'highlight');
       syncMode();
@@ -90,7 +90,7 @@ export function WordToolbarPolish() {
         min-height: 30px;
         padding-right: 16px;
         border-radius: 15px;
-        transition: background-color .12s ease;
+        transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease;
       }
       .docs-toolbar .docs-toolbar-combo[data-fwo-single-trigger='true']:hover {
         background: #e2e7ec;
@@ -168,16 +168,47 @@ export function WordToolbarPolish() {
         flex: 0 0 6px !important;
       }
 
+      /* Editing/Suggesting/Viewing is a real menu, so give it the visual
+         treatment of a dropdown instead of leaving it looking like plain text. */
       .docs-toolbar-mode-group .docs-toolbar-combo[data-fwo-single-trigger='true'] {
-        min-width: 92px;
-        padding-right: 19px;
+        box-sizing: border-box;
+        min-width: 108px !important;
+        height: 30px !important;
+        padding: 0 24px 0 3px !important;
+        border: 1px solid #c4c7c5 !important;
+        border-radius: 8px !important;
+        background: #fff !important;
+        box-shadow: 0 1px 1px rgba(60,64,67,.08);
+      }
+      .docs-toolbar-mode-group .docs-toolbar-combo[data-fwo-single-trigger='true']:hover {
+        background: #f8fafd !important;
+        border-color: #9aa0a6 !important;
+      }
+      .docs-toolbar-mode-group .docs-toolbar-combo[data-fwo-single-trigger='true']:focus-within {
+        border-color: #0b57d0 !important;
+        box-shadow: 0 0 0 1px #0b57d0;
+      }
+      .docs-toolbar-mode-group .docs-toolbar-combo[data-fwo-single-trigger='true']::after {
+        right: 9px !important;
+        top: 9px !important;
+        width: 7px !important;
+        height: 7px !important;
+        border-right-width: 1.5px !important;
+        border-bottom-width: 1.5px !important;
       }
       .docs-toolbar-mode-group .docs-toolbar-button {
-        gap: 5px;
+        gap: 6px;
+        min-width: 78px !important;
+        padding-left: 5px !important;
+      }
+      .docs-toolbar-mode-group .docs-toolbar-button .material-symbols-rounded,
+      .docs-toolbar-mode-group .docs-toolbar-button .material-symbols-outlined,
+      .docs-toolbar-mode-group .docs-toolbar-button .material-icons {
+        font-size: 18px !important;
       }
       .fwo-editing-mode-text {
         color: #3c4043;
-        font: 500 12px/1 Arial, Helvetica, sans-serif;
+        font: 500 12.5px/1 Arial, Helvetica, sans-serif;
         white-space: nowrap;
       }
 
@@ -235,13 +266,6 @@ export function WordToolbarPolish() {
         bottom: 8px !important;
         width: 3px !important;
         border-radius: 3px !important;
-      }
-      .fwo-outline-empty {
-        margin: 4px 8px !important;
-        padding: 10px 0 !important;
-        color: #64748b !important;
-        font-size: 13px !important;
-        line-height: 1.5 !important;
       }
     `}</style>
   );
