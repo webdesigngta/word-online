@@ -115,19 +115,24 @@ export function LegacyFormatInterface({ mode }: { mode: LegacyFormatMode }) {
         .fwo-legacy-tool{display:grid;gap:16px}.fwo-legacy-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.fwo-legacy-file{display:flex;align-items:center;gap:10px;min-width:0}.fwo-legacy-icon{width:42px;height:42px;border-radius:12px;background:#e8f0fe;color:#174ea6;display:grid;place-items:center}.fwo-legacy-icon svg{width:21px}.fwo-legacy-copy{min-width:0}.fwo-legacy-copy strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}.fwo-legacy-copy span{display:block;color:#5f6368;font-size:12px;margin-top:3px}.fwo-legacy-actions{display:flex;gap:8px;flex-wrap:wrap}.fwo-legacy-btn{border:1px solid #dadce0;border-radius:20px;background:#fff;color:#202124;padding:9px 14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px}.fwo-legacy-btn.primary{background:#0b57d0;color:#fff;border-color:#0b57d0}.fwo-legacy-btn:disabled{opacity:.55;cursor:not-allowed}.fwo-legacy-btn svg{width:16px}.fwo-legacy-empty{min-height:330px;border:2px dashed #d5dae2;border-radius:16px;background:#fbfcfe;display:grid;place-items:center;text-align:center;padding:32px;color:#5f6368}.fwo-legacy-empty svg{width:42px;height:42px;color:#174ea6;margin-bottom:10px}.fwo-legacy-paper{min-height:420px;max-height:65vh;overflow:auto;border:1px solid #dadce0;border-radius:14px;background:#fff;padding:36px 42px;box-shadow:0 1px 2px rgba(60,64,67,.08);line-height:1.55;color:#202124}.fwo-legacy-paper[contenteditable=true]{outline:none}.fwo-legacy-paper[contenteditable=true]:focus{box-shadow:inset 0 0 0 2px #0b57d0}.fwo-legacy-paper h1,.fwo-legacy-paper h2,.fwo-legacy-paper h3{line-height:1.2}.fwo-legacy-paper table{border-collapse:collapse;max-width:100%}.fwo-legacy-paper td,.fwo-legacy-paper th{border:1px solid #dadce0;padding:6px 8px}.fwo-legacy-note{font-size:12px;color:#5f6368;border-radius:10px;background:#f8fafd;padding:10px 12px}.fwo-legacy-note.warn{background:#fff8e1;color:#7a4d00}@media(max-width:700px){.fwo-legacy-paper{padding:24px 20px}.fwo-legacy-copy strong{max-width:230px}.fwo-legacy-btn{padding:8px 11px}}
       `}</style>
       <input ref={inputRef} type="file" accept={config.accept} hidden onChange={(event) => void open(event.target.files?.[0])} />
-      <div className="fwo-legacy-top">
+
+      {html ? <div className="fwo-legacy-top">
         <div className="fwo-legacy-file">
           <div className="fwo-legacy-icon">{config.editor ? <Pencil /> : config.viewer ? <Eye /> : <FileText />}</div>
-          <div className="fwo-legacy-copy"><strong>{fileName || config.label}</strong><span>{status}{dirty ? ' Unsaved changes.' : ''}</span></div>
+          <div className="fwo-legacy-copy"><strong>{fileName}</strong><span>{status}{dirty ? ' Unsaved changes.' : ''}</span></div>
         </div>
         <div className="fwo-legacy-actions">
           {config.editor && fileName ? <button className="fwo-legacy-btn" type="button" disabled={busy} onClick={() => void saveEdited()}><Download />Save {config.extension.toUpperCase()}</button> : null}
           {mode === 'odt-to-pdf' && fileName ? <button className="fwo-legacy-btn" type="button" disabled={busy} onClick={() => void convertPdf()}><Download />Download PDF</button> : null}
-          <button className="fwo-legacy-btn primary" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? <RefreshCw /> : <FolderOpen />}{busy ? 'Working…' : fileName ? 'Open another' : `Choose ${config.extension.toUpperCase()}`}</button>
+          <button className="fwo-legacy-btn primary" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? <RefreshCw /> : <FolderOpen />}{busy ? 'Working…' : 'Open another'}</button>
         </div>
-      </div>
+      </div> : null}
 
-      {!html ? <div className="fwo-legacy-empty"><div><FileText /><strong>{config.label}</strong><div>{config.editor ? 'Open a document, edit its browser representation, then save a rebuilt file.' : mode === 'odt-to-pdf' ? 'Open an ODT file and export its supported content as PDF.' : 'Open a document in a clean read-only browser view.'}</div></div></div> : config.editor ? (
+      {!html ? (
+        <div className="fwo-legacy-empty fwo-legacy-picker">
+          <button className="fwo-legacy-btn primary" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? <RefreshCw /> : <FolderOpen />}{busy ? 'Working…' : 'Choose Files'}</button>
+        </div>
+      ) : config.editor ? (
         <div ref={editorRef} className="fwo-legacy-paper" contentEditable suppressContentEditableWarning onInput={() => setDirty(true)} />
       ) : (
         <div className="fwo-legacy-paper" dangerouslySetInnerHTML={{ __html: html }} />
