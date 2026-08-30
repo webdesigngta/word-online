@@ -193,9 +193,60 @@ function sanitizeNode(node: Node) {
   if (node instanceof HTMLElement) sanitizeElement(node);
 }
 
+function tableColumnCount(table: HTMLTableElement) {
+  return Array.from(table.rows).reduce((maximum, row) => {
+    const columns = Array.from(row.cells).reduce((total, cell) => total + Math.max(1, cell.colSpan || 1), 0);
+    return Math.max(maximum, columns);
+  }, 0);
+}
+
+function unwrapSingleColumnTable(table: HTMLTableElement) {
+  const documentRef = table.ownerDocument;
+  const fragment = documentRef.createDocumentFragment();
+
+  Array.from(table.rows).forEach((row) => {
+    const cell = row.cells[0];
+    if (!cell) return;
+
+    const hasBlockChild = Array.from(cell.children).some((child) => BLOCK_TAGS.has(child.tagName));
+    if (hasBlockChild) {
+      fragment.append(...Array.from(cell.childNodes));
+      return;
+    }
+
+    const paragraph = documentRef.createElement('p');
+    while (cell.firstChild) paragraph.appendChild(cell.firstChild);
+    if (!paragraph.childNodes.length) paragraph.appendChild(documentRef.createElement('br'));
+    fragment.appendChild(paragraph);
+  });
+
+  if (!fragment.childNodes.length) fragment.appendChild(documentRef.createElement('p'));
+  table.replaceWith(fragment);
+}
+
+function normalizePastedTables(root: HTMLElement) {
+  Array.from(root.querySelectorAll<HTMLTableElement>('table')).forEach((table) => {
+    // Clipboard HTML from websites and chat apps often uses a one-cell table only
+    // for layout. In an editable document that table can collapse to a few pixels
+    // and make URLs/text wrap one or two characters per line. Convert those layout
+    // tables back to normal document paragraphs while keeping their inline content.
+    if (tableColumnCount(table) <= 1) {
+      unwrapSingleColumnTable(table);
+      return;
+    }
+
+    // Real multi-column tables should use the document width rather than the
+    // source page's geometry. This prevents narrow/collapsed pasted columns.
+    table.style.width = '100%';
+    table.style.maxWidth = '100%';
+    table.style.tableLayout = 'auto';
+  });
+}
+
 function sanitizedClipboardHtml(html: string) {
   const parsed = new DOMParser().parseFromString(html, 'text/html');
   Array.from(parsed.body.childNodes).forEach((node) => sanitizeNode(node));
+  normalizePastedTables(parsed.body);
 
   // Never allow copied layout dimensions to make the document wider/taller than
   // the DOC321 editing surface. Formatting survives; foreign page geometry does not.
@@ -284,6 +335,7 @@ export function WordRichPaste() {
         height: auto;
       }
       .docs-editor-workspace .editor-page table {
+        width: 100% !important;
         max-width: 100% !important;
         table-layout: auto;
       }
@@ -295,10 +347,18 @@ export function WordRichPaste() {
       }
       .docs-editor-workspace .editor-page p,
       .docs-editor-workspace .editor-page li,
-      .docs-editor-workspace .editor-page td,
-      .docs-editor-workspace .editor-page th,
       .docs-editor-workspace .editor-page blockquote {
         overflow-wrap: anywhere;
+      }
+      .docs-editor-workspace .editor-page td,
+      .docs-editor-workspace .editor-page th {
+        min-width: 0;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+      .docs-editor-workspace .editor-page a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
     `}</style>
   );
