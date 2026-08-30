@@ -4,10 +4,12 @@ import { useEffect } from 'react';
 
 const PAGE_SELECTOR = ':scope > .fwo-page-sheet';
 
-type CaretSnapshot = {
-  node: Node;
-  offset: number;
-  textOffset: number | null;
+type SelectionSnapshot = {
+  range: Range;
+  anchorNode: Node | null;
+  anchorOffset: number;
+  focusNode: Node | null;
+  focusOffset: number;
 };
 
 function makePage(): HTMLDivElement {
@@ -23,216 +25,187 @@ function appendPage(root: HTMLElement): HTMLDivElement {
   return page;
 }
 
-function pageOverflows(page: HTMLElement) {
-  return page.scrollHeight > page.clientHeight + 1;
+function isPageNode(node: Node): node is HTMLDivElement {
+  return node instanceof HTMLDivElement && node.classList.contains('fwo-page-sheet');
 }
 
-function canSplitAcrossPages(node: Node): node is HTMLElement {
-  if (!(node instanceof HTMLElement)) return false;
-  if (!node.textContent?.trim()) return false;
-  if (node.matches('img,table,ul,ol,figure,pre,hr')) return false;
-  return !node.querySelector('img,table,ul,ol,figure,pre');
+function directPages(root: HTMLElement) {
+  return Array.from(root.querySelectorAll<HTMLDivElement>(PAGE_SELECTOR));
 }
 
-function fitTextAcrossPages(root: HTMLElement, startPage: HTMLDivElement, source: HTMLElement): HTMLDivElement {
-  let page = startPage;
-  let remaining = source.textContent ?? '';
-
-  while (remaining) {
-    const before = remaining;
-    const piece = source.cloneNode(false) as HTMLElement;
-    page.append(piece);
-
-    let low = 1;
-    let high = remaining.length;
-    let best = 0;
-
-    while (low <= high) {
-      const middle = Math.floor((low + high) / 2);
-      piece.textContent = remaining.slice(0, middle);
-      if (!pageOverflows(page)) {
-        best = middle;
-        low = middle + 1;
-      } else {
-        high = middle - 1;
-      }
-    }
-
-    if (best === 0) {
-      piece.remove();
-
-      // If this sheet already contains earlier content, continue on a fresh A4 page
-      // and measure the same remaining text again there.
-      if (page.childNodes.length) {
-        page = appendPage(root);
-        continue;
-      }
-
-      // A pathological unbreakable element should not lock the pagination loop.
-      // Keep it on one page and allow later document blocks to continue after it.
-      piece.textContent = remaining;
-      page.append(piece);
-      remaining = '';
-      break;
-    }
-
-    let cut = best;
-    if (cut < remaining.length) {
-      const boundary = Math.max(
-        remaining.lastIndexOf(' ', cut),
-        remaining.lastIndexOf('\n', cut),
-        remaining.lastIndexOf('\t', cut),
-      );
-      if (boundary > Math.floor(cut * 0.6)) cut = boundary + 1;
-    }
-
-    piece.textContent = remaining.slice(0, cut).replace(/\s+$/u, '');
-    remaining = remaining.slice(cut).replace(/^\s+/u, '');
-
-    // Safety is based on forward progress, not a page-count ceiling.
-    if (remaining === before) {
-      remaining = '';
-      break;
-    }
-
-    if (remaining) page = appendPage(root);
-  }
-
-  return page;
-}
-
-function caretTextOffset(root: HTMLElement) {
+function selectionInside(root: HTMLElement) {
   const selection = window.getSelection();
-  if (!selection?.rangeCount || !root.contains(selection.anchorNode)) return null;
-  const range = document.createRange();
-  range.selectNodeContents(root);
-  range.setEnd(selection.anchorNode!, selection.anchorOffset);
-  return range.toString().length;
-}
-
-function captureCaret(root: HTMLElement): CaretSnapshot | null {
-  const selection = window.getSelection();
-  if (!selection?.rangeCount) return null;
+  if (!selection?.rangeCount) return false;
   const range = selection.getRangeAt(0);
-  if (!root.contains(range.startContainer)) return null;
+  return root.contains(range.startContainer) && root.contains(range.endContainer);
+}
+
+function captureSelection(root: HTMLElement): SelectionSnapshot | null {
+  const selection = window.getSelection();
+  if (!selection?.rangeCount || !selectionInside(root)) return null;
 
   return {
-    node: range.startContainer,
-    offset: range.startOffset,
-    textOffset: caretTextOffset(root),
+    range: selection.getRangeAt(0).cloneRange(),
+    anchorNode: selection.anchorNode,
+    anchorOffset: selection.anchorOffset,
+    focusNode: selection.focusNode,
+    focusOffset: selection.focusOffset,
   };
 }
 
-function restoreTextOffset(root: HTMLElement, offset: number | null) {
-  if (offset === null) return;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let remaining = offset;
-  let node: Node | null;
-  while ((node = walker.nextNode())) {
-    const length = node.textContent?.length ?? 0;
-    if (remaining <= length) {
-      const range = document.createRange();
-      range.setStart(node, remaining);
-      range.collapse(true);
-      const selection = window.getSelection();
-      selection?.removeAllRanges();
-      selection?.addRange(range);
+function restoreSelection(root: HTMLElement, snapshot: SelectionSnapshot | null) {
+  if (!snapshot) return;
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  try {
+    if (
+      snapshot.anchorNode
+      && snapshot.focusNode
+      && root.contains(snapshot.anchorNode)
+      && root.contains(snapshot.focusNode)
+      && typeof selection.setBaseAndExtent === 'function'
+    ) {
+      selection.removeAllRanges();
+      selection.setBaseAndExtent(
+        snapshot.anchorNode,
+        snapshot.anchorOffset,
+        snapshot.focusNode,
+        snapshot.focusOffset,
+      );
       return;
     }
-    remaining -= length;
+
+    if (
+      root.contains(snapshot.range.startContainer)
+      && root.contains(snapshot.range.endContainer)
+    ) {
+      selection.removeAllRanges();
+      selection.addRange(snapshot.range);
+    }
+  } catch {
+    // The browser keeps its current native selection if a boundary disappeared.
   }
 }
 
-function restoreCaret(root: HTMLElement, snapshot: CaretSnapshot | null) {
-  if (!snapshot) return;
-
-  // Normal editing moves the same paragraph/text nodes between A4 wrappers.
-  // Restoring against the original node preserves structurally distinct positions,
-  // including a newly created empty paragraph after pressing Enter.
-  if (root.contains(snapshot.node)) {
-    const maxOffset = snapshot.node.nodeType === Node.TEXT_NODE
-      ? snapshot.node.textContent?.length ?? 0
-      : snapshot.node.childNodes.length;
-    const range = document.createRange();
-    range.setStart(snapshot.node, Math.min(snapshot.offset, maxOffset));
-    range.collapse(true);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-    return;
-  }
-
-  // Overflow splitting can replace a source node with clones. In that case,
-  // fall back to the previous text-offset behavior.
-  restoreTextOffset(root, snapshot.textOffset);
+function needsPageNormalization(root: HTMLElement) {
+  if (!root.childNodes.length) return true;
+  return Array.from(root.childNodes).some((node) => !isPageNode(node));
 }
 
-/** Turns the editable document into as many independently bounded A4 sheets as the content requires. */
+/**
+ * Keep the editable DOM stable while the user types.
+ *
+ * Older pagination rebuilt the complete contenteditable tree on every input.
+ * That invalidated native browser caret positions at structural boundaries,
+ * especially after Enter, replacing a selection, Backspace/Delete, or moving
+ * between an empty paragraph and surrounding text. Shift+Enter appeared to work
+ * more often only because it inserts a BR inside the existing block.
+ *
+ * This normalizer only wraps root-level document nodes when wrapping is actually
+ * required. Existing page wrappers and their descendants are never torn down
+ * during normal typing, so browser editing semantics remain native and stable.
+ */
+function normalizePageStructure(root: HTMLElement) {
+  const children = Array.from(root.childNodes);
+  let currentPage: HTMLDivElement | null = null;
+
+  for (const node of children) {
+    if (isPageNode(node)) {
+      currentPage = node;
+      continue;
+    }
+
+    if (!currentPage) {
+      currentPage = makePage();
+      root.insertBefore(currentPage, node);
+    }
+
+    // Moving the existing node preserves its text nodes, formatting, live Range
+    // boundaries, and undo semantics. Nothing is cloned or recreated here.
+    currentPage.append(node);
+  }
+
+  const pages = directPages(root);
+  if (!pages.length) {
+    const page = appendPage(root);
+    page.innerHTML = '<p><br></p>';
+    return [page];
+  }
+
+  return pages;
+}
+
+/**
+ * Provides stable page wrappers without mutating the editable document after
+ * every keystroke. This deliberately prioritizes correct Word-like editing
+ * semantics over destructive live text splitting.
+ */
 export function A4Pagination() {
   useEffect(() => {
     const root = document.querySelector<HTMLElement>('.editor-page');
     if (!root) return;
-    let frame = 0;
-    let paginating = false;
-    const observer = new MutationObserver(() => schedule());
 
-    const paginate = () => {
-      if (paginating) return;
-      paginating = true;
+    let frame = 0;
+    let normalizing = false;
+    let composing = false;
+
+    const observer = new MutationObserver(() => {
+      if (!normalizing && !composing && needsPageNormalization(root)) schedule();
+    });
+
+    const normalize = () => {
+      if (normalizing || composing || !needsPageNormalization(root)) return;
+      normalizing = true;
       observer.disconnect();
 
       try {
-        const caret = captureCaret(root);
-        const existingPages = Array.from(root.querySelectorAll<HTMLDivElement>(PAGE_SELECTOR));
-        const nodes = existingPages.length
-          ? existingPages.flatMap((page) => Array.from(page.childNodes))
-          : Array.from(root.childNodes);
-
-        // Empty text nodes between pages are layout artefacts, not document content.
-        const content = nodes.filter((node) => node.nodeType !== Node.TEXT_NODE || Boolean(node.textContent?.trim()));
-        root.replaceChildren();
-        let page: HTMLDivElement = appendPage(root);
-
-        for (const node of content) {
-          page.append(node);
-          if (!pageOverflows(page)) continue;
-
-          node.remove();
-
-          if (canSplitAcrossPages(node)) {
-            page = fitTextAcrossPages(root, page, node);
-            continue;
-          }
-
-          if (page.childNodes.length) page = appendPage(root);
-          page.append(node);
-        }
-
-        if (!content.length) page.innerHTML = '<p><br></p>';
-        restoreCaret(root, caret);
-        root.dataset.pageCount = String(root.querySelectorAll(PAGE_SELECTOR).length);
+        const selection = captureSelection(root);
+        const pages = normalizePageStructure(root);
+        root.dataset.pageCount = String(pages.length);
+        restoreSelection(root, selection);
         root.dispatchEvent(new CustomEvent('fwo:pages', { bubbles: true }));
       } finally {
         observer.observe(root, { childList: true, subtree: true, characterData: true });
-        paginating = false;
+        normalizing = false;
       }
     };
 
     const schedule = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(paginate);
+      frame = requestAnimationFrame(normalize);
+    };
+
+    const onInput = () => {
+      // Normal text edits stay completely untouched. Only repair the wrapper if
+      // the browser/importer placed a new block directly under the editor root.
+      if (!composing && needsPageNormalization(root)) schedule();
+    };
+
+    const onCompositionStart = () => {
+      composing = true;
+      cancelAnimationFrame(frame);
+    };
+
+    const onCompositionEnd = () => {
+      composing = false;
+      if (needsPageNormalization(root)) schedule();
     };
 
     observer.observe(root, { childList: true, subtree: true, characterData: true });
-    root.addEventListener('input', schedule);
-    window.addEventListener('resize', schedule);
+    root.addEventListener('input', onInput);
+    root.addEventListener('compositionstart', onCompositionStart);
+    root.addEventListener('compositionend', onCompositionEnd);
+
+    // Initial content and asynchronously restored drafts may begin unwrapped.
     schedule();
 
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
-      root.removeEventListener('input', schedule);
-      window.removeEventListener('resize', schedule);
+      root.removeEventListener('input', onInput);
+      root.removeEventListener('compositionstart', onCompositionStart);
+      root.removeEventListener('compositionend', onCompositionEnd);
     };
   }, []);
 
