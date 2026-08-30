@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 
 const PAGE_SELECTOR = ':scope > .fwo-page-sheet';
+const LEGACY_PAGE_BREAK_SELECTOR = '[data-fwo-page-break]';
 
 type SelectionSnapshot = {
   range: Range;
@@ -88,7 +89,14 @@ function restoreSelection(root: HTMLElement, snapshot: SelectionSnapshot | null)
   }
 }
 
+function removeLegacyPageBreaks(root: HTMLElement) {
+  const markers = Array.from(root.querySelectorAll<HTMLElement>(LEGACY_PAGE_BREAK_SELECTOR));
+  markers.forEach((marker) => marker.remove());
+  return markers.length > 0;
+}
+
 function needsPageNormalization(root: HTMLElement) {
+  if (root.querySelector(LEGACY_PAGE_BREAK_SELECTOR)) return true;
   if (!root.childNodes.length) return true;
   return Array.from(root.childNodes).some((node) => !isPageNode(node));
 }
@@ -161,6 +169,7 @@ export function A4Pagination() {
 
       try {
         const selection = captureSelection(root);
+        removeLegacyPageBreaks(root);
         const pages = normalizePageStructure(root);
         root.dataset.pageCount = String(pages.length);
         restoreSelection(root, selection);
@@ -215,6 +224,7 @@ export function A4Pagination() {
 /** Removes visual page containers while retaining the original document blocks. */
 export function serializableEditorHtml(root: HTMLElement) {
   const clone = root.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll(LEGACY_PAGE_BREAK_SELECTOR).forEach((marker) => marker.remove());
   const pages = Array.from(clone.querySelectorAll<HTMLElement>(PAGE_SELECTOR));
   if (!pages.length) return clone.innerHTML;
   const fragment = document.createDocumentFragment();
