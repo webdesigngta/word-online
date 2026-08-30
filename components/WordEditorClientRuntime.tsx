@@ -26,6 +26,7 @@ import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTrigg
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
 import { WordColorControlsFix } from '@/components/WordColorControlsFix';
 import { WordEditorBrandMobilePolish } from '@/components/WordEditorBrandMobilePolish';
+import { WordEditorMobileUsability } from '@/components/WordEditorMobileUsability';
 import { WordFormattingSelectionBridge } from '@/components/WordFormattingSelectionBridge';
 import { WordRichPaste } from '@/components/WordRichPaste';
 import { WordToolbarPolish } from '@/components/WordToolbarPolish';
@@ -64,6 +65,7 @@ export function WordEditorClientRuntime({
       <WordColorControlsFix />
       <WordFormattingSelectionBridge />
       <WordEditorBrandMobilePolish />
+      <WordEditorMobileUsability />
       <LocalUndoManager />
       <LocalVersionHistory />
       <VersionHistoryToolbarButton />
