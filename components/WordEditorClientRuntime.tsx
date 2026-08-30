@@ -26,6 +26,7 @@ import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTrigg
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
 import { WordEditorBrandMobilePolish } from '@/components/WordEditorBrandMobilePolish';
 import { WordFormattingSelectionBridge } from '@/components/WordFormattingSelectionBridge';
+import { WordRichPaste } from '@/components/WordRichPaste';
 import { WordToolbarPolish } from '@/components/WordToolbarPolish';
 import { HydrationReady } from '@/components/HydrationReady';
 import { WordEditorTool } from '@/tools/word/editor';
@@ -47,6 +48,7 @@ export function WordEditorClientRuntime({
     <>
       <WordEditorTool {...runtimeOptions} />
       <A4Pagination />
+      <WordRichPaste />
       <EditorKeyboardScope />
       <EditorMenuAutoDismiss />
       <DocumentOutline />
