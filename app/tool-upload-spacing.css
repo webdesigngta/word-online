@@ -39,6 +39,41 @@
   margin-top:13px!important;
 }
 
+/* A normalized file picker is always the primary upload CTA, even when an old
+   tool component still carries a legacy `.secondary` class. This selector is
+   intentionally loaded after the compatibility layer so white generated
+   "Choose Files" copy never lands on a pale secondary background. */
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] [data-uniform-file-picker="true"]:not(:disabled){
+  opacity:1!important;
+  border-color:#2563EB!important;
+  background:#2563EB!important;
+  color:#fff!important;
+  box-shadow:0 8px 20px rgba(37,99,235,.20)!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] [data-uniform-file-picker="true"]:not(:disabled):hover{
+  background:#1D4ED8!important;
+  border-color:#1D4ED8!important;
+  box-shadow:0 11px 26px rgba(37,99,235,.25)!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] [data-uniform-file-picker="true"]:not(:disabled)::after{
+  color:#fff!important;
+  opacity:1!important;
+}
+
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] [data-uniform-file-picker="true"]:not(:disabled) .uniform-upload-icon,
+.platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
+.platform-task-workspace [data-uniform-dropzone="true"] [data-uniform-file-picker="true"]:not(:disabled) .uniform-upload-icon-svg{
+  color:#fff!important;
+  stroke:#fff!important;
+  opacity:1!important;
+}
+
 @media(max-width:640px){
   .platform-task-page:not(:has(.editor-route)):not(:has(.notepad-is-shell))
   .platform-task-workspace [data-uniform-dropzone="true"] > .uniform-upload-meta,
