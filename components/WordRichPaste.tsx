@@ -126,6 +126,7 @@ function copySafeAttributes(source: HTMLElement, target: HTMLElement) {
 
 function normalizeFontElement(element: HTMLElement) {
   const span = element.ownerDocument.createElement('span');
+  copySafeStyles(element, span);
   const color = element.getAttribute('color');
   const face = element.getAttribute('face');
   if (color) span.style.color = color;
@@ -166,8 +167,7 @@ function sanitizeElement(element: HTMLElement) {
   }
 
   if (element.tagName === 'FONT') {
-    const span = normalizeFontElement(element);
-    copySafeStyles(element, span);
+    normalizeFontElement(element);
     return;
   }
 
