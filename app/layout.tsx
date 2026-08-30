@@ -17,6 +17,7 @@ import './docx-to-html-compact.css';
 import './home-typography.css';
 import './home-readability.css';
 import './home-search-layer.css';
+import { GlobalToolUsabilityFixes } from '@/components/GlobalToolUsabilityFixes';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { absoluteUrl, allowIndexing, site, siteUrl } from '@/lib/site';
 
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <style dangerouslySetInnerHTML={{ __html: criticalEditorCss }} />
       </head>
       <body>
+        <GlobalToolUsabilityFixes />
         {children}
         <ScrollToTop />
       </body>
