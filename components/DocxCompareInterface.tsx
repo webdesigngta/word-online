@@ -73,7 +73,7 @@ export function DocxCompareInterface() {
         <Files />
         <h2>Compare two Word documents</h2>
         <p>The comparison checks paragraph and heading content in the two DOCX files.</p>
-        <button className="fwo-compare-button secondary" type="button" onClick={() => inputRef.current?.click()}>Choose two DOCX files</button>
+        <button className="fwo-compare-button secondary" type="button" onClick={() => inputRef.current?.click()}>Choose Files</button>
       </div>
       {files.length ? <div className="fwo-compare-files">{[0,1].map((index) => <div className="fwo-compare-file" key={index}><span>{index === 0 ? 'Original' : 'Compared version'}</span><strong>{files[index]?.name || 'Not selected'}</strong></div>)}</div> : null}
       <div className="fwo-compare-actions"><span className="fwo-compare-status">{status}</span><button className="fwo-compare-button" type="button" disabled={busy || files.length !== 2} onClick={() => void compare()}>{busy ? <RefreshCw /> : <FileDiff />}{busy ? 'Comparing…' : 'Compare documents'}</button></div>
