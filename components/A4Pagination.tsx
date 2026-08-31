@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 const PAGE_SELECTOR = ':scope > .fwo-page-sheet';
 const LEGACY_PAGE_BREAK_SELECTOR = '[data-fwo-page-break]';
+const A4_HEIGHT_TO_WIDTH = 297 / 210;
 
 type SelectionSnapshot = {
   range: Range;
@@ -129,8 +130,6 @@ function normalizePageStructure(root: HTMLElement) {
       root.insertBefore(currentPage, node);
     }
 
-    // Moving the existing node preserves its text nodes, formatting, live Range
-    // boundaries, and undo semantics. Nothing is cloned or recreated here.
     currentPage.append(node);
   }
 
@@ -144,6 +143,129 @@ function normalizePageStructure(root: HTMLElement) {
   return pages;
 }
 
+function pixels(value: string) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function targetPageHeight(page: HTMLElement, root: HTMLElement) {
+  const pageRect = page.getBoundingClientRect();
+  const rootRect = root.getBoundingClientRect();
+  const width = Math.max(1, pageRect.width || rootRect.width || 794);
+  const computed = window.getComputedStyle(page);
+  const minHeight = pixels(computed.minHeight);
+  return Math.max(minHeight, width * A4_HEIGHT_TO_WIDTH);
+}
+
+function nodeBottom(node: Node) {
+  if (node instanceof HTMLElement) return node.getBoundingClientRect().bottom;
+  const range = document.createRange();
+  range.selectNode(node);
+  const rect = range.getBoundingClientRect();
+  range.detach?.();
+  return rect.bottom;
+}
+
+function lastRenderedNode(page: HTMLElement) {
+  const nodes = Array.from(page.childNodes).reverse();
+  return nodes.find((node) => {
+    if (node.nodeType === Node.TEXT_NODE) return Boolean(node.textContent?.trim());
+    return node instanceof HTMLElement && !node.matches('[data-fwo-header],[data-fwo-footer]');
+  }) ?? null;
+}
+
+function pageOverflows(page: HTMLElement, root: HTMLElement) {
+  const last = lastRenderedNode(page);
+  if (!last) return false;
+  const rect = page.getBoundingClientRect();
+  const computed = window.getComputedStyle(page);
+  const bottomPadding = pixels(computed.paddingBottom);
+  const limit = rect.top + targetPageHeight(page, root) - bottomPadding;
+  return nodeBottom(last) > limit + 1;
+}
+
+function movableContentNodes(page: HTMLElement) {
+  return Array.from(page.childNodes).filter((node) => {
+    if (node instanceof HTMLElement && node.matches('[data-fwo-header],[data-fwo-footer]')) return false;
+    if (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) return false;
+    return true;
+  });
+}
+
+function splitTrailingListItem(page: HTMLElement, nextPage: HTMLElement) {
+  const last = lastRenderedNode(page);
+  if (!(last instanceof HTMLElement) || !['UL', 'OL'].includes(last.tagName) || last.children.length <= 1) return false;
+
+  let continuation = nextPage.firstElementChild as HTMLElement | null;
+  if (!continuation || continuation.tagName !== last.tagName || continuation.dataset.fwoListContinuation !== 'true') {
+    continuation = last.cloneNode(false) as HTMLElement;
+    continuation.dataset.fwoListContinuation = 'true';
+    nextPage.insertBefore(continuation, nextPage.firstChild);
+  }
+
+  const item = last.lastElementChild;
+  if (!item) return false;
+  continuation.insertBefore(item, continuation.firstChild);
+  return true;
+}
+
+/**
+ * A normal keystroke never triggers live re-pagination. Rich paste is different:
+ * a large external paste can add dozens of blocks at once. Flow only those
+ * overflowing blocks onto additional A4 wrappers so the pasted document does not
+ * run outside the white sheet, while keeping native typing/caret behavior stable.
+ */
+function paginateAfterRichPaste(root: HTMLElement) {
+  if (needsPageNormalization(root)) {
+    removeLegacyPageBreaks(root);
+    normalizePageStructure(root);
+  }
+
+  const snapshot = captureSelection(root);
+  let pages = directPages(root);
+  let index = 0;
+  let guard = 0;
+
+  while (index < pages.length && guard < 500) {
+    guard += 1;
+    const page = pages[index];
+
+    if (!pageOverflows(page, root)) {
+      index += 1;
+      continue;
+    }
+
+    let nextPage = pages[index + 1];
+    if (!nextPage) {
+      nextPage = appendPage(root);
+      pages = directPages(root);
+    }
+
+    if (splitTrailingListItem(page, nextPage)) continue;
+
+    const movable = movableContentNodes(page);
+    if (movable.length <= 1) {
+      // A single unusually tall paragraph is left intact rather than destructively
+      // splitting its inline formatting or breaking the user's caret position.
+      index += 1;
+      continue;
+    }
+
+    const node = movable[movable.length - 1];
+    nextPage.insertBefore(node, nextPage.firstChild);
+  }
+
+  pages = directPages(root);
+  pages.forEach((page) => {
+    const height = targetPageHeight(page, root);
+    page.style.minHeight = `${Math.ceil(height)}px`;
+  });
+
+  root.dataset.pageCount = String(pages.length);
+  restoreSelection(root, snapshot);
+  root.dispatchEvent(new CustomEvent('fwo:pages', { bubbles: true }));
+}
+
 /**
  * Provides stable page wrappers without mutating the editable document after
  * every keystroke. This deliberately prioritizes correct Word-like editing
@@ -155,6 +277,7 @@ export function A4Pagination() {
     if (!root) return;
 
     let frame = 0;
+    let pasteFrame = 0;
     let normalizing = false;
     let composing = false;
 
@@ -185,15 +308,25 @@ export function A4Pagination() {
       frame = requestAnimationFrame(normalize);
     };
 
+    const schedulePastePagination = () => {
+      cancelAnimationFrame(pasteFrame);
+      pasteFrame = requestAnimationFrame(() => {
+        pasteFrame = requestAnimationFrame(() => paginateAfterRichPaste(root));
+      });
+    };
+
     const onInput = () => {
-      // Normal text edits stay completely untouched. Only repair the wrapper if
-      // the browser/importer placed a new block directly under the editor root.
       if (!composing && needsPageNormalization(root)) schedule();
+    };
+
+    const onRichPaste = () => {
+      if (!composing) schedulePastePagination();
     };
 
     const onCompositionStart = () => {
       composing = true;
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(pasteFrame);
     };
 
     const onCompositionEnd = () => {
@@ -203,22 +336,30 @@ export function A4Pagination() {
 
     observer.observe(root, { childList: true, subtree: true, characterData: true });
     root.addEventListener('input', onInput);
+    root.addEventListener('fwo:rich-paste', onRichPaste);
     root.addEventListener('compositionstart', onCompositionStart);
     root.addEventListener('compositionend', onCompositionEnd);
 
-    // Initial content and asynchronously restored drafts may begin unwrapped.
     schedule();
 
     return () => {
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(pasteFrame);
       observer.disconnect();
       root.removeEventListener('input', onInput);
+      root.removeEventListener('fwo:rich-paste', onRichPaste);
       root.removeEventListener('compositionstart', onCompositionStart);
       root.removeEventListener('compositionend', onCompositionEnd);
     };
   }, []);
 
-  return null;
+  return (
+    <style jsx global>{`
+      .docs-editor-workspace .fwo-page-sheet + .fwo-page-sheet {
+        margin-top: 18px;
+      }
+    `}</style>
+  );
 }
 
 /** Removes visual page containers while retaining the original document blocks. */
