@@ -204,19 +204,45 @@ function cellHasMeaningfulContent(cell: HTMLTableCellElement) {
   return Boolean(text || cell.querySelector('img,hr,table'));
 }
 
-function tableLooksLikeRealData(table: HTMLTableElement, plainText: string) {
+function clipboardComesFromDocumentApp(html: string) {
+  return /(?:mso-|urn:schemas-microsoft-com:office|google-sheets-html-origin|docs-internal-guid|data-sheets-value|data-sheets-userformat)/i.test(html);
+}
+
+function clipboardTextLooksTabular(plainText: string, rowCount: number) {
+  const lines = plainText.replace(/\r\n?/g, '\n').split('\n').filter((line) => line.trim());
+  const tabbedLines = lines.filter((line) => line.includes('\t'));
+  const minimumTabbedLines = Math.min(2, Math.max(1, rowCount));
+  return tabbedLines.length >= minimumTabbedLines;
+}
+
+function tableLooksLikeRealData(table: HTMLTableElement, plainText: string, sourceHtml: string) {
   const columnCount = tableColumnCount(table);
   if (columnCount < 2) return false;
 
   const rows = Array.from(table.rows);
-  const hasTabbedClipboardText = /\t/.test(plainText);
   const headerCells = table.querySelectorAll('th').length;
-  const denseRows = rows.filter((row) => Array.from(row.cells).filter(cellHasMeaningfulContent).length >= 2).length;
+  const hasSemanticHeader = Boolean(table.querySelector('thead')) || headerCells >= 2;
+  const role = (table.getAttribute('role') ?? '').toLowerCase();
+  const hasTableRole = role === 'table' || role === 'grid';
 
-  // Word, Excel, Google Docs and other document apps normally expose copied table
-  // cells as tab-separated plain text. Keep those as real tables. Also keep obvious
-  // semantic tables with multiple headers or multiple populated rows.
-  return hasTabbedClipboardText || headerCells >= 2 || denseRows >= 2;
+  // Explicit table semantics should always survive a formatted paste.
+  if (hasSemanticHeader || hasTableRole) return true;
+
+  const denseRows = rows.filter((row) => Array.from(row.cells).filter(cellHasMeaningfulContent).length >= 2).length;
+  const looksTabularText = clipboardTextLooksTabular(plainText, rows.length);
+
+  // Office, Google Docs and Google Sheets use layout-ish markup even for genuine
+  // document tables. Their source markers plus tabular plain text are strong proof
+  // that the table is user data rather than a copied webpage layout.
+  if (clipboardComesFromDocumentApp(sourceHtml) && looksTabularText && denseRows >= 1) return true;
+
+  // Generic webpage clipboard HTML frequently uses multi-column tables for cards,
+  // nav items and feature grids. Keeping those tables is what caused pasted text to
+  // collapse into the very narrow vertical columns seen in the editor. Only retain
+  // a small, simple generic table when the plain-text clipboard is clearly tabular.
+  const cells = Array.from(table.querySelectorAll<HTMLTableCellElement>('td,th'));
+  const hasRichLayoutContent = cells.some((cell) => Boolean(cell.querySelector('h1,h2,h3,h4,h5,h6,ul,ol,blockquote,pre,table,img')));
+  return columnCount <= 2 && denseRows >= 2 && looksTabularText && !hasRichLayoutContent;
 }
 
 function appendCellAsDocumentContent(fragment: DocumentFragment, cell: HTMLTableCellElement) {
@@ -250,11 +276,11 @@ function unwrapLayoutTable(table: HTMLTableElement) {
   table.replaceWith(fragment);
 }
 
-function normalizePastedTables(root: HTMLElement, plainText: string) {
-  // Work from the deepest table outward so nested clipboard layout is cleaned
-  // before its parent is evaluated.
+function normalizePastedTables(root: HTMLElement, plainText: string, sourceHtml: string) {
+  // Inspect raw clipboard markup before sanitizing it. That preserves useful source
+  // markers/semantics for deciding whether a table is real data or only page layout.
   Array.from(root.querySelectorAll<HTMLTableElement>('table')).reverse().forEach((table) => {
-    if (!tableLooksLikeRealData(table, plainText)) {
+    if (!tableLooksLikeRealData(table, plainText, sourceHtml)) {
       unwrapLayoutTable(table);
       return;
     }
@@ -291,8 +317,10 @@ function normalizePastedBlocks(root: HTMLElement) {
 
 function sanitizedClipboardHtml(html: string, plainText: string) {
   const parsed = new DOMParser().parseFromString(html, 'text/html');
+
+  // Remove layout tables before sanitization strips the clues that identify them.
+  normalizePastedTables(parsed.body, plainText, html);
   Array.from(parsed.body.childNodes).forEach((node) => sanitizeNode(node));
-  normalizePastedTables(parsed.body, plainText);
   normalizeLooseTopLevelContent(parsed.body, plainText);
   normalizePastedBlocks(parsed.body);
 
