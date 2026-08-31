@@ -5,6 +5,7 @@ import { ChromeStatusAndZoom } from '@/components/ChromeStatusAndZoom';
 import { CompactStyleMenu } from '@/components/CompactStyleMenu';
 import { DelayedTooltips } from '@/components/DelayedTooltips';
 import { DocumentOutline } from '@/components/DocumentOutline';
+import { EditorFeatureCleanup } from '@/components/EditorFeatureCleanup';
 import { EditorIntentPrompt, type EditorIntentMode } from '@/components/EditorIntentPrompt';
 import { EditorKeyboardScope } from '@/components/EditorKeyboardScope';
 import { EditorMenuAutoDismiss } from '@/components/EditorMenuAutoDismiss';
@@ -61,6 +62,7 @@ export function WordEditorClientRuntime({
       <UnifiedToolbarMenuTriggers />
       <NoLoginToolbarFeatures />
       <WordToolbarPolish />
+      <EditorFeatureCleanup />
       <EditorNativeSelectionGuard />
       <WordColorControlsFix />
       <WordFormattingSelectionBridge />
