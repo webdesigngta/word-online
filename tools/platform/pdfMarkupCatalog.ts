@@ -6,7 +6,7 @@ export const livePdfMarkupTools: readonly PlatformToolDefinition[] = [
     route: '/edit-pdf',
     name: 'Edit PDF',
     title: 'Edit PDF – Free Online PDF Editor',
-    description: 'Edit PDF pages directly in your browser by adding text, highlights, and rectangle overlays, then download a new edited copy.',
+    description: 'Open a PDF, recognize existing text with embedded PDF metadata or OCR, edit the detected text and formatting in place, then download a new edited PDF.',
     eyebrow: 'EDIT PDF',
     primaryIntent: 'Edit a PDF online',
     kind: 'pdf',
