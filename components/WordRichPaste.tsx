@@ -62,6 +62,7 @@ const SAFE_ATTRIBUTES: Record<string, Set<string>> = {
   A: new Set(['href', 'title']),
   IMG: new Set(['src', 'alt', 'title']),
   OL: new Set(['start', 'type']),
+  TABLE: new Set(['data-doc321-real-table']),
   TD: new Set(['colspan', 'rowspan']),
   TH: new Set(['colspan', 'rowspan', 'scope']),
 };
@@ -285,6 +286,7 @@ function normalizePastedTables(root: HTMLElement, plainText: string, sourceHtml:
       return;
     }
 
+    table.setAttribute('data-doc321-real-table', 'true');
     table.style.width = '100%';
     table.style.maxWidth = '100%';
     table.style.tableLayout = 'auto';
@@ -297,6 +299,38 @@ function normalizePastedTables(root: HTMLElement, plainText: string, sourceHtml:
       });
     });
   });
+}
+
+function repairCollapsedLayoutTables(editor: HTMLElement) {
+  let changed = false;
+
+  Array.from(editor.querySelectorAll<HTMLTableElement>('table')).reverse().forEach((table) => {
+    if (table.getAttribute('data-doc321-real-table') === 'true') return;
+    if (table.querySelector('thead,th')) return;
+
+    const role = (table.getAttribute('role') ?? '').toLowerCase();
+    if (role === 'table' || role === 'grid') return;
+
+    const columnCount = tableColumnCount(table);
+    if (columnCount < 6) return;
+
+    const cells = Array.from(table.querySelectorAll<HTMLTableCellElement>('td,th'));
+    const measuredWidths = cells.map((cell) => cell.getBoundingClientRect().width).filter((width) => width > 0);
+    if (!measuredWidths.length) return;
+
+    const averageWidth = measuredWidths.reduce((total, width) => total + width, 0) / measuredWidths.length;
+    const proseCells = cells.filter((cell) => (cell.textContent ?? '').replace(/\s+/g, ' ').trim().length >= 24).length;
+    const layoutHeavyCells = cells.filter((cell) => Boolean(cell.querySelector('p,h1,h2,h3,h4,h5,h6,ul,ol,blockquote,img'))).length;
+
+    // This is deliberately narrow: it repairs the extreme 6+ column, prose-heavy
+    // layout-table failure from older pastes without touching normal user tables.
+    if (averageWidth > 120 || proseCells < 2 || layoutHeavyCells < 2) return;
+
+    unwrapLayoutTable(table);
+    changed = true;
+  });
+
+  if (changed) editor.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 function normalizeLooseTopLevelContent(root: HTMLElement, plainText: string) {
@@ -353,6 +387,7 @@ function insertClipboardContent(editor: HTMLElement, html: string, text: string,
   }
 
   editor.dispatchEvent(new Event('input', { bubbles: true }));
+  requestAnimationFrame(() => repairCollapsedLayoutTables(editor));
 }
 
 /**
@@ -368,6 +403,11 @@ export function WordRichPaste() {
     if (!editor) return;
 
     let pasteAsPlainText = false;
+
+    // Repair documents that were autosaved before the stronger paste cleanup was
+    // deployed. Running twice catches both immediate and restored local content.
+    const firstRepairFrame = requestAnimationFrame(() => repairCollapsedLayoutTables(editor));
+    const delayedRepair = window.setTimeout(() => repairCollapsedLayoutTables(editor), 250);
 
     const onKeyDown = (event: KeyboardEvent) => {
       pasteAsPlainText = Boolean((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'v');
@@ -398,6 +438,8 @@ export function WordRichPaste() {
     editor.addEventListener('paste', onPaste, true);
 
     return () => {
+      cancelAnimationFrame(firstRepairFrame);
+      window.clearTimeout(delayedRepair);
       document.removeEventListener('keydown', onKeyDown, true);
       document.removeEventListener('keyup', onKeyUp, true);
       editor.removeEventListener('paste', onPaste, true);
