@@ -148,23 +148,23 @@ function unwrapTableToText(table: HTMLTableElement) {
 }
 
 function sanitizeElement(element: HTMLElement) {
-  Array.from(element.childNodes).forEach((child) => sanitizeNode(child));
+  // Handle clipboard layout/visual objects before walking their descendants.
+  if (element.tagName === 'TABLE') {
+    unwrapTableToText(element as HTMLTableElement);
+    return;
+  }
+
+  if (['HR', 'IMG', 'VIDEO', 'AUDIO', 'CANVAS'].includes(element.tagName)) {
+    element.remove();
+    return;
+  }
 
   if (DROP_WITH_CONTENT.has(element.tagName)) {
     element.remove();
     return;
   }
 
-  if (element.tagName === 'TABLE') {
-    unwrapTableToText(element as HTMLTableElement);
-    return;
-  }
-
-  // Never import foreign visual/layout objects from the clipboard.
-  if (['HR', 'IMG', 'VIDEO', 'AUDIO', 'CANVAS'].includes(element.tagName)) {
-    element.remove();
-    return;
-  }
+  Array.from(element.childNodes).forEach((child) => sanitizeNode(child));
 
   if (['DIV', 'SECTION', 'ARTICLE', 'MAIN', 'HEADER', 'FOOTER', 'ASIDE', 'NAV'].includes(element.tagName)) {
     normalizeDivElement(element);
@@ -242,6 +242,7 @@ function insertClipboardContent(editor: HTMLElement, html: string, text: string,
   }
 
   editor.dispatchEvent(new Event('input', { bubbles: true }));
+  editor.dispatchEvent(new CustomEvent('fwo:rich-paste', { bubbles: true }));
 }
 
 /**
@@ -316,14 +317,6 @@ export function WordRichPaste() {
       }
       .docs-editor-workspace .editor-page pre {
         white-space: pre-wrap !important;
-      }
-      .docs-editor-workspace .editor-page hr,
-      .docs-editor-workspace .editor-page img,
-      .docs-editor-workspace .editor-page video,
-      .docs-editor-workspace .editor-page audio,
-      .docs-editor-workspace .editor-page canvas,
-      .docs-editor-workspace .editor-page table {
-        display: none !important;
       }
     `}</style>
   );
