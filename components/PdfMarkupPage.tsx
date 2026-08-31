@@ -1,6 +1,6 @@
 import { PlatformTaskPage } from '@/components/PlatformTaskPage';
 import { PdfMarkupInterface, type PdfMarkupMode } from '@/components/PdfMarkupInterface';
-import { PdfSmartEditInterfaceV2 } from '@/components/PdfSmartEditInterfaceV2';
+import { PdfSmartEditLoader } from '@/components/PdfSmartEditLoader';
 import { getAllPlatformToolByRoute } from '@/tools/platform/allTools';
 
 const content: Record<PdfMarkupMode, { details: Array<{ title: string; text: string }>; faq: Array<{ question: string; answer: string }> }> = {
@@ -35,7 +35,7 @@ export function PdfMarkupPage({ route, mode }: { route: string; mode: PdfMarkupM
   if (!tool) throw new Error(`Unknown PDF markup route: ${route}`);
   const page = content[mode];
   const interfaceNode = mode === 'edit-pdf'
-    ? <PdfSmartEditInterfaceV2 toolId={tool.id} />
+    ? <PdfSmartEditLoader toolId={tool.id} />
     : <PdfMarkupInterface mode={mode} toolId={tool.id} />;
   return <PlatformTaskPage route={route} title={tool.title} description={tool.description} tool={interfaceNode} details={page.details} faq={page.faq} />;
 }
