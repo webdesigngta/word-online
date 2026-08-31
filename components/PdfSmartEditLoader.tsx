@@ -41,7 +41,7 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
 
   if (error) {
     return (
-      <div className="spe-engine-state spe-engine-error" role="alert">
+      <div data-native-upload-ui="true" className="spe-engine-state spe-engine-error" role="alert">
         <FileUp size={34} />
         <strong>Could not start the PDF editor</strong>
         <span>{error}</span>
@@ -58,7 +58,7 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
 
   if (!ready) {
     return (
-      <div className="spe-engine-state" aria-live="polite">
+      <div data-native-upload-ui="true" className="spe-engine-state" aria-live="polite">
         <LoaderCircle className="spe-engine-spinner" size={34} />
         <strong>Loading PDF editor...</strong>
         <span>Preparing the PDF renderer and OCR engine.</span>
@@ -72,6 +72,7 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
 
   return (
     <div
+      data-native-upload-ui="true"
       onClickCapture={(event) => {
         const target = event.target as HTMLElement | null;
         const button = target?.closest<HTMLButtonElement>('.smart-pdf-editor .spe-drop .spe-btn.primary');
