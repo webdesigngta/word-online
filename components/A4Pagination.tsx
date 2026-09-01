@@ -14,6 +14,11 @@ type SelectionSnapshot = {
   focusOffset: number;
 };
 
+type TextSplitPoint = {
+  node: Text;
+  offset: number;
+};
+
 function makePage(): HTMLDivElement {
   const page = document.createElement('div');
   page.className = 'fwo-page-sheet';
@@ -157,6 +162,13 @@ function targetPageHeight(page: HTMLElement, root: HTMLElement) {
   return Math.max(minHeight, width * A4_HEIGHT_TO_WIDTH);
 }
 
+function pageContentBottom(page: HTMLElement, root: HTMLElement) {
+  const rect = page.getBoundingClientRect();
+  const computed = window.getComputedStyle(page);
+  const bottomPadding = pixels(computed.paddingBottom);
+  return rect.top + targetPageHeight(page, root) - bottomPadding;
+}
+
 function nodeBottom(node: Node) {
   if (node instanceof HTMLElement) return node.getBoundingClientRect().bottom;
   const range = document.createRange();
@@ -164,6 +176,13 @@ function nodeBottom(node: Node) {
   const rect = range.getBoundingClientRect();
   range.detach?.();
   return rect.bottom;
+}
+
+function rangeBottom(range: Range) {
+  const rects = Array.from(range.getClientRects());
+  const last = rects[rects.length - 1];
+  if (last) return last.bottom;
+  return range.getBoundingClientRect().bottom;
 }
 
 function lastRenderedNode(page: HTMLElement) {
@@ -177,11 +196,7 @@ function lastRenderedNode(page: HTMLElement) {
 function pageOverflows(page: HTMLElement, root: HTMLElement) {
   const last = lastRenderedNode(page);
   if (!last) return false;
-  const rect = page.getBoundingClientRect();
-  const computed = window.getComputedStyle(page);
-  const bottomPadding = pixels(computed.paddingBottom);
-  const limit = rect.top + targetPageHeight(page, root) - bottomPadding;
-  return nodeBottom(last) > limit + 1;
+  return nodeBottom(last) > pageContentBottom(page, root) + 1;
 }
 
 function movableContentNodes(page: HTMLElement) {
@@ -190,6 +205,124 @@ function movableContentNodes(page: HTMLElement) {
     if (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) return false;
     return true;
   });
+}
+
+function nearestWordBoundary(text: string, offset: number) {
+  if (offset <= 1 || offset >= text.length) return offset;
+  const before = text.slice(0, offset);
+  const space = Math.max(
+    before.lastIndexOf(' '),
+    before.lastIndexOf('\n'),
+    before.lastIndexOf('\t'),
+    before.lastIndexOf('\u00a0'),
+  );
+  // Avoid moving an unnecessarily large amount of already fitting text just to
+  // find a word boundary. Long URLs/words can still split at a character.
+  return space >= Math.max(1, offset - 80) ? space + 1 : offset;
+}
+
+function fittingTextSplitPoint(block: HTMLElement, page: HTMLElement, root: HTMLElement): TextSplitPoint | null {
+  const walker = block.ownerDocument.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      return node.textContent?.length ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    },
+  });
+  const textNodes: Text[] = [];
+  let current = walker.nextNode();
+  while (current) {
+    textNodes.push(current as Text);
+    current = walker.nextNode();
+  }
+  if (!textNodes.length) return null;
+
+  const limit = pageContentBottom(page, root);
+  let lastFit: TextSplitPoint | null = null;
+
+  for (const textNode of textNodes) {
+    const text = textNode.data;
+    if (!text.length) continue;
+
+    const range = block.ownerDocument.createRange();
+    range.setStart(block, 0);
+    range.setEnd(textNode, text.length);
+
+    if (rangeBottom(range) <= limit + 1) {
+      lastFit = { node: textNode, offset: text.length };
+      range.detach?.();
+      continue;
+    }
+
+    let low = 0;
+    let high = text.length;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      range.setEnd(textNode, mid);
+      if (rangeBottom(range) <= limit + 1) low = mid;
+      else high = mid - 1;
+    }
+    range.detach?.();
+
+    if (low <= 0) return lastFit;
+    return { node: textNode, offset: nearestWordBoundary(text, low) };
+  }
+
+  return lastFit;
+}
+
+function splitOversizedElement(page: HTMLElement, nextPage: HTMLElement, element: HTMLElement, root: HTMLElement) {
+  const point = fittingTextSplitPoint(element, page, root);
+  if (!point) return false;
+
+  const firstText = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT).nextNode();
+  if (firstText === point.node && point.offset <= 0) return false;
+
+  const range = element.ownerDocument.createRange();
+  range.setStart(point.node, point.offset);
+  range.setEnd(element, element.childNodes.length);
+  const fragment = range.extractContents();
+  range.detach?.();
+
+  if (!fragment.childNodes.length) return false;
+
+  const continuation = element.cloneNode(false) as HTMLElement;
+  continuation.removeAttribute('id');
+  continuation.dataset.fwoBlockContinuation = 'true';
+  continuation.append(fragment);
+
+  if (!continuation.textContent?.trim() && !continuation.querySelector('br')) return false;
+  nextPage.insertBefore(continuation, nextPage.firstChild);
+  return true;
+}
+
+function splitOversizedTextNode(page: HTMLElement, nextPage: HTMLElement, textNode: Text, root: HTMLElement) {
+  const text = textNode.data;
+  if (text.length <= 1) return false;
+
+  const limit = pageContentBottom(page, root);
+  const range = textNode.ownerDocument.createRange();
+  range.setStart(textNode, 0);
+  let low = 0;
+  let high = text.length;
+
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    range.setEnd(textNode, mid);
+    if (rangeBottom(range) <= limit + 1) low = mid;
+    else high = mid - 1;
+  }
+  range.detach?.();
+
+  const splitAt = nearestWordBoundary(text, low);
+  if (splitAt <= 0 || splitAt >= text.length) return false;
+  const tail = textNode.splitText(splitAt);
+  nextPage.insertBefore(tail, nextPage.firstChild);
+  return true;
+}
+
+function splitOversizedNode(page: HTMLElement, nextPage: HTMLElement, node: Node, root: HTMLElement) {
+  if (node instanceof HTMLElement) return splitOversizedElement(page, nextPage, node, root);
+  if (node instanceof Text) return splitOversizedTextNode(page, nextPage, node, root);
+  return false;
 }
 
 function splitTrailingListItem(page: HTMLElement, nextPage: HTMLElement) {
@@ -211,9 +344,10 @@ function splitTrailingListItem(page: HTMLElement, nextPage: HTMLElement) {
 
 /**
  * A normal keystroke never triggers live re-pagination. Rich paste is different:
- * a large external paste can add dozens of blocks at once. Flow only those
- * overflowing blocks onto additional A4 wrappers so the pasted document does not
- * run outside the white sheet, while keeping native typing/caret behavior stable.
+ * a large external paste can add dozens of blocks at once. Flow overflowing
+ * blocks onto additional A4 wrappers. If a pasted source arrives as one very tall
+ * paragraph/list/pre block, split it at the last rendered text position that fits
+ * so content can never continue below the white A4 sheet.
  */
 function paginateAfterRichPaste(root: HTMLElement) {
   if (needsPageNormalization(root)) {
@@ -245,8 +379,7 @@ function paginateAfterRichPaste(root: HTMLElement) {
 
     const movable = movableContentNodes(page);
     if (movable.length <= 1) {
-      // A single unusually tall paragraph is left intact rather than destructively
-      // splitting its inline formatting or breaking the user's caret position.
+      if (movable.length === 1 && splitOversizedNode(page, nextPage, movable[0], root)) continue;
       index += 1;
       continue;
     }
