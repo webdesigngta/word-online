@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { FileUp, LoaderCircle } from 'lucide-react';
-import { PdfSmartEditInterfaceV2 } from '@/components/PdfSmartEditInterfaceV2';
+import { PdfEditorWorkspace } from '@/components/PdfEditorWorkspace';
 
 function workerUrl() {
   const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/+$/, '');
@@ -23,9 +23,6 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
 
     void import('pdfjs-dist/legacy/build/pdf.mjs')
       .then((pdfjs) => {
-        // PDF.js 6 requires an explicit browser worker URL. The production
-        // build copies this worker into /public so it is available at the
-        // site root after the static export is deployed.
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl();
         if (mounted.current) setReady(true);
       })
@@ -77,12 +74,11 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
         const target = event.target as HTMLElement | null;
         const button = target?.closest<HTMLButtonElement>('.smart-pdf-editor .spe-drop .spe-btn.primary');
         if (!button) return;
-        // Allow choosing the same PDF again after a failed or cancelled load.
         const input = button.closest<HTMLElement>('.smart-pdf-editor')?.querySelector<HTMLInputElement>('input[type="file"][accept*="pdf"]');
         if (input) input.value = '';
       }}
     >
-      <PdfSmartEditInterfaceV2 toolId={toolId} />
+      <PdfEditorWorkspace toolId={toolId} />
     </div>
   );
 }
