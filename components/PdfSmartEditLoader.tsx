@@ -6,7 +6,12 @@ import { PdfEditorWorkspace } from '@/components/PdfEditorWorkspace';
 
 function workerUrl() {
   const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/+$/, '');
-  const path = `${basePath}/pdf.worker.min.mjs`;
+  // HostGator/Apache can serve .mjs with a non-JavaScript MIME type. PDF.js
+  // creates a module worker only when a document is opened, so that failure
+  // looks like the picker worked and then the editor instantly stopped.
+  // The build copies the same PDF.js worker bytes to a .js URL, which shared
+  // Apache hosting serves as JavaScript reliably.
+  const path = `${basePath}/pdf.worker.min.js`;
   return new URL(path, window.location.origin).toString();
 }
 
