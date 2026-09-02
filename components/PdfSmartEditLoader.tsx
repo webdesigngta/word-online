@@ -15,6 +15,7 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const mounted = useRef(true);
+  const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     mounted.current = true;
@@ -35,6 +36,45 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
       mounted.current = false;
     };
   }, [attempt]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const host = hostRef.current;
+    if (!host) return;
+
+    const onChoosePdf = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const button = target?.closest<HTMLElement>('.smart-pdf-editor .spe-drop .spe-btn.primary');
+      if (!button || !host.contains(button)) return;
+
+      const input = host.querySelector<HTMLInputElement>('input[type="file"][accept*="pdf"]');
+      if (!input || input.disabled) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      input.value = '';
+      input.hidden = false;
+      input.style.position = 'fixed';
+      input.style.left = '-10000px';
+      input.style.top = '0';
+      input.style.width = '1px';
+      input.style.height = '1px';
+      input.style.opacity = '0';
+      input.style.pointerEvents = 'none';
+
+      try {
+        const picker = input as HTMLInputElement & { showPicker?: () => void };
+        if (typeof picker.showPicker === 'function') picker.showPicker();
+        else input.click();
+      } catch {
+        input.click();
+      }
+    };
+
+    host.addEventListener('click', onChoosePdf, true);
+    return () => host.removeEventListener('click', onChoosePdf, true);
+  }, [ready]);
 
   if (error) {
     return (
@@ -68,16 +108,7 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
   }
 
   return (
-    <div
-      data-native-upload-ui="true"
-      onClickCapture={(event) => {
-        const target = event.target as HTMLElement | null;
-        const button = target?.closest<HTMLButtonElement>('.smart-pdf-editor .spe-drop .spe-btn.primary');
-        if (!button) return;
-        const input = button.closest<HTMLElement>('.smart-pdf-editor')?.querySelector<HTMLInputElement>('input[type="file"][accept*="pdf"]');
-        if (input) input.value = '';
-      }}
-    >
+    <div ref={hostRef} data-native-upload-ui="true">
       <PdfEditorWorkspace toolId={toolId} />
     </div>
   );
