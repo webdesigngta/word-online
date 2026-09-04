@@ -22,6 +22,8 @@ const STYLE_ITEMS: StyleItem[] = [
   { label: 'Heading 6', tag: 'h6', size: '12px', weight: '600' },
 ];
 
+const BLOCK_SELECTOR = 'p,h1,h2,h3,h4,h5,h6';
+
 function labelForBlock(block: HTMLElement | null) {
   if (!block) return 'Normal text';
   const special = block.dataset.fwoParagraphStyle;
@@ -34,29 +36,163 @@ function labelForBlock(block: HTMLElement | null) {
 function clearSpecialStyle(block: HTMLElement | null) {
   if (!block) return;
   delete block.dataset.fwoParagraphStyle;
-  if (block.style.fontSize) block.style.removeProperty('font-size');
-  if (block.style.fontWeight) block.style.removeProperty('font-weight');
-  if (block.style.color) block.style.removeProperty('color');
-  if (block.style.marginTop) block.style.removeProperty('margin-top');
-  if (block.style.marginBottom) block.style.removeProperty('margin-bottom');
+  block.style.removeProperty('font-size');
+  block.style.removeProperty('font-weight');
+  block.style.removeProperty('color');
+  block.style.removeProperty('margin-top');
+  block.style.removeProperty('margin-bottom');
 }
 
-function currentBlock() {
-  const editor = document.querySelector<HTMLElement>('.editor-page');
+function applySpecialStyle(block: HTMLElement, item: StyleItem) {
+  clearSpecialStyle(block);
+  if (item.kind === 'title') {
+    block.dataset.fwoParagraphStyle = 'title';
+    block.style.fontSize = '26pt';
+    block.style.fontWeight = '500';
+    block.style.marginTop = '0.6em';
+    block.style.marginBottom = '0.3em';
+  } else if (item.kind === 'subtitle') {
+    block.dataset.fwoParagraphStyle = 'subtitle';
+    block.style.fontSize = '15pt';
+    block.style.fontWeight = '400';
+    block.style.color = '#5f6368';
+    block.style.marginTop = '0.3em';
+    block.style.marginBottom = '0.6em';
+  }
+}
+
+function selectionRange(editor: HTMLElement) {
   const selection = window.getSelection();
-  if (!editor || !selection?.rangeCount) return null;
-  let node: Node | null = selection.anchorNode;
-  if (!node || !editor.contains(node)) return null;
-  if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-  return node instanceof HTMLElement ? node.closest<HTMLElement>('p,h1,h2,h3,h4,h5,h6') : null;
+  if (!selection?.rangeCount) return null;
+  const range = selection.getRangeAt(0);
+  return editor.contains(range.startContainer) && editor.contains(range.endContainer) ? range : null;
+}
+
+function blockForNode(editor: HTMLElement, node: Node) {
+  let element: HTMLElement | null = node.nodeType === Node.TEXT_NODE ? node.parentElement : node as HTMLElement;
+  const block = element?.closest<HTMLElement>(BLOCK_SELECTOR) ?? null;
+  return block && editor.contains(block) ? block : null;
+}
+
+function currentBlock(editor: HTMLElement) {
+  const range = selectionRange(editor);
+  return range ? blockForNode(editor, range.startContainer) : null;
+}
+
+function fragmentHasContent(fragment: DocumentFragment) {
+  return Boolean(fragment.textContent?.length || fragment.querySelector('*'));
+}
+
+function cloneBlockShell(block: HTMLElement) {
+  const clone = block.cloneNode(false) as HTMLElement;
+  clone.removeAttribute('id');
+  return clone;
+}
+
+function makeStyledBlock(item: StyleItem, source: HTMLElement | null, contents: DocumentFragment) {
+  const block = document.createElement(item.tag);
+  if (source) {
+    if (source.dir) block.dir = source.dir;
+    if (source.style.textAlign) block.style.textAlign = source.style.textAlign;
+    if (source.style.marginLeft) block.style.marginLeft = source.style.marginLeft;
+    if (source.style.marginRight) block.style.marginRight = source.style.marginRight;
+  }
+  if (fragmentHasContent(contents)) block.appendChild(contents);
+  else block.appendChild(document.createElement('br'));
+  applySpecialStyle(block, item);
+  return block;
+}
+
+function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleItem) {
+  if (range.collapsed) return null;
+  const startBlock = blockForNode(editor, range.startContainer);
+  const endBlock = blockForNode(editor, range.endContainer);
+  if (!startBlock || startBlock !== endBlock) return null;
+
+  const beforeRange = document.createRange();
+  beforeRange.selectNodeContents(startBlock);
+  beforeRange.setEnd(range.startContainer, range.startOffset);
+  const before = beforeRange.cloneContents();
+
+  const afterRange = document.createRange();
+  afterRange.selectNodeContents(startBlock);
+  afterRange.setStart(range.endContainer, range.endOffset);
+  const after = afterRange.cloneContents();
+
+  // If the whole block is selected, native formatBlock is the simpler path.
+  if (!fragmentHasContent(before) && !fragmentHasContent(after)) return null;
+
+  const selected = range.cloneContents();
+  const replacement: HTMLElement[] = [];
+
+  if (fragmentHasContent(before)) {
+    const beforeBlock = cloneBlockShell(startBlock);
+    beforeBlock.appendChild(before);
+    replacement.push(beforeBlock);
+  }
+
+  const selectedBlock = makeStyledBlock(item, startBlock, selected);
+  replacement.push(selectedBlock);
+
+  if (fragmentHasContent(after)) {
+    const afterBlock = cloneBlockShell(startBlock);
+    afterBlock.appendChild(after);
+    replacement.push(afterBlock);
+  }
+
+  startBlock.replaceWith(...replacement);
+  const selection = window.getSelection();
+  const selectedRange = document.createRange();
+  selectedRange.selectNodeContents(selectedBlock);
+  selection?.removeAllRanges();
+  selection?.addRange(selectedRange);
+  return selectedBlock;
+}
+
+function isolateRootSelection(editor: HTMLElement, range: Range, item: StyleItem) {
+  if (range.collapsed) return null;
+  const startBlock = blockForNode(editor, range.startContainer);
+  const endBlock = blockForNode(editor, range.endContainer);
+  if (startBlock || endBlock) return null;
+
+  const selected = range.extractContents();
+  const block = makeStyledBlock(item, null, selected);
+  range.insertNode(block);
+  const selection = window.getSelection();
+  const selectedRange = document.createRange();
+  selectedRange.selectNodeContents(block);
+  selection?.removeAllRanges();
+  selection?.addRange(selectedRange);
+  return block;
 }
 
 export function CompactStyleMenu() {
   useEffect(() => {
+    const editor = document.querySelector<HTMLElement>('.editor-page');
     const select = document.querySelector<HTMLSelectElement>('.docs-style-select');
-    if (!select || document.querySelector('.fwo-style-wrap')) return;
+    if (!editor || !select || document.querySelector('.fwo-style-wrap')) return;
 
     select.style.display = 'none';
+    let savedRange: Range | null = null;
+
+    const rememberRange = () => {
+      const range = selectionRange(editor);
+      if (range) savedRange = range.cloneRange();
+    };
+
+    const restoreRange = () => {
+      if (!savedRange) return false;
+      try {
+        const selection = window.getSelection();
+        editor.focus({ preventScroll: true });
+        selection?.removeAllRanges();
+        selection?.addRange(savedRange.cloneRange());
+        return true;
+      } catch {
+        savedRange = null;
+        return false;
+      }
+    };
 
     const wrap = document.createElement('div');
     wrap.className = 'fwo-style-wrap';
@@ -84,7 +220,6 @@ export function CompactStyleMenu() {
       const left = Math.min(Math.max(edge, rect.left), Math.max(edge, window.innerWidth - width - edge));
       const top = Math.max(edge, rect.bottom + gap);
       const availableHeight = Math.max(120, window.innerHeight - top - edge);
-
       menu.style.left = `${left}px`;
       menu.style.top = `${top}px`;
       menu.style.width = `${width}px`;
@@ -97,32 +232,29 @@ export function CompactStyleMenu() {
     };
 
     const applyItem = (item: StyleItem) => {
-      const before = currentBlock();
-      if (before) clearSpecialStyle(before);
-      document.execCommand('formatBlock', false, item.tag);
-      const block = currentBlock();
-      if (block) {
-        clearSpecialStyle(block);
-        if (item.kind === 'title') {
-          block.dataset.fwoParagraphStyle = 'title';
-          block.style.fontSize = '26pt';
-          block.style.fontWeight = '500';
-          block.style.marginTop = '0.6em';
-          block.style.marginBottom = '0.3em';
-        } else if (item.kind === 'subtitle') {
-          block.dataset.fwoParagraphStyle = 'subtitle';
-          block.style.fontSize = '15pt';
-          block.style.fontWeight = '400';
-          block.style.color = '#5f6368';
-          block.style.marginTop = '0.3em';
-          block.style.marginBottom = '0.6em';
-        }
+      restoreRange();
+      const range = selectionRange(editor);
+      if (!range) {
+        closeMenu();
+        return;
       }
-      const editor = document.querySelector<HTMLElement>('.editor-page');
-      editor?.dispatchEvent(new Event('input', { bubbles: true }));
+
+      let block = isolatePartialSelection(editor, range, item) ?? isolateRootSelection(editor, range, item);
+
+      if (!block) {
+        const before = currentBlock(editor);
+        if (before) clearSpecialStyle(before);
+        document.execCommand('formatBlock', false, item.tag);
+        block = currentBlock(editor);
+        if (block) applySpecialStyle(block, item);
+      }
+
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      const active = window.getSelection();
+      if (active?.rangeCount) savedRange = active.getRangeAt(0).cloneRange();
       (trigger.querySelector('.fwo-style-label') as HTMLElement).textContent = item.label;
       closeMenu();
-      editor?.focus({ preventScroll: true });
+      editor.focus({ preventScroll: true });
     };
 
     STYLE_ITEMS.forEach((item) => {
@@ -136,7 +268,10 @@ export function CompactStyleMenu() {
       menu.appendChild(button);
     });
 
-    trigger.addEventListener('mousedown', (event) => event.preventDefault());
+    trigger.addEventListener('mousedown', (event) => {
+      rememberRange();
+      event.preventDefault();
+    });
     trigger.addEventListener('click', () => {
       const opening = menu.hidden;
       if (!opening) {
@@ -149,7 +284,8 @@ export function CompactStyleMenu() {
     });
 
     const updateFromSelection = () => {
-      (trigger.querySelector('.fwo-style-label') as HTMLElement).textContent = labelForBlock(currentBlock());
+      if (menu.hidden) rememberRange();
+      (trigger.querySelector('.fwo-style-label') as HTMLElement).textContent = labelForBlock(currentBlock(editor));
     };
 
     const closeOutside = (event: MouseEvent) => {
