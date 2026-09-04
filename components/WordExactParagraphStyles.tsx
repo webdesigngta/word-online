@@ -44,6 +44,14 @@ function blockForNode(editor: HTMLElement, node: Node) {
   return block;
 }
 
+function styleForBlock(block: HTMLElement | null): StyleSpec {
+  if (!block) return STYLES[0];
+  if (block.dataset.fwoParagraphStyle === 'title') return STYLES.find((item) => item.value === 'title')!;
+  if (block.dataset.fwoParagraphStyle === 'subtitle') return STYLES.find((item) => item.value === 'subtitle')!;
+  const tag = block.tagName.toLowerCase();
+  return STYLES.find((item) => item.tag === tag && !item.special) ?? STYLES[0];
+}
+
 function hasContent(fragment: DocumentFragment) {
   return Boolean(fragment.textContent?.length || fragment.querySelector('*'));
 }
@@ -207,78 +215,274 @@ function styleRange(editor: HTMLElement, range: Range, spec: StyleSpec) {
   return replacements[0];
 }
 
-/** Exact-selection paragraph styles for Word Online. */
+/** Selection-safe paragraph style control for Word Online. */
 export function WordExactParagraphStyles() {
   useEffect(() => {
-    const editor = editorElement();
-    const original = document.querySelector<HTMLSelectElement>('select.docs-style-select[aria-label="Paragraph style"]');
-    if (!editor || !original) return;
+    let frame = 0;
+    let attempts = 0;
+    let cleanupMounted: (() => void) | null = null;
 
-    const select = document.createElement('select');
-    select.className = `${original.className} fwo-exact-style-select`;
-    select.setAttribute('aria-label', 'Paragraph style');
-    STYLES.forEach((spec) => {
-      const option = document.createElement('option');
-      option.value = spec.value;
-      option.textContent = spec.label;
-      select.appendChild(option);
-    });
-    select.value = 'p';
+    const mount = () => {
+      const editor = editorElement();
+      const original = document.querySelector<HTMLSelectElement>('select.docs-style-select[aria-label="Paragraph style"]');
+      const host = original?.parentElement;
 
-    original.style.display = 'none';
-    original.tabIndex = -1;
-    original.parentElement?.insertBefore(select, original);
+      if (!editor || !original || !host) {
+        attempts += 1;
+        if (attempts < 120) frame = window.requestAnimationFrame(mount);
+        return;
+      }
 
-    let savedRange: Range | null = null;
+      if (host.querySelector('.fwo-exact-style-wrap')) return;
 
-    const remember = () => {
-      const range = rangeInside(editor);
-      if (range) savedRange = range.cloneRange();
-    };
+      original.style.display = 'none';
+      original.tabIndex = -1;
+      original.setAttribute('aria-hidden', 'true');
 
-    const onSelectionChange = () => {
-      if (document.activeElement === select) return;
-      remember();
-    };
+      const wrap = document.createElement('div');
+      wrap.className = 'fwo-exact-style-wrap';
 
-    const onChange = () => {
-      const spec = STYLES.find((item) => item.value === select.value) ?? STYLES[0];
-      if (!savedRange) return;
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'fwo-style-trigger fwo-exact-style-trigger';
+      trigger.setAttribute('aria-label', 'Paragraph style');
+      trigger.setAttribute('aria-haspopup', 'menu');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.innerHTML = '<span class="fwo-style-label">Normal text</span><span class="fwo-style-caret">▾</span>';
+      wrap.appendChild(trigger);
+      host.insertBefore(wrap, original);
 
-      try {
-        const selection = window.getSelection();
-        editor.focus({ preventScroll: true });
-        selection?.removeAllRanges();
-        selection?.addRange(savedRange.cloneRange());
-        const active = rangeInside(editor);
-        if (!active) return;
+      const menu = document.createElement('div');
+      menu.className = 'fwo-exact-style-menu';
+      menu.setAttribute('role', 'menu');
+      menu.setAttribute('aria-label', 'Paragraph styles');
+      menu.hidden = true;
+      document.body.appendChild(menu);
+
+      let savedRange: Range | null = null;
+
+      const triggerLabel = () => trigger.querySelector<HTMLElement>('.fwo-style-label');
+      const setLabel = (label: string) => {
+        const node = triggerLabel();
+        if (node && node.textContent !== label) node.textContent = label;
+      };
+
+      const remember = () => {
+        const range = rangeInside(editor);
+        if (range) savedRange = range.cloneRange();
+      };
+
+      const restore = () => {
+        if (!savedRange) return null;
+        try {
+          const selection = window.getSelection();
+          editor.focus({ preventScroll: true });
+          selection?.removeAllRanges();
+          selection?.addRange(savedRange.cloneRange());
+          return rangeInside(editor);
+        } catch {
+          savedRange = null;
+          return null;
+        }
+      };
+
+      const positionMenu = () => {
+        if (menu.hidden) return;
+        const rect = trigger.getBoundingClientRect();
+        const width = Math.min(220, Math.max(172, window.innerWidth - 16));
+        const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+        const top = Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 380));
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+        menu.style.width = `${width}px`;
+        menu.style.maxHeight = `${Math.max(160, window.innerHeight - top - 8)}px`;
+      };
+
+      const closeMenu = () => {
+        menu.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+      };
+
+      const apply = (spec: StyleSpec) => {
+        const active = restore();
+        if (!active) {
+          closeMenu();
+          return;
+        }
+
         const changed = styleRange(editor, active, spec);
         if (changed) {
+          setLabel(spec.label);
           editor.dispatchEvent(new Event('input', { bubbles: true }));
           editor.dispatchEvent(new CustomEvent('fwo:force-pagination', { bubbles: true }));
           const current = rangeInside(editor);
           if (current) savedRange = current.cloneRange();
         }
-      } catch {
-        // Keep document unchanged if the saved browser range became stale.
-      }
+
+        closeMenu();
+        editor.focus({ preventScroll: true });
+      };
+
+      STYLES.forEach((spec) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'fwo-exact-style-item';
+        button.setAttribute('role', 'menuitem');
+        button.dataset.styleValue = spec.value;
+        button.textContent = spec.label;
+        button.addEventListener('mousedown', (event) => event.preventDefault());
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          apply(spec);
+        });
+        menu.appendChild(button);
+      });
+
+      const onTriggerMouseDown = (event: MouseEvent) => {
+        remember();
+        event.preventDefault();
+      };
+
+      const onTriggerClick = () => {
+        if (!menu.hidden) {
+          closeMenu();
+          return;
+        }
+        menu.hidden = false;
+        trigger.setAttribute('aria-expanded', 'true');
+        positionMenu();
+      };
+
+      const onSelectionChange = () => {
+        if (!menu.hidden) return;
+        const range = rangeInside(editor);
+        if (!range) return;
+        savedRange = range.cloneRange();
+        const start = blockForNode(editor, range.startContainer);
+        const end = blockForNode(editor, range.endContainer);
+        setLabel(start && start === end ? styleForBlock(start).label : 'Normal text');
+      };
+
+      const onOutsideMouseDown = (event: MouseEvent) => {
+        const target = event.target as Node;
+        if (wrap.contains(target) || menu.contains(target)) return;
+        closeMenu();
+      };
+
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== 'Escape' || menu.hidden) return;
+        event.preventDefault();
+        closeMenu();
+        trigger.focus();
+      };
+
+      const onReposition = () => positionMenu();
+
+      trigger.addEventListener('mousedown', onTriggerMouseDown);
+      trigger.addEventListener('click', onTriggerClick);
+      document.addEventListener('selectionchange', onSelectionChange);
+      document.addEventListener('mousedown', onOutsideMouseDown);
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('resize', onReposition);
+      window.addEventListener('scroll', onReposition, true);
+
+      cleanupMounted = () => {
+        trigger.removeEventListener('mousedown', onTriggerMouseDown);
+        trigger.removeEventListener('click', onTriggerClick);
+        document.removeEventListener('selectionchange', onSelectionChange);
+        document.removeEventListener('mousedown', onOutsideMouseDown);
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('resize', onReposition);
+        window.removeEventListener('scroll', onReposition, true);
+        menu.remove();
+        wrap.remove();
+        original.style.display = '';
+        original.tabIndex = 0;
+        original.removeAttribute('aria-hidden');
+      };
     };
 
-    select.addEventListener('pointerdown', remember, true);
-    select.addEventListener('mousedown', remember, true);
-    select.addEventListener('change', onChange);
-    document.addEventListener('selectionchange', onSelectionChange);
+    mount();
 
     return () => {
-      select.removeEventListener('pointerdown', remember, true);
-      select.removeEventListener('mousedown', remember, true);
-      select.removeEventListener('change', onChange);
-      document.removeEventListener('selectionchange', onSelectionChange);
-      select.remove();
-      original.style.display = '';
-      original.tabIndex = 0;
+      window.cancelAnimationFrame(frame);
+      cleanupMounted?.();
     };
   }, []);
 
-  return null;
+  return (
+    <style jsx global>{`
+      .fwo-exact-style-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        flex: 0 0 auto;
+      }
+      .fwo-exact-style-trigger {
+        box-sizing: border-box;
+        width: 116px;
+        min-width: 116px;
+        max-width: 116px;
+        height: 28px;
+        padding: 0 8px 0 10px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: #3c4043;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font: 400 14px/28px Arial,Helvetica,sans-serif;
+        cursor: pointer;
+      }
+      .fwo-exact-style-trigger:hover,
+      .fwo-exact-style-trigger[aria-expanded='true'] { background: #e2e7ec; }
+      .fwo-exact-style-trigger .fwo-style-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .fwo-exact-style-trigger .fwo-style-caret { flex: 0 0 auto; color: #5f6368; font-size: 10px; }
+      .fwo-exact-style-menu {
+        position: fixed;
+        z-index: 9500;
+        box-sizing: border-box;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 6px;
+        border: 1px solid #dadce0;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(60,64,67,.24),0 2px 6px rgba(60,64,67,.12);
+        font-family: Arial,Helvetica,sans-serif;
+      }
+      .fwo-exact-style-menu[hidden] { display: none !important; }
+      .fwo-exact-style-item {
+        width: 100%;
+        min-height: 36px;
+        padding: 7px 10px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: #202124;
+        display: block;
+        text-align: left;
+        font: 500 13px/1.25 Arial,Helvetica,sans-serif;
+        cursor: pointer;
+      }
+      .fwo-exact-style-item:hover,
+      .fwo-exact-style-item:focus-visible { background: #f1f3f4; outline: 0; }
+      .fwo-exact-style-item[data-style-value='title'] { font-size: 18px; }
+      .fwo-exact-style-item[data-style-value='h1'] { font-size: 17px; font-weight: 700; }
+      .fwo-exact-style-item[data-style-value='h2'] { font-size: 16px; font-weight: 700; }
+      .fwo-exact-style-item[data-style-value='h3'] { font-size: 15px; font-weight: 700; }
+      @media(max-width:720px) {
+        .fwo-exact-style-trigger { width: 98px; min-width: 98px; max-width: 98px; font-size: 12.5px; }
+        .fwo-exact-style-item { min-height: 40px; }
+      }
+    `}</style>
+  );
 }
