@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 
+const BLOCK_SELECTOR = 'p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,div';
+
 function editorElement() {
   return document.querySelector<HTMLElement>('.editor-page');
 }
@@ -14,42 +16,130 @@ function selectionRangeInside(editor: HTMLElement) {
   return range;
 }
 
-function insertPlainText(editor: HTMLElement, text: string) {
-  editor.focus({ preventScroll: true });
+function blockForNode(editor: HTMLElement, node: Node) {
+  let element: HTMLElement | null = node.nodeType === Node.TEXT_NODE ? node.parentElement : node as HTMLElement;
+  const block = element?.closest<HTMLElement>(BLOCK_SELECTOR) ?? null;
+  return block && block !== editor && editor.contains(block) ? block : null;
+}
 
-  const selection = window.getSelection();
-  const range = selectionRangeInside(editor);
-  if (!selection || !range) {
-    document.execCommand('insertText', false, text);
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
-    editor.dispatchEvent(new CustomEvent('fwo:rich-paste', { bubbles: true }));
-    return;
-  }
+function cloneBlockShell(block: HTMLElement) {
+  const clone = block.cloneNode(false) as HTMLElement;
+  clone.removeAttribute('id');
+  return clone;
+}
 
-  range.deleteContents();
-  const fragment = document.createDocumentFragment();
-  const normalized = text.replace(/\r\n?/g, '\n');
-  const lines = normalized.split('\n');
+function appendPlainLine(block: HTMLElement, line: string) {
+  if (line) block.appendChild(document.createTextNode(line));
+  else block.appendChild(document.createElement('br'));
+}
 
-  lines.forEach((line, index) => {
-    if (index > 0) fragment.appendChild(document.createElement('br'));
-    if (line) fragment.appendChild(document.createTextNode(line));
-  });
-
-  // Keep the caret immediately after the pasted plain-text content.
-  const marker = document.createTextNode('');
-  fragment.appendChild(marker);
-  range.insertNode(fragment);
-
+function placeCaretAtMarker(selection: Selection, marker: Text) {
   const nextRange = document.createRange();
   nextRange.setStartAfter(marker);
   nextRange.collapse(true);
   selection.removeAllRanges();
   selection.addRange(nextRange);
   marker.remove();
+}
+
+function insertMultilineIntoSingleBlock(editor: HTMLElement, selection: Selection, range: Range, block: HTMLElement, lines: string[]) {
+  const beforeRange = document.createRange();
+  beforeRange.selectNodeContents(block);
+  beforeRange.setEnd(range.startContainer, range.startOffset);
+  const before = beforeRange.cloneContents();
+
+  const afterRange = document.createRange();
+  afterRange.selectNodeContents(block);
+  afterRange.setStart(range.endContainer, range.endOffset);
+  const after = afterRange.cloneContents();
+
+  const replacement: HTMLElement[] = [];
+  const first = cloneBlockShell(block);
+  first.appendChild(before);
+  appendPlainLine(first, lines[0] ?? '');
+  replacement.push(first);
+
+  for (let index = 1; index < lines.length - 1; index += 1) {
+    const paragraph = document.createElement('p');
+    appendPlainLine(paragraph, lines[index] ?? '');
+    replacement.push(paragraph);
+  }
+
+  const last = cloneBlockShell(block);
+  appendPlainLine(last, lines[lines.length - 1] ?? '');
+  const marker = document.createTextNode('');
+  last.appendChild(marker);
+  last.appendChild(after);
+  replacement.push(last);
+
+  block.replaceWith(...replacement);
+  editor.focus({ preventScroll: true });
+  placeCaretAtMarker(selection, marker);
+}
+
+function insertMultilineAtRoot(editor: HTMLElement, selection: Selection, range: Range, lines: string[]) {
+  range.deleteContents();
+  const fragment = document.createDocumentFragment();
+  const marker = document.createTextNode('');
+
+  lines.forEach((line, index) => {
+    const paragraph = document.createElement('p');
+    appendPlainLine(paragraph, line);
+    if (index === lines.length - 1) paragraph.appendChild(marker);
+    fragment.appendChild(paragraph);
+  });
+
+  range.insertNode(fragment);
+  editor.focus({ preventScroll: true });
+  placeCaretAtMarker(selection, marker);
+}
+
+function insertPlainText(editor: HTMLElement, text: string) {
+  editor.focus({ preventScroll: true });
+
+  const selection = window.getSelection();
+  const range = selectionRangeInside(editor);
+  const normalized = text.replace(/\r\n?/g, '\n');
+
+  if (!selection || !range) {
+    document.execCommand('insertText', false, normalized);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    editor.dispatchEvent(new CustomEvent('fwo:rich-paste', { bubbles: true }));
+    return;
+  }
+
+  if (!normalized.includes('\n')) {
+    range.deleteContents();
+    const node = document.createTextNode(normalized);
+    range.insertNode(node);
+    const nextRange = document.createRange();
+    nextRange.setStartAfter(node);
+    nextRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(nextRange);
+  } else {
+    const lines = normalized.split('\n');
+    const startBlock = blockForNode(editor, range.startContainer);
+    const endBlock = blockForNode(editor, range.endContainer);
+
+    if (startBlock && startBlock === endBlock) {
+      insertMultilineIntoSingleBlock(editor, selection, range, startBlock, lines);
+    } else if (!startBlock && !endBlock) {
+      insertMultilineAtRoot(editor, selection, range, lines);
+    } else {
+      // Cross-block replacement is uncommon. Let the browser perform the deletion,
+      // then insert DOC321-generated paragraph markup rather than clipboard HTML.
+      const html = lines.map((line) => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = line;
+        return paragraph.outerHTML;
+      }).join('');
+      document.execCommand('insertHTML', false, html);
+    }
+  }
 
   editor.dispatchEvent(new Event('input', { bubbles: true }));
-  // Keep this compatibility event because pagination/editor listeners already use it.
+  // Pagination/editor listeners already use this compatibility event.
   editor.dispatchEvent(new CustomEvent('fwo:rich-paste', { bubbles: true }));
 }
 
@@ -58,10 +148,10 @@ function insertPlainText(editor: HTMLElement, text: string) {
  * - every paste is plain text only
  * - source fonts, sizes, colors, highlights and styles are removed
  * - tables, borders, horizontal rules, images, backgrounds and layout markup are removed
- * - line breaks are retained as simple text line breaks
+ * - pasted line/paragraph breaks become real editable paragraph boundaries
  *
- * The pasted text can still inherit the formatting of the destination paragraph,
- * exactly like typing text at the current caret position.
+ * Real paragraph boundaries keep Heading/Title changes isolated from the text
+ * immediately above and below the selected pasted line.
  */
 export function WordRichPaste() {
   useEffect(() => {
