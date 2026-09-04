@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import {
   AlignCenter,
   AlignLeft,
@@ -37,7 +37,10 @@ import { trackToolEvent } from '@/lib/toolAnalytics';
 const STORAGE_KEY = 'fwo:online-notepad:rich:v1';
 const STORAGE_META_KEY = 'fwo:online-notepad:rich:meta:v1';
 const DEFAULT_ZOOM = 100;
+const SAVE_IDLE_MS = 260;
+
 type PaperStyle = 'notebook' | 'plain';
+type NoteStats = { words: number; characters: number; lines: number };
 
 interface SpeechRecognitionEventLike extends Event {
   results: ArrayLike<{ 0: { transcript: string }; isFinal?: boolean }>;
@@ -89,14 +92,33 @@ function normalizeText(value: string) {
   return value.replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n').trimEnd();
 }
 
+function noteStats(text: string): NoteStats {
+  const trimmed = text.trim();
+  return {
+    words: trimmed ? trimmed.split(/\s+/u).length : 0,
+    characters: text.length,
+    lines: text ? text.split(/\r?\n/u).length : 0,
+  };
+}
+
+function hasMeaningfulContent(editor: HTMLElement, text?: string) {
+  const currentText = text ?? editor.innerText ?? '';
+  return Boolean(currentText.trim() || editor.querySelector('img,table,hr'));
+}
+
 export function NotepadInterface({ toolId }: { toolId: string }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const speechRef = useRef<SpeechRecognitionLike | null>(null);
-  const [html, setHtml] = useState('');
-  const [plainText, setPlainText] = useState('');
+  const saveTimerRef = useRef<number | null>(null);
+  const startedRef = useRef(false);
+  const contentPresentRef = useRef(false);
+  const readyRef = useRef(false);
+
   const [ready, setReady] = useState(false);
+  const [hasContent, setHasContent] = useState(false);
+  const [stats, setStats] = useState<NoteStats>({ words: 0, characters: 0, lines: 0 });
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -108,56 +130,111 @@ export function NotepadInterface({ toolId }: { toolId: string }) {
   const [blockType, setBlockType] = useState('p');
   const [textColor, setTextColor] = useState('#202124');
 
-  const stats = useMemo(() => {
-    const trimmed = plainText.trim();
-    return {
-      words: trimmed ? trimmed.split(/\s+/u).length : 0,
-      characters: plainText.length,
-      lines: plainText ? plainText.split(/\r?\n/u).length : 0,
-    };
-  }, [plainText]);
-
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY) ?? '';
       const metaRaw = window.localStorage.getItem(STORAGE_META_KEY);
       const meta = metaRaw ? JSON.parse(metaRaw) as { darkMode?: boolean; zoom?: number; paperStyle?: PaperStyle } : {};
-      setHtml(saved);
+
       setDarkMode(Boolean(meta.darkMode));
       if (typeof meta.zoom === 'number') setZoom(Math.min(200, Math.max(75, meta.zoom)));
       if (meta.paperStyle === 'plain' || meta.paperStyle === 'notebook') setPaperStyle(meta.paperStyle);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = saved;
-        setPlainText(editorRef.current.innerText ?? '');
+
+      const editor = editorRef.current;
+      if (editor) {
+        editor.innerHTML = saved;
+        const text = editor.innerText ?? '';
+        const present = hasMeaningfulContent(editor, text);
+        contentPresentRef.current = present;
+        startedRef.current = present;
+        setHasContent(present);
+        setStats(noteStats(text));
       }
     } catch {
-      setHtml('');
+      const editor = editorRef.current;
+      if (editor) editor.innerHTML = '';
     } finally {
+      readyRef.current = true;
       setReady(true);
     }
   }, []);
 
   useEffect(() => {
     if (!ready) return;
-    const timeout = window.setTimeout(() => {
-      window.localStorage.setItem(STORAGE_KEY, html);
+    try {
       window.localStorage.setItem(STORAGE_META_KEY, JSON.stringify({ darkMode, zoom, paperStyle }));
-      setSavedAt(new Date());
-    }, 180);
-    return () => window.clearTimeout(timeout);
-  }, [darkMode, html, paperStyle, ready, zoom]);
+    } catch {
+      // Preferences are optional; editing remains fully usable if storage is unavailable.
+    }
+  }, [darkMode, paperStyle, ready, zoom]);
 
-  useEffect(() => () => speechRef.current?.stop(), []);
+  useEffect(() => {
+    return () => {
+      speechRef.current?.stop();
+      if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current);
+      const editor = editorRef.current;
+      if (editor && readyRef.current) {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, editor.innerHTML);
+        } catch {
+          // Do not block navigation if browser storage is unavailable/full.
+        }
+      }
+    };
+  }, []);
 
-  function syncEditor() {
+  function updateContentState(present: boolean) {
+    if (contentPresentRef.current === present) return;
+    contentPresentRef.current = present;
+    setHasContent(present);
+  }
+
+  function persistEditor() {
+    if (!readyRef.current) return;
     const editor = editorRef.current;
     if (!editor) return;
-    const nextHtml = editor.innerHTML;
-    const nextText = editor.innerText ?? '';
-    if (!html && nextText.trim()) trackToolEvent('tool_start', { toolId, fileType: 'text' });
-    setHtml(nextHtml);
-    setPlainText(nextText);
-    setStatus('');
+
+    const text = editor.innerText ?? '';
+    const present = hasMeaningfulContent(editor, text);
+    updateContentState(present);
+    setStats(noteStats(text));
+
+    try {
+      window.localStorage.setItem(STORAGE_KEY, editor.innerHTML);
+      const now = new Date();
+      setSavedAt(now);
+    } catch {
+      setStatus('Autosave storage is full — download a copy');
+    }
+  }
+
+  function scheduleEditorSync() {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    if (!startedRef.current) {
+      const text = editor.textContent ?? '';
+      if (text.trim() || editor.querySelector('img,table,hr')) {
+        startedRef.current = true;
+        updateContentState(true);
+        trackToolEvent('tool_start', { toolId, fileType: 'text' });
+      }
+    }
+
+    if (status) setStatus('');
+    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null;
+      persistEditor();
+    }, SAVE_IDLE_MS);
+  }
+
+  function flushEditor() {
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    persistEditor();
   }
 
   function focusEditor() {
@@ -167,7 +244,7 @@ export function NotepadInterface({ toolId }: { toolId: string }) {
   function runCommand(command: string, value?: string) {
     focusEditor();
     document.execCommand(command, false, value);
-    syncEditor();
+    scheduleEditorSync();
   }
 
   function setHeading(value: string) {
@@ -186,27 +263,40 @@ export function NotepadInterface({ toolId }: { toolId: string }) {
   }
 
   function clearEditor() {
-    if (!editorRef.current) return;
-    editorRef.current.innerHTML = '';
-    setHtml('');
-    setPlainText('');
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.innerHTML = '';
+    updateContentState(false);
+    setStats({ words: 0, characters: 0, lines: 0 });
     setStatus('Note cleared');
+    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, '');
+      setSavedAt(new Date());
+    } catch {
+      // Clearing the editor itself still succeeds.
+    }
     focusEditor();
   }
 
+  function currentPlainText() {
+    return editorRef.current?.innerText ?? '';
+  }
+
   async function copyText() {
-    await navigator.clipboard.writeText(normalizeText(plainText));
+    await navigator.clipboard.writeText(normalizeText(currentPlainText()));
     setStatus('Copied to clipboard');
     trackToolEvent('tool_download', { toolId, outputType: 'clipboard' });
   }
 
   function downloadTxt() {
-    downloadBlob(new Blob([normalizeText(plainText)], { type: 'text/plain;charset=utf-8' }), 'online-notepad.txt');
+    downloadBlob(new Blob([normalizeText(currentPlainText())], { type: 'text/plain;charset=utf-8' }), 'online-notepad.txt');
     setStatus('TXT downloaded');
     trackToolEvent('tool_download', { toolId, outputType: 'txt' });
   }
 
   function downloadHtml() {
+    const html = editorRef.current?.innerHTML ?? '';
     const documentHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Online Notepad</title></head><body>${html}</body></html>`;
     downloadBlob(new Blob([documentHtml], { type: 'text/html;charset=utf-8' }), 'online-notepad.html');
     setStatus('HTML downloaded');
@@ -232,7 +322,7 @@ export function NotepadInterface({ toolId }: { toolId: string }) {
   }
 
   async function shareNote() {
-    const text = normalizeText(plainText);
+    const text = normalizeText(currentPlainText());
     if (navigator.share) {
       await navigator.share({ title: 'Online Notepad', text });
       setStatus('Share sheet opened');
@@ -266,7 +356,8 @@ export function NotepadInterface({ toolId }: { toolId: string }) {
         : result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
       if (editorRef.current) {
         editorRef.current.innerHTML = nextHtml;
-        syncEditor();
+        startedRef.current = true;
+        flushEditor();
       }
       setStatus(`${file.name} opened`);
       trackToolEvent('tool_success', { toolId, metadata: { action: 'upload-note' } });
@@ -369,7 +460,7 @@ export function NotepadInterface({ toolId }: { toolId: string }) {
         <div className="np-toolgroup"><button className="np-btn" type="button" onClick={() => runCommand('bold')} title="Bold"><Bold/></button><button className="np-btn" type="button" onClick={() => runCommand('italic')} title="Italic"><Italic/></button><button className="np-btn" type="button" onClick={() => runCommand('underline')} title="Underline"><Underline/></button><button className="np-btn" type="button" onClick={() => runCommand('strikeThrough')} title="Strikethrough"><Strikethrough/></button><input className="np-color" type="color" value={textColor} onChange={(event) => setColor(event.target.value)} title="Text color" aria-label="Text color" /></div>
         <div className="np-toolgroup"><button className="np-btn" type="button" onClick={() => runCommand('justifyLeft')} title="Align left"><AlignLeft/></button><button className="np-btn" type="button" onClick={() => runCommand('justifyCenter')} title="Align center"><AlignCenter/></button><button className="np-btn" type="button" onClick={() => runCommand('justifyRight')} title="Align right"><AlignRight/></button><button className="np-btn" type="button" onClick={() => runCommand('insertUnorderedList')} title="Bulleted list"><List/></button><button className="np-btn" type="button" onClick={() => runCommand('insertOrderedList')} title="Numbered list"><ListOrdered/></button></div>
         <div className="np-toolgroup"><button className="np-btn" type="button" onClick={insertLink} title="Insert link"><Link2/></button><button className="np-btn" type="button" onClick={() => imageInputRef.current?.click()} title="Insert image"><ImagePlus/></button><button className="np-btn" type="button" onClick={insertTable} title="Insert table"><Table2/></button><button className="np-btn" type="button" onClick={insertDate} title="Insert date"><CalendarDays/></button></div>
-        <div className="np-toolgroup"><button className="np-btn" type="button" disabled={!plainText} onClick={() => void copyText()} title="Copy"><Copy/></button><button className="np-btn" type="button" disabled={!plainText} onClick={downloadTxt} title="Download TXT"><FileText/></button><button className="np-btn" type="button" disabled={!plainText} onClick={downloadHtml} title="Export HTML"><FileCode2/></button><button className="np-btn is-accent" type="button" disabled={!plainText} onClick={() => void downloadPdf()} title="Download PDF"><Download/>PDF</button><button className="np-btn" type="button" disabled={!plainText} onClick={clearEditor} title="Clear note"><Trash2/></button></div>
+        <div className="np-toolgroup"><button className="np-btn" type="button" disabled={!hasContent} onClick={() => void copyText()} title="Copy"><Copy/></button><button className="np-btn" type="button" disabled={!hasContent} onClick={downloadTxt} title="Download TXT"><FileText/></button><button className="np-btn" type="button" disabled={!hasContent} onClick={downloadHtml} title="Export HTML"><FileCode2/></button><button className="np-btn is-accent" type="button" disabled={!hasContent} onClick={() => void downloadPdf()} title="Download PDF"><Download/>PDF</button><button className="np-btn" type="button" disabled={!hasContent} onClick={clearEditor} title="Clear note"><Trash2/></button></div>
         <div className="np-toolgroup">
           <select className="np-select np-paper-mode" value={paperStyle} onChange={(event) => setPaperStyle(event.target.value as PaperStyle)} aria-label="Page background">
             <option value="notebook">Notebook</option>
@@ -378,7 +469,7 @@ export function NotepadInterface({ toolId }: { toolId: string }) {
         </div>
         <div className="np-toolgroup np-utility">
           <button className="np-btn" type="button" onClick={() => fileInputRef.current?.click()} title="Open a text, Markdown or HTML file"><Upload/><span>Upload</span></button>
-          <button className="np-btn" type="button" disabled={!plainText} onClick={() => void shareNote()} title="Share note"><Share2/><span>Share</span></button>
+          <button className="np-btn" type="button" disabled={!hasContent} onClick={() => void shareNote()} title="Share note"><Share2/><span>Share</span></button>
           <button className={`np-btn${listening ? ' is-recording' : ''}`} type="button" onClick={toggleSpeech} title="Speech to text">{listening ? <MicOff/> : <Mic/>}</button>
           <button className="np-btn" type="button" onClick={() => setDarkMode((value) => !value)} title="Toggle dark mode">{darkMode ? <Sun/> : <Moon/>}</button>
           <button className="np-btn" type="button" onClick={toggleFullscreen} title={fullscreen ? 'Exit full screen' : 'Full screen'}>{fullscreen ? <MinimizeIcon/> : <Maximize2/>}</button>
@@ -388,7 +479,7 @@ export function NotepadInterface({ toolId }: { toolId: string }) {
       <div className="np-workspace">
         <div className="np-paper-wrap" style={{ transform: `scale(${zoom / 100})`, marginBottom: `${Math.max(0, (zoom - 100) * 5.8)}px` }}>
           <div className="np-paper">
-            <div ref={editorRef} className="np-editor" contentEditable suppressContentEditableWarning data-placeholder="Start writing here…" onInput={syncEditor} onBlur={syncEditor} spellCheck aria-label="Online notepad editor" />
+            <div ref={editorRef} className="np-editor" contentEditable suppressContentEditableWarning data-placeholder="Start writing here…" onInput={scheduleEditorSync} onBlur={flushEditor} spellCheck aria-label="Online notepad editor" />
           </div>
         </div>
       </div>
