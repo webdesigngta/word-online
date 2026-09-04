@@ -3,12 +3,17 @@ import { SoftwareJsonLd } from '@/components/JsonLd';
 import { pageMetadata } from '@/lib/seo';
 import { wordToolSeo } from '@/tools/word';
 
-export const metadata = pageMetadata(wordToolSeo);
+const baseMetadata = pageMetadata(wordToolSeo);
+
+export const metadata = {
+  ...baseMetadata,
+  title: { absolute: wordToolSeo.title },
+};
 
 export default function WordOnlinePage() {
   return (
     <>
-      <WordEditorExperience interfaceId="word-online" heading="Free Word Online editor" />
+      <WordEditorExperience interfaceId="word-online" heading="Word Online editor" />
       <SoftwareJsonLd />
     </>
   );
