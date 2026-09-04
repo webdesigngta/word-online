@@ -5,35 +5,33 @@ import { useEffect } from 'react';
 export function NotepadHeaderBridge({ targetId }: { targetId: string }) {
   useEffect(() => {
     let sourceObserver: MutationObserver | null = null;
-    let currentSource: HTMLElement | null = null;
+    let frame = 0;
+    let attempts = 0;
 
-    const sync = () => {
-      const title = document.querySelector<HTMLElement>('.product-site-header .site-context-title');
-      const context = title?.closest<HTMLElement>('.site-context');
-      if (title) title.textContent = 'Online Notebook';
-      if (context) context.setAttribute('aria-label', 'Online Notebook');
-
+    const attach = () => {
       const target = document.getElementById(targetId);
       const source = document.querySelector<HTMLElement>('.notepad-is-shell .np-save');
-      if (!target) return;
 
-      if (source) {
-        target.textContent = source.textContent?.trim() || 'Saved locally';
-        if (source !== currentSource) {
-          sourceObserver?.disconnect();
-          currentSource = source;
-          sourceObserver = new MutationObserver(sync);
-          sourceObserver.observe(source, { childList: true, subtree: true, characterData: true });
-        }
+      if (!target || !source) {
+        attempts += 1;
+        if (attempts < 90) frame = window.requestAnimationFrame(attach);
+        return;
       }
+
+      const syncStatus = () => {
+        const next = source.textContent?.trim() || 'Saved locally';
+        if (target.textContent !== next) target.textContent = next;
+      };
+
+      syncStatus();
+      sourceObserver = new MutationObserver(syncStatus);
+      sourceObserver.observe(source, { childList: true, subtree: true, characterData: true });
     };
 
-    sync();
-    const pageObserver = new MutationObserver(sync);
-    pageObserver.observe(document.body, { childList: true, subtree: true });
+    attach();
 
     return () => {
-      pageObserver.disconnect();
+      window.cancelAnimationFrame(frame);
       sourceObserver?.disconnect();
     };
   }, [targetId]);
