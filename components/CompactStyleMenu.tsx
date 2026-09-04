@@ -26,9 +26,8 @@ const BLOCK_SELECTOR = 'p,h1,h2,h3,h4,h5,h6';
 
 function labelForBlock(block: HTMLElement | null) {
   if (!block) return 'Normal text';
-  const special = block.dataset.fwoParagraphStyle;
-  if (special === 'title') return 'Title';
-  if (special === 'subtitle') return 'Subtitle';
+  if (block.dataset.fwoParagraphStyle === 'title') return 'Title';
+  if (block.dataset.fwoParagraphStyle === 'subtitle') return 'Subtitle';
   const tag = block.tagName.toLowerCase();
   return STYLE_ITEMS.find((item) => item.tag === tag && !item.kind)?.label ?? 'Normal text';
 }
@@ -69,7 +68,7 @@ function selectionRange(editor: HTMLElement) {
 }
 
 function blockForNode(editor: HTMLElement, node: Node) {
-  let element: HTMLElement | null = node.nodeType === Node.TEXT_NODE ? node.parentElement : node as HTMLElement;
+  const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node instanceof HTMLElement ? node : null;
   const block = element?.closest<HTMLElement>(BLOCK_SELECTOR) ?? null;
   return block && editor.contains(block) ? block : null;
 }
@@ -89,8 +88,8 @@ function cloneBlockShell(block: HTMLElement) {
   return clone;
 }
 
-function makeStyledBlock(item: StyleItem, source: HTMLElement | null, contents: DocumentFragment) {
-  const block = document.createElement(item.tag);
+function makeStyledBlock(item: StyleItem, source: HTMLElement | null, contents: DocumentFragment): HTMLElement {
+  const block = document.createElement(item.tag) as HTMLElement;
   if (source) {
     if (source.dir) block.dir = source.dir;
     if (source.style.textAlign) block.style.textAlign = source.style.textAlign;
@@ -103,7 +102,15 @@ function makeStyledBlock(item: StyleItem, source: HTMLElement | null, contents: 
   return block;
 }
 
-function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleItem) {
+function selectBlockContents(block: HTMLElement) {
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(block);
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}
+
+function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleItem): HTMLElement | null {
   if (range.collapsed) return null;
   const startBlock = blockForNode(editor, range.startContainer);
   const endBlock = blockForNode(editor, range.endContainer);
@@ -119,7 +126,6 @@ function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleI
   afterRange.setStart(range.endContainer, range.endOffset);
   const after = afterRange.cloneContents();
 
-  // If the whole block is selected, native formatBlock is the simpler path.
   if (!fragmentHasContent(before) && !fragmentHasContent(after)) return null;
 
   const selected = range.cloneContents();
@@ -141,28 +147,17 @@ function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleI
   }
 
   startBlock.replaceWith(...replacement);
-  const selection = window.getSelection();
-  const selectedRange = document.createRange();
-  selectedRange.selectNodeContents(selectedBlock);
-  selection?.removeAllRanges();
-  selection?.addRange(selectedRange);
+  selectBlockContents(selectedBlock);
   return selectedBlock;
 }
 
-function isolateRootSelection(editor: HTMLElement, range: Range, item: StyleItem) {
+function isolateRootSelection(editor: HTMLElement, range: Range, item: StyleItem): HTMLElement | null {
   if (range.collapsed) return null;
-  const startBlock = blockForNode(editor, range.startContainer);
-  const endBlock = blockForNode(editor, range.endContainer);
-  if (startBlock || endBlock) return null;
-
+  if (blockForNode(editor, range.startContainer) || blockForNode(editor, range.endContainer)) return null;
   const selected = range.extractContents();
   const block = makeStyledBlock(item, null, selected);
   range.insertNode(block);
-  const selection = window.getSelection();
-  const selectedRange = document.createRange();
-  selectedRange.selectNodeContents(block);
-  selection?.removeAllRanges();
-  selection?.addRange(selectedRange);
+  selectBlockContents(block);
   return block;
 }
 
@@ -213,17 +208,13 @@ export function CompactStyleMenu() {
 
     const positionMenu = () => {
       const rect = trigger.getBoundingClientRect();
-      const gap = 6;
       const edge = 8;
-      const preferredWidth = 190;
-      const width = Math.min(preferredWidth, Math.max(150, window.innerWidth - edge * 2));
-      const left = Math.min(Math.max(edge, rect.left), Math.max(edge, window.innerWidth - width - edge));
-      const top = Math.max(edge, rect.bottom + gap);
-      const availableHeight = Math.max(120, window.innerHeight - top - edge);
-      menu.style.left = `${left}px`;
+      const top = Math.max(edge, rect.bottom + 6);
+      const width = Math.min(190, Math.max(150, window.innerWidth - edge * 2));
+      menu.style.left = `${Math.min(Math.max(edge, rect.left), Math.max(edge, window.innerWidth - width - edge))}px`;
       menu.style.top = `${top}px`;
       menu.style.width = `${width}px`;
-      menu.style.maxHeight = `${Math.min(390, availableHeight)}px`;
+      menu.style.maxHeight = `${Math.min(390, Math.max(120, window.innerHeight - top - edge))}px`;
     };
 
     const closeMenu = () => {
@@ -239,8 +230,7 @@ export function CompactStyleMenu() {
         return;
       }
 
-      let block = isolatePartialSelection(editor, range, item) ?? isolateRootSelection(editor, range, item);
-
+      let block: HTMLElement | null = isolatePartialSelection(editor, range, item) ?? isolateRootSelection(editor, range, item);
       if (!block) {
         const before = currentBlock(editor);
         if (before) clearSpecialStyle(before);
@@ -273,8 +263,7 @@ export function CompactStyleMenu() {
       event.preventDefault();
     });
     trigger.addEventListener('click', () => {
-      const opening = menu.hidden;
-      if (!opening) {
+      if (!menu.hidden) {
         closeMenu();
         return;
       }
@@ -287,16 +276,11 @@ export function CompactStyleMenu() {
       if (menu.hidden) rememberRange();
       (trigger.querySelector('.fwo-style-label') as HTMLElement).textContent = labelForBlock(currentBlock(editor));
     };
-
     const closeOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       if (!wrap.contains(target) && !menu.contains(target)) closeMenu();
     };
-
-    const repositionOpenMenu = () => {
-      if (!menu.hidden) positionMenu();
-    };
-
+    const reposition = () => { if (!menu.hidden) positionMenu(); };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !menu.hidden) {
         event.preventDefault();
@@ -307,8 +291,8 @@ export function CompactStyleMenu() {
 
     document.addEventListener('selectionchange', updateFromSelection);
     document.addEventListener('mousedown', closeOutside);
-    window.addEventListener('resize', repositionOpenMenu);
-    window.addEventListener('scroll', repositionOpenMenu, true);
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
     window.addEventListener('keydown', onKeyDown);
 
     wrap.appendChild(trigger);
@@ -317,34 +301,22 @@ export function CompactStyleMenu() {
     const style = document.createElement('style');
     style.dataset.fwoCompactStyles = 'true';
     style.textContent = `
-      .fwo-style-wrap { position: relative; flex: 0 0 auto; min-width: 0; font-family: Arial, Helvetica, sans-serif; }
-      .fwo-style-trigger { height: 28px; min-width: 108px; max-width: 132px; padding: 0 8px 0 10px; border: 0; border-radius: 6px; background: transparent; color: #3c4043; display: flex; align-items: center; justify-content: space-between; gap: 9px; font-size: 13px; cursor: pointer; }
-      .fwo-style-trigger:hover, .fwo-style-trigger[aria-expanded='true'] { background: #e8eaed; }
-      .fwo-style-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .fwo-style-caret { font-size: 10px; color: #5f6368; flex: 0 0 auto; }
-      .fwo-style-menu { position: fixed; z-index: 5000; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 5px; background: #fff; border: 1px solid #dadce0; border-radius: 10px; box-shadow: 0 8px 24px rgba(60,64,67,.24), 0 2px 6px rgba(60,64,67,.12); font-family: Arial, Helvetica, sans-serif; }
-      .fwo-style-menu[hidden] { display: none !important; }
-      .fwo-style-item { width: 100%; min-height: 34px; padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: #202124; display: flex; align-items: center; text-align: left; cursor: pointer; white-space: nowrap; }
-      .fwo-style-item:hover, .fwo-style-item:focus-visible { background: #f1f3f4; outline: 0; }
-      .fwo-style-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .fwo-style-menu::-webkit-scrollbar { width: 10px; }
-      .fwo-style-menu::-webkit-scrollbar-thumb { background: #c4c7c5; border: 3px solid #fff; border-radius: 10px; }
-      @media (max-width: 850px) {
-        .fwo-style-trigger { min-width: 88px; max-width: 102px; padding-left: 8px; }
-        .fwo-style-menu { border-radius: 9px; }
-        .fwo-style-item { min-height: 38px; }
-      }
-      @media (max-width: 480px) {
-        .fwo-style-trigger { min-width: 78px; max-width: 90px; font-size: 12px; }
-      }
+      .fwo-style-wrap{position:relative;flex:0 0 auto;min-width:0;font-family:Arial,Helvetica,sans-serif}
+      .fwo-style-trigger{height:28px;min-width:108px;max-width:132px;padding:0 8px 0 10px;border:0;border-radius:6px;background:transparent;color:#3c4043;display:flex;align-items:center;justify-content:space-between;gap:9px;font-size:13px;cursor:pointer}
+      .fwo-style-trigger:hover,.fwo-style-trigger[aria-expanded='true']{background:#e8eaed}
+      .fwo-style-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fwo-style-caret{font-size:10px;color:#5f6368;flex:0 0 auto}
+      .fwo-style-menu{position:fixed;z-index:5000;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;padding:5px;background:#fff;border:1px solid #dadce0;border-radius:10px;box-shadow:0 8px 24px rgba(60,64,67,.24),0 2px 6px rgba(60,64,67,.12);font-family:Arial,Helvetica,sans-serif}
+      .fwo-style-menu[hidden]{display:none!important}.fwo-style-item{width:100%;min-height:34px;padding:6px 10px;border:0;border-radius:7px;background:transparent;color:#202124;display:flex;align-items:center;text-align:left;cursor:pointer;white-space:nowrap}.fwo-style-item:hover,.fwo-style-item:focus-visible{background:#f1f3f4;outline:0}.fwo-style-preview{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      @media(max-width:850px){.fwo-style-trigger{min-width:88px;max-width:102px;padding-left:8px}.fwo-style-item{min-height:38px}}
+      @media(max-width:480px){.fwo-style-trigger{min-width:78px;max-width:90px;font-size:12px}}
     `;
     document.head.appendChild(style);
 
     return () => {
       document.removeEventListener('selectionchange', updateFromSelection);
       document.removeEventListener('mousedown', closeOutside);
-      window.removeEventListener('resize', repositionOpenMenu);
-      window.removeEventListener('scroll', repositionOpenMenu, true);
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('keydown', onKeyDown);
       wrap.remove();
       menu.remove();
