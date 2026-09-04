@@ -2,7 +2,6 @@
 
 import { ChecklistVisibilityFix } from '@/components/ChecklistVisibilityFix';
 import { ChromeStatusAndZoom } from '@/components/ChromeStatusAndZoom';
-import { CompactStyleMenu } from '@/components/CompactStyleMenu';
 import { DelayedTooltips } from '@/components/DelayedTooltips';
 import { DocumentOutline } from '@/components/DocumentOutline';
 import { EditorFeatureCleanup } from '@/components/EditorFeatureCleanup';
@@ -25,17 +24,16 @@ import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles'
 import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTriggers';
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
-import { WordAllToolsButton } from '@/components/WordAllToolsButton';
 import { WordColorControlsFix } from '@/components/WordColorControlsFix';
 import { WordEditorBrandMobilePolish } from '@/components/WordEditorBrandMobilePolish';
 import { WordEditorMobileUsability } from '@/components/WordEditorMobileUsability';
+import { WordExactParagraphStyles } from '@/components/WordExactParagraphStyles';
 import { WordFormattingSelectionBridge } from '@/components/WordFormattingSelectionBridge';
-import { WordPageFlowGuard } from '@/components/WordPageFlowGuard';
+import { WordPaginationController } from '@/components/WordPaginationController';
 import { WordRichPaste } from '@/components/WordRichPaste';
 import { WordToolbarPolish } from '@/components/WordToolbarPolish';
 import { HydrationReady } from '@/components/HydrationReady';
 import { WordEditorTool } from '@/tools/word/editor';
-import { A4Pagination } from '@/components/A4Pagination';
 
 export type SerializableEditorRuntimeOptions = {
   documentId?: string;
@@ -52,16 +50,14 @@ export function WordEditorClientRuntime({
   return (
     <>
       <WordEditorTool {...runtimeOptions} />
-      <A4Pagination />
-      <WordPageFlowGuard />
+      <WordPaginationController />
       <WordRichPaste />
-      <WordAllToolsButton />
+      <WordExactParagraphStyles />
       <EditorKeyboardScope />
       <EditorMenuAutoDismiss />
       <DocumentOutline />
       <GracefulEditorDialogs />
       <FontMenuEnhancer />
-      <CompactStyleMenu />
       <ToolbarGalleryMenus />
       <UnifiedToolbarMenuTriggers />
       <NoLoginToolbarFeatures />
