@@ -8,6 +8,11 @@ export function NotepadHeaderBridge({ targetId }: { targetId: string }) {
     let currentSource: HTMLElement | null = null;
 
     const sync = () => {
+      const title = document.querySelector<HTMLElement>('.product-site-header .site-context-title');
+      const context = title?.closest<HTMLElement>('.site-context');
+      if (title) title.textContent = 'Online Notebook';
+      if (context) context.setAttribute('aria-label', 'Online Notebook');
+
       const target = document.getElementById(targetId);
       const source = document.querySelector<HTMLElement>('.notepad-is-shell .np-save');
       if (!target) return;
