@@ -3,11 +3,12 @@
 import { useEffect } from 'react';
 
 type StyleValue = 'p' | 'title' | 'subtitle' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+type TagName = 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 type StyleSpec = {
   value: StyleValue;
   label: string;
-  tag: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  tag: TagName;
   special?: 'title' | 'subtitle';
 };
 
@@ -53,7 +54,7 @@ function cloneShell(block: HTMLElement) {
   return clone;
 }
 
-function clearParagraphPresentation(block: HTMLElement) {
+function clearPresentation(block: HTMLElement) {
   delete block.dataset.fwoParagraphStyle;
   block.style.removeProperty('font-size');
   block.style.removeProperty('font-weight');
@@ -63,7 +64,7 @@ function clearParagraphPresentation(block: HTMLElement) {
 }
 
 function applyPresentation(block: HTMLElement, spec: StyleSpec) {
-  clearParagraphPresentation(block);
+  clearPresentation(block);
   if (spec.special === 'title') {
     block.dataset.fwoParagraphStyle = 'title';
     block.style.fontSize = '26pt';
@@ -80,7 +81,7 @@ function applyPresentation(block: HTMLElement, spec: StyleSpec) {
   }
 }
 
-function styledBlock(spec: StyleSpec, source: HTMLElement | null, contents: DocumentFragment) {
+function makeBlock(spec: StyleSpec, source: HTMLElement | null, contents: DocumentFragment) {
   const block = document.createElement(spec.tag);
   if (source) {
     if (source.dir) block.dir = source.dir;
@@ -107,13 +108,12 @@ function replaceWholeBlock(block: HTMLElement, spec: StyleSpec) {
   range.selectNodeContents(block);
   const contents = range.extractContents();
   range.detach?.();
-  const replacement = styledBlock(spec, block, contents);
+  const replacement = makeBlock(spec, block, contents);
   block.replaceWith(replacement);
-  selectContents(replacement);
   return replacement;
 }
 
-function applyWithinSingleBlock(editor: HTMLElement, range: Range, block: HTMLElement, spec: StyleSpec) {
+function styleSingleBlockSelection(range: Range, block: HTMLElement, spec: StyleSpec) {
   const beforeRange = document.createRange();
   beforeRange.selectNodeContents(block);
   beforeRange.setEnd(range.startContainer, range.startOffset);
@@ -127,41 +127,45 @@ function applyWithinSingleBlock(editor: HTMLElement, range: Range, block: HTMLEl
   afterRange.detach?.();
 
   const selected = range.cloneContents();
-  const hasBefore = hasContent(before);
-  const hasAfter = hasContent(after);
+  const beforeExists = hasContent(before);
+  const afterExists = hasContent(after);
 
-  if (!hasBefore && !hasAfter) return replaceWholeBlock(block, spec);
+  if (!beforeExists && !afterExists) {
+    const replacement = replaceWholeBlock(block, spec);
+    selectContents(replacement);
+    return replacement;
+  }
 
   const replacements: HTMLElement[] = [];
-  if (hasBefore) {
+  if (beforeExists) {
     const beforeBlock = cloneShell(block);
     beforeBlock.appendChild(before);
     replacements.push(beforeBlock);
   }
 
-  const middle = styledBlock(spec, block, selected);
-  replacements.push(middle);
+  const selectedBlock = makeBlock(spec, block, selected);
+  replacements.push(selectedBlock);
 
-  if (hasAfter) {
+  if (afterExists) {
     const afterBlock = cloneShell(block);
     afterBlock.appendChild(after);
     replacements.push(afterBlock);
   }
 
   block.replaceWith(...replacements);
-  selectContents(middle);
-  return middle;
+  selectContents(selectedBlock);
+  return selectedBlock;
 }
 
-function applyLooseSelection(range: Range, spec: StyleSpec) {
+function styleLooseSelection(range: Range, spec: StyleSpec) {
   const selected = range.extractContents();
-  const block = styledBlock(spec, null, selected);
+  const block = makeBlock(spec, null, selected);
   range.insertNode(block);
   selectContents(block);
   return block;
 }
 
-function safelyIntersects(range: Range, node: Node) {
+function intersects(range: Range, node: Node) {
   try {
     return range.intersectsNode(node);
   } catch {
@@ -169,62 +173,61 @@ function safelyIntersects(range: Range, node: Node) {
   }
 }
 
-function applyAcrossBlocks(editor: HTMLElement, range: Range, spec: StyleSpec) {
-  const blocks = Array.from(editor.querySelectorAll<HTMLElement>(BLOCK_SELECTOR))
-    .filter((block) => safelyIntersects(range, block));
-  if (!blocks.length) return null;
-
-  let first: HTMLElement | null = null;
-  let last: HTMLElement | null = null;
-  blocks.forEach((block) => {
-    const replacement = replaceWholeBlock(block, spec);
-    if (!first) first = replacement;
-    last = replacement;
-  });
-
-  if (first && last) {
-    const selection = window.getSelection();
-    const next = document.createRange();
-    next.setStart(first, 0);
-    next.setEnd(last, last.childNodes.length);
-    selection?.removeAllRanges();
-    selection?.addRange(next);
-  }
-  return first;
-}
-
-function applyStyle(editor: HTMLElement, range: Range, spec: StyleSpec) {
-  if (range.collapsed) {
-    const block = blockForNode(editor, range.startContainer);
-    return block ? replaceWholeBlock(block, spec) : null;
-  }
-
+function styleRange(editor: HTMLElement, range: Range, spec: StyleSpec) {
   const startBlock = blockForNode(editor, range.startContainer);
   const endBlock = blockForNode(editor, range.endContainer);
 
-  if (startBlock && startBlock === endBlock) return applyWithinSingleBlock(editor, range, startBlock, spec);
-  if (!startBlock && !endBlock) return applyLooseSelection(range, spec);
-  return applyAcrossBlocks(editor, range, spec);
+  if (range.collapsed) {
+    if (!startBlock) return null;
+    const replacement = replaceWholeBlock(startBlock, spec);
+    selectContents(replacement);
+    return replacement;
+  }
+
+  if (startBlock && startBlock === endBlock) {
+    return styleSingleBlockSelection(range, startBlock, spec);
+  }
+
+  if (!startBlock && !endBlock) {
+    return styleLooseSelection(range, spec);
+  }
+
+  const blocks = Array.from(editor.querySelectorAll<HTMLElement>(BLOCK_SELECTOR))
+    .filter((block) => intersects(range, block));
+  if (!blocks.length) return null;
+
+  const replacements = blocks.map((block) => replaceWholeBlock(block, spec));
+  const selection = window.getSelection();
+  const next = document.createRange();
+  next.setStart(replacements[0], 0);
+  const last = replacements[replacements.length - 1];
+  next.setEnd(last, last.childNodes.length);
+  selection?.removeAllRanges();
+  selection?.addRange(next);
+  return replacements[0];
 }
 
-/**
- * Owns the Word paragraph-style selector.
- * Highlighted text never calls execCommand(formatBlock): that browser command
- * can promote an A4 page container when pasted/legacy markup is loose.
- */
+/** Exact-selection paragraph styles for Word Online. */
 export function WordExactParagraphStyles() {
   useEffect(() => {
     const editor = editorElement();
-    const select = document.querySelector<HTMLSelectElement>('select.docs-style-select[aria-label="Paragraph style"]');
-    if (!editor || !select) return;
+    const original = document.querySelector<HTMLSelectElement>('select.docs-style-select[aria-label="Paragraph style"]');
+    if (!editor || !original) return;
 
-    select.replaceChildren(...STYLES.map((spec) => {
+    const select = document.createElement('select');
+    select.className = `${original.className} fwo-exact-style-select`;
+    select.setAttribute('aria-label', 'Paragraph style');
+    STYLES.forEach((spec) => {
       const option = document.createElement('option');
       option.value = spec.value;
       option.textContent = spec.label;
-      return option;
-    }));
+      select.appendChild(option);
+    });
     select.value = 'p';
+
+    original.style.display = 'none';
+    original.tabIndex = -1;
+    original.parentElement?.insertBefore(select, original);
 
     let savedRange: Range | null = null;
 
@@ -235,22 +238,12 @@ export function WordExactParagraphStyles() {
 
     const onSelectionChange = () => {
       if (document.activeElement === select) return;
-      const range = rangeInside(editor);
-      if (range) savedRange = range.cloneRange();
+      remember();
     };
 
-    const onPointerDown = () => remember();
-
-    const onChange = (event: Event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-
+    const onChange = () => {
       const spec = STYLES.find((item) => item.value === select.value) ?? STYLES[0];
-      if (!savedRange) {
-        select.value = 'p';
-        return;
-      }
+      if (!savedRange) return;
 
       try {
         const selection = window.getSelection();
@@ -259,28 +252,31 @@ export function WordExactParagraphStyles() {
         selection?.addRange(savedRange.cloneRange());
         const active = rangeInside(editor);
         if (!active) return;
-        const changed = applyStyle(editor, active, spec);
+        const changed = styleRange(editor, active, spec);
         if (changed) {
           editor.dispatchEvent(new Event('input', { bubbles: true }));
           editor.dispatchEvent(new CustomEvent('fwo:force-pagination', { bubbles: true }));
           const current = rangeInside(editor);
           if (current) savedRange = current.cloneRange();
         }
-      } finally {
-        select.value = spec.value;
+      } catch {
+        // Keep document unchanged if the saved browser range became stale.
       }
     };
 
-    select.addEventListener('pointerdown', onPointerDown, true);
-    select.addEventListener('mousedown', onPointerDown, true);
-    select.addEventListener('change', onChange, true);
+    select.addEventListener('pointerdown', remember, true);
+    select.addEventListener('mousedown', remember, true);
+    select.addEventListener('change', onChange);
     document.addEventListener('selectionchange', onSelectionChange);
 
     return () => {
-      select.removeEventListener('pointerdown', onPointerDown, true);
-      select.removeEventListener('mousedown', onPointerDown, true);
-      select.removeEventListener('change', onChange, true);
+      select.removeEventListener('pointerdown', remember, true);
+      select.removeEventListener('mousedown', remember, true);
+      select.removeEventListener('change', onChange);
       document.removeEventListener('selectionchange', onSelectionChange);
+      select.remove();
+      original.style.display = '';
+      original.tabIndex = 0;
     };
   }, []);
 
