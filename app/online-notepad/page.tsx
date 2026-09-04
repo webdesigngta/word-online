@@ -41,7 +41,7 @@ export default function Page() {
   return (
     <>
       <ToolViewAnalytics toolId={tool.id} route={route} />
-      <SiteHeader contextTitle="DOC321's Online Notepad" contextMetaId={saveStatusId} contextMeta="Saved locally" />
+      <SiteHeader contextTitle="Online Notebook" contextMetaId={saveStatusId} contextMeta="Saved locally" />
       <NotepadHeaderBridge targetId={saveStatusId} />
       <main className="notepad-native-page">
         <style>{`
