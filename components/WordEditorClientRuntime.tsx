@@ -30,6 +30,7 @@ import { WordColorControlsFix } from '@/components/WordColorControlsFix';
 import { WordEditorBrandMobilePolish } from '@/components/WordEditorBrandMobilePolish';
 import { WordEditorMobileUsability } from '@/components/WordEditorMobileUsability';
 import { WordFormattingSelectionBridge } from '@/components/WordFormattingSelectionBridge';
+import { WordPageFlowGuard } from '@/components/WordPageFlowGuard';
 import { WordRichPaste } from '@/components/WordRichPaste';
 import { WordToolbarPolish } from '@/components/WordToolbarPolish';
 import { HydrationReady } from '@/components/HydrationReady';
@@ -52,6 +53,7 @@ export function WordEditorClientRuntime({
     <>
       <WordEditorTool {...runtimeOptions} />
       <A4Pagination />
+      <WordPageFlowGuard />
       <WordRichPaste />
       <WordAllToolsButton />
       <EditorKeyboardScope />
