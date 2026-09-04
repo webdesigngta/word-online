@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Download, FileText, FileType2, Printer } from 'lucide-react';
+import { ChevronDown, Download, FileText, FileType2, LayoutGrid, Printer } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -128,47 +128,68 @@ export function HeaderDownloadMenu() {
   };
 
   return createPortal(
-    <div ref={wrapRef} className="fwo-header-download-wrap">
-      <button
-        type="button"
-        className="docs-action-pill fwo-header-download-button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        title="Download"
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Download className="fwo-header-download-main-icon" />
-        <span>Download</span>
-        <ChevronDown className="fwo-header-download-chevron" />
-      </button>
+    <div ref={wrapRef} className="fwo-header-actions-wrap">
+      <div className="fwo-header-download-wrap">
+        <button
+          type="button"
+          className="docs-action-pill fwo-header-download-button"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          title="Download"
+          onClick={() => setOpen((value) => !value)}
+        >
+          <Download className="fwo-header-download-main-icon" />
+          <span>Download</span>
+          <ChevronDown className="fwo-header-download-chevron" />
+        </button>
 
-      {open && (
-        <div className="fwo-header-download-menu" role="menu" aria-label="Download document">
-          <button type="button" role="menuitem" onClick={() => choose(() => legacyFileAction('Download DOCX'))}>
-            <FileType2 /><span><strong>Word (.docx)</strong><small>Modern Microsoft Word</small></span>
-          </button>
-          <button type="button" role="menuitem" onClick={() => choose(downloadLegacyDoc)}>
-            <FileText /><span><strong>Word 97–2003 (.doc)</strong><small>Compatible with Google Docs</small></span>
-          </button>
-          <div className="fwo-header-download-separator" />
-          <button type="button" role="menuitem" onClick={() => choose(() => window.print())}>
-            <Printer /><span><strong>PDF (.pdf)</strong><small>Print or save as PDF</small></span>
-          </button>
-          <button type="button" role="menuitem" onClick={() => choose(() => legacyFileAction('Download HTML'))}>
-            <FileText /><span><strong>HTML (.html)</strong><small>Web document</small></span>
-          </button>
-          <button type="button" role="menuitem" onClick={() => choose(downloadText)}>
-            <FileText /><span><strong>Plain text (.txt)</strong><small>Text only</small></span>
-          </button>
-        </div>
-      )}
+        {open && (
+          <div className="fwo-header-download-menu" role="menu" aria-label="Download document">
+            <button type="button" role="menuitem" onClick={() => choose(() => legacyFileAction('Download DOCX'))}>
+              <FileType2 /><span><strong>Word (.docx)</strong><small>Modern Microsoft Word</small></span>
+            </button>
+            <button type="button" role="menuitem" onClick={() => choose(downloadLegacyDoc)}>
+              <FileText /><span><strong>Word 97–2003 (.doc)</strong><small>Compatible with Google Docs</small></span>
+            </button>
+            <div className="fwo-header-download-separator" />
+            <button type="button" role="menuitem" onClick={() => choose(() => window.print())}>
+              <Printer /><span><strong>PDF (.pdf)</strong><small>Print or save as PDF</small></span>
+            </button>
+            <button type="button" role="menuitem" onClick={() => choose(() => legacyFileAction('Download HTML'))}>
+              <FileText /><span><strong>HTML (.html)</strong><small>Web document</small></span>
+            </button>
+            <button type="button" role="menuitem" onClick={() => choose(downloadText)}>
+              <FileText /><span><strong>Plain text (.txt)</strong><small>Text only</small></span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <a className="docs-action-pill fwo-header-all-tools-button" href="/tools" title="All DOC321 tools" aria-label="View all DOC321 tools">
+        <LayoutGrid />
+        <span>All Tools</span>
+      </a>
 
       <style jsx global>{`
         .fwo-header-download-host { display:flex; align-items:center; position:relative; }
+        .fwo-header-actions-wrap { display:flex; align-items:center; gap:8px; }
         .fwo-header-download-wrap { position:relative; display:flex; align-items:center; }
-        .fwo-header-download-button { gap:7px !important; cursor:pointer; white-space:nowrap; }
-        .fwo-header-download-button .fwo-header-download-main-icon { width:17px; height:17px; }
+        .fwo-header-download-button,
+        .fwo-header-all-tools-button {
+          box-sizing:border-box;
+          height:40px !important;
+          min-width:126px !important;
+          padding:0 14px !important;
+          gap:7px !important;
+          cursor:pointer;
+          white-space:nowrap;
+          text-decoration:none;
+        }
+        .fwo-header-download-button .fwo-header-download-main-icon,
+        .fwo-header-all-tools-button svg { width:17px; height:17px; }
         .fwo-header-download-button .fwo-header-download-chevron { width:14px; height:14px; margin-left:1px; }
+        .fwo-header-all-tools-button { color:#3c4043; }
+        .fwo-header-all-tools-button:hover { background:#f8fafd; color:#174ea6; }
         .fwo-header-download-menu { position:absolute; top:calc(100% + 7px); right:0; z-index:7200; width:268px; max-height:calc(100vh - 78px); overflow:auto; box-sizing:border-box; padding:7px; border:1px solid #dfe3e7; border-radius:12px; background:#fff; box-shadow:0 10px 30px rgba(60,64,67,.24),0 2px 7px rgba(60,64,67,.12); font-family:Arial,Helvetica,sans-serif; }
         .fwo-header-download-menu button { width:100%; min-height:48px; border:0; border-radius:8px; background:transparent; color:#202124; padding:7px 9px; display:grid; grid-template-columns:22px minmax(0,1fr); gap:10px; align-items:center; text-align:left; cursor:pointer; }
         .fwo-header-download-menu button:hover { background:#f1f3f4; }
@@ -177,9 +198,17 @@ export function HeaderDownloadMenu() {
         .fwo-header-download-menu strong { font-size:13px; line-height:1.2; font-weight:500; }
         .fwo-header-download-menu small { color:#7b8085; font-size:10.5px; line-height:1.25; }
         .fwo-header-download-separator { height:1px; margin:5px 3px; background:#e0e3e7; }
+        @media(max-width:900px) {
+          .fwo-header-download-button,
+          .fwo-header-all-tools-button { min-width:104px !important; padding-inline:10px !important; }
+        }
         @media(max-width:720px) {
-          .fwo-header-download-button > span { display:none; }
-          .fwo-header-download-button { min-width:38px !important; padding:0 8px !important; }
+          .fwo-header-actions-wrap { gap:5px; }
+          .fwo-header-download-button,
+          .fwo-header-all-tools-button { min-width:40px !important; width:40px !important; padding:0 !important; }
+          .fwo-header-download-button > span,
+          .fwo-header-download-button .fwo-header-download-chevron,
+          .fwo-header-all-tools-button > span { display:none; }
           .fwo-header-download-menu { position:fixed; top:58px; left:8px; right:8px; width:auto; max-height:calc(100vh - 70px); }
         }
       `}</style>
