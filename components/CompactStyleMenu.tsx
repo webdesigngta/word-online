@@ -110,7 +110,16 @@ function selectBlockContents(block: HTMLElement) {
   selection?.addRange(range);
 }
 
-function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleItem): HTMLElement | null {
+function selectBlocks(first: HTMLElement, last: HTMLElement) {
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.setStart(first, 0);
+  range.setEnd(last, last.childNodes.length);
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}
+
+function isolateSingleBlockSelection(editor: HTMLElement, range: Range, item: StyleItem): HTMLElement | null {
   if (range.collapsed) return null;
   const startBlock = blockForNode(editor, range.startContainer);
   const endBlock = blockForNode(editor, range.endContainer);
@@ -126,12 +135,21 @@ function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleI
   afterRange.setStart(range.endContainer, range.endOffset);
   const after = afterRange.cloneContents();
 
-  if (!fragmentHasContent(before) && !fragmentHasContent(after)) return null;
-
   const selected = range.cloneContents();
-  const replacement: HTMLElement[] = [];
+  const hasBefore = fragmentHasContent(before);
+  const hasAfter = fragmentHasContent(after);
 
-  if (fragmentHasContent(before)) {
+  // Full paragraph/heading selected: replace only that block, never ask the
+  // browser to guess the formatting scope.
+  if (!hasBefore && !hasAfter) {
+    const selectedBlock = makeStyledBlock(item, startBlock, selected);
+    startBlock.replaceWith(selectedBlock);
+    selectBlockContents(selectedBlock);
+    return selectedBlock;
+  }
+
+  const replacement: HTMLElement[] = [];
+  if (hasBefore) {
     const beforeBlock = cloneBlockShell(startBlock);
     beforeBlock.appendChild(before);
     replacement.push(beforeBlock);
@@ -140,7 +158,7 @@ function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleI
   const selectedBlock = makeStyledBlock(item, startBlock, selected);
   replacement.push(selectedBlock);
 
-  if (fragmentHasContent(after)) {
+  if (hasAfter) {
     const afterBlock = cloneBlockShell(startBlock);
     afterBlock.appendChild(after);
     replacement.push(afterBlock);
@@ -151,14 +169,46 @@ function isolatePartialSelection(editor: HTMLElement, range: Range, item: StyleI
   return selectedBlock;
 }
 
-function isolateRootSelection(editor: HTMLElement, range: Range, item: StyleItem): HTMLElement | null {
+function isolateLooseSelection(editor: HTMLElement, range: Range, item: StyleItem): HTMLElement | null {
   if (range.collapsed) return null;
   if (blockForNode(editor, range.startContainer) || blockForNode(editor, range.endContainer)) return null;
+
+  // Handles legacy pasted content that lives directly inside an A4 page as
+  // text + BR nodes. Only the highlighted range is extracted and restyled.
   const selected = range.extractContents();
   const block = makeStyledBlock(item, null, selected);
   range.insertNode(block);
   selectBlockContents(block);
   return block;
+}
+
+function safelyIntersects(range: Range, node: Node) {
+  try {
+    return range.intersectsNode(node);
+  } catch {
+    return false;
+  }
+}
+
+function styleIntersectingBlocks(editor: HTMLElement, range: Range, item: StyleItem): HTMLElement | null {
+  if (range.collapsed) return null;
+  const blocks = Array.from(editor.querySelectorAll<HTMLElement>(BLOCK_SELECTOR))
+    .filter((block) => safelyIntersects(range, block));
+  if (!blocks.length) return null;
+
+  const replacements: HTMLElement[] = [];
+  blocks.forEach((block) => {
+    const contentsRange = document.createRange();
+    contentsRange.selectNodeContents(block);
+    const contents = contentsRange.cloneContents();
+    contentsRange.detach?.();
+    const styled = makeStyledBlock(item, block, contents);
+    block.replaceWith(styled);
+    replacements.push(styled);
+  });
+
+  if (replacements.length) selectBlocks(replacements[0], replacements[replacements.length - 1]);
+  return replacements[0] ?? null;
 }
 
 export function CompactStyleMenu() {
@@ -230,19 +280,31 @@ export function CompactStyleMenu() {
         return;
       }
 
-      let block: HTMLElement | null = isolatePartialSelection(editor, range, item) ?? isolateRootSelection(editor, range, item);
-      if (!block) {
+      let block: HTMLElement | null = null;
+
+      if (!range.collapsed) {
+        // Never use execCommand(formatBlock) for highlighted text. Browser scope
+        // inference can promote an A4 container on legacy pasted markup.
+        block = isolateSingleBlockSelection(editor, range, item)
+          ?? isolateLooseSelection(editor, range, item)
+          ?? styleIntersectingBlocks(editor, range, item);
+      } else {
         const before = currentBlock(editor);
-        if (before) clearSpecialStyle(before);
-        document.execCommand('formatBlock', false, item.tag);
-        block = currentBlock(editor);
-        if (block) applySpecialStyle(block, item);
+        if (before) {
+          clearSpecialStyle(before);
+          document.execCommand('formatBlock', false, item.tag);
+          block = currentBlock(editor);
+          if (block) applySpecialStyle(block, item);
+        }
       }
 
-      editor.dispatchEvent(new Event('input', { bubbles: true }));
-      const active = window.getSelection();
-      if (active?.rangeCount) savedRange = active.getRangeAt(0).cloneRange();
-      (trigger.querySelector('.fwo-style-label') as HTMLElement).textContent = item.label;
+      if (block) {
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        const active = window.getSelection();
+        if (active?.rangeCount) savedRange = active.getRangeAt(0).cloneRange();
+        (trigger.querySelector('.fwo-style-label') as HTMLElement).textContent = item.label;
+      }
+
       closeMenu();
       editor.focus({ preventScroll: true });
     };
