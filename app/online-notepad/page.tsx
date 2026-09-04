@@ -1,3 +1,4 @@
+import { NotepadHeaderBridge } from '@/components/NotepadHeaderBridge';
 import { NotepadInterface } from '@/components/NotepadInterface';
 import { NativeToolEditorial } from '@/components/NativeToolEditorial';
 import { SiteFooter } from '@/components/SiteFooter';
@@ -8,6 +9,7 @@ import { getPlatformToolByRoute } from '@/tools/platform/catalog';
 
 const route = '/online-notepad';
 const tool = getPlatformToolByRoute(route)!;
+const saveStatusId = 'doc321-notepad-save-status';
 
 export const metadata = pageMetadata({
   title: tool.title,
@@ -39,16 +41,16 @@ export default function Page() {
   return (
     <>
       <ToolViewAnalytics toolId={tool.id} route={route} />
-      <SiteHeader />
+      <SiteHeader contextTitle="DOC321's Online Notepad" contextMetaId={saveStatusId} contextMeta="Saved locally" />
+      <NotepadHeaderBridge targetId={saveStatusId} />
       <main className="notepad-native-page">
         <style>{`
-          .notepad-native-page{padding:14px 0 0;background:#fff;color:#202124;font-family:Arial,Helvetica,sans-serif}
+          .notepad-native-page{padding:0;background:#fff;color:#202124;font-family:Arial,Helvetica,sans-serif}
           .notepad-native-wrap{width:min(1500px,calc(100% - 48px));margin:0 auto}
 
-          /* Online Notepad owns its editor UI. Generic upload normalization is intentionally not used here. */
-          .notepad-is-shell{border-radius:15px!important;border-color:#dfe3e8!important;box-shadow:0 2px 7px rgba(32,33,36,.10)!important;background:#fff!important}
-          .notepad-is-shell .np-topbar{padding:8px 12px;background:#fff;border-bottom-color:#e1e4e8;backdrop-filter:none;-webkit-backdrop-filter:none}
-          .notepad-is-shell .np-mark{width:30px;height:30px;border-radius:9px;font-size:13px}
+          /* One notepad controls row only. The tool identity and save state now live in the DOC321 header. */
+          .notepad-is-shell{border-radius:0 0 15px 15px!important;border-color:#dfe3e8!important;box-shadow:0 2px 7px rgba(32,33,36,.10)!important;background:#fff!important}
+          .notepad-is-shell .np-topbar{display:none!important}
           .notepad-is-shell .np-toolbar{padding:7px 10px;gap:5px;background:#fff;border-bottom-color:#dfe3e8;box-shadow:0 1px 3px rgba(32,33,36,.06)}
           .notepad-is-shell .np-btn{height:32px;min-width:32px;border-radius:7px}
           .notepad-is-shell .np-select{height:32px}
@@ -86,7 +88,6 @@ export default function Page() {
           .notepad-is-shell .np-statusbar{background:#fff;border-top-color:#dfe3e8}
 
           .notepad-is-shell.is-dark{background:#17191d!important}
-          .notepad-is-shell.is-dark .np-topbar,
           .notepad-is-shell.is-dark .np-toolbar,
           .notepad-is-shell.is-dark .np-statusbar{background:#1c1e23}
           .notepad-is-shell.is-dark .np-workspace,
@@ -101,9 +102,8 @@ export default function Page() {
           .product-site-header .site-nav a:first-child{background:#e8f0fe;color:#174ea6;box-shadow:inset 0 0 0 1px #d2e3fc}
 
           @media(max-width:760px){
-            .notepad-native-page{padding-top:8px}
             .notepad-native-wrap{width:calc(100% - 20px)}
-            .notepad-is-shell{border-radius:12px!important}
+            .notepad-is-shell{border-radius:0 0 12px 12px!important}
             .notepad-is-shell .np-workspace,
             .notepad-is-shell .np-paper,
             .notepad-is-shell .np-editor{min-height:540px}
@@ -128,7 +128,7 @@ export default function Page() {
 
           @media(max-width:480px){
             .notepad-native-wrap{width:calc(100% - 12px)}
-            .notepad-is-shell{border-radius:10px!important}
+            .notepad-is-shell{border-radius:0 0 10px 10px!important}
             .notepad-is-shell .np-editor{padding-right:14px;padding-left:62px}
           }
         `}</style>
