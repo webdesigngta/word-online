@@ -25,6 +25,7 @@ import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles'
 import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTriggers';
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
+import { WordAllToolsButton } from '@/components/WordAllToolsButton';
 import { WordColorControlsFix } from '@/components/WordColorControlsFix';
 import { WordEditorBrandMobilePolish } from '@/components/WordEditorBrandMobilePolish';
 import { WordEditorMobileUsability } from '@/components/WordEditorMobileUsability';
@@ -52,6 +53,7 @@ export function WordEditorClientRuntime({
       <WordEditorTool {...runtimeOptions} />
       <A4Pagination />
       <WordRichPaste />
+      <WordAllToolsButton />
       <EditorKeyboardScope />
       <EditorMenuAutoDismiss />
       <DocumentOutline />
