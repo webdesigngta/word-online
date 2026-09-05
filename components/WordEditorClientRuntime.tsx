@@ -24,7 +24,7 @@ import { ResponsiveDropdownStyles } from '@/components/ResponsiveDropdownStyles'
 import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTriggers';
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
-import { WordColorControlsFix } from '@/components/WordColorControlsFix';
+import { WordColorControls } from '@/components/WordColorControls';
 import { WordEditorBrandMobilePolish } from '@/components/WordEditorBrandMobilePolish';
 import { WordEditorMobileUsability } from '@/components/WordEditorMobileUsability';
 import { WordExactParagraphStyles } from '@/components/WordExactParagraphStyles';
@@ -64,7 +64,7 @@ export function WordEditorClientRuntime({
       <WordToolbarPolish />
       <EditorFeatureCleanup />
       <EditorNativeSelectionGuard />
-      <WordColorControlsFix />
+      <WordColorControls />
       <WordFormattingSelectionBridge />
       <WordEditorBrandMobilePolish />
       <WordEditorMobileUsability />
