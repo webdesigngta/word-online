@@ -11,7 +11,7 @@ export const wordTool = {
 } satisfies PlatformTool;
 
 export const wordToolSeo = {
-  title: 'Word Online – Free Browser Word Editor',
+  title: 'Free Word Online – Browser Word Editor',
   description:
     'Use Word Online free in your browser. Open DOCX files, format documents, autosave locally, and export without creating an account.',
   path: wordTool.route,
