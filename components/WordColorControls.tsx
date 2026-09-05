@@ -186,8 +186,8 @@ function applyExactColor(editor: HTMLElement, bookmark: SelectionBookmark, kind:
     const selectedNode = target.start > 0 ? target.node.splitText(target.start) : target.node;
     const parent = selectedNode.parentElement;
 
-    // One DOC321 fragment owns both text and highlight styles. This prevents
-    // alternating text/highlight choices from building nested formatting spans.
+    // One DOC321 fragment owns both text and highlight styles. Alternating
+    // between the two tools therefore does not build stacks of formatting spans.
     if (
       parent?.dataset.fwoColorFragment === 'true' &&
       parent.childNodes.length === 1 &&
@@ -222,7 +222,7 @@ function rgbToHex(value: string) {
 
 function colorsAtBookmark(editor: HTMLElement, bookmark: SelectionBookmark) {
   const boundary = boundaryAtOffset(editor, bookmark.start);
-  let element = boundary?.node.parentElement ?? editor;
+  let element: HTMLElement | null = boundary?.node.parentElement ?? editor;
   const text = rgbToHex(getComputedStyle(element).color) || DEFAULT_TEXT_COLOR;
   let highlight: string | null = null;
 
@@ -232,7 +232,7 @@ function colorsAtBookmark(editor: HTMLElement, bookmark: SelectionBookmark) {
       highlight = background;
       break;
     }
-    element = element.parentElement as HTMLElement;
+    element = element.parentElement;
   }
 
   return { text, highlight: highlight || NO_HIGHLIGHT_COLOR };
@@ -254,6 +254,15 @@ function positionPopover(button: HTMLElement, width: number, height: number) {
   return { left, top };
 }
 
+function HighlighterGlyph() {
+  return (
+    <svg className="fwo-highlight-glyph" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7.2 15.7 14.9 8l3.1 3.1-7.7 7.7H7.2v-3.1Z" />
+      <path d="m14.9 8 1.2-1.2a1.3 1.3 0 0 1 1.8 0l1.3 1.3a1.3 1.3 0 0 1 0 1.8L18 11.1" />
+    </svg>
+  );
+}
+
 function ColorToolbarButton({
   kind,
   color,
@@ -264,7 +273,6 @@ function ColorToolbarButton({
   onOpen: (kind: ColorKind, button: HTMLButtonElement) => void;
 }) {
   const text = kind === 'text' ? 'Text color' : 'Highlight color';
-  const icon = kind === 'text' ? 'format_color_text' : 'ink_highlighter';
 
   return (
     <button
@@ -279,7 +287,9 @@ function ColorToolbarButton({
         onOpen(kind, event.currentTarget);
       }}
     >
-      <span className="material-symbols-rounded fwo-color-button-icon" aria-hidden="true">{icon}</span>
+      {kind === 'text'
+        ? <span className="fwo-text-color-glyph" aria-hidden="true">A</span>
+        : <HighlighterGlyph />}
       <span
         className="fwo-color-button-indicator"
         aria-hidden="true"
@@ -320,15 +330,15 @@ export function WordColorControls() {
     return () => { disposed = true; };
   }, []);
 
-  // Remember selection only when the user finishes selecting/typing inside the
-  // editor. There is deliberately no document-wide selectionchange listener.
+  // Selection tracking is scoped to the editor and runs only when an action
+  // finishes. A normal caret explicitly clears the old bookmark, so stale text
+  // can never be recolored by a later toolbar click.
   useEffect(() => {
     const editor = editorElement();
     if (!editor) return;
 
     const remember = () => {
-      const bookmark = currentBookmark(editor);
-      if (bookmark) bookmarkRef.current = bookmark;
+      bookmarkRef.current = currentBookmark(editor);
     };
 
     editor.addEventListener('pointerup', remember);
@@ -380,7 +390,8 @@ export function WordColorControls() {
     const editor = editorElement();
     if (!editor) return;
 
-    const bookmark = currentBookmark(editor) || bookmarkRef.current;
+    const liveBookmark = currentBookmark(editor);
+    const bookmark = liveBookmark || bookmarkRef.current;
     if (!bookmark || !restoreBookmark(editor, bookmark)) {
       bookmarkRef.current = null;
       setPalette(null);
@@ -412,7 +423,6 @@ export function WordColorControls() {
     else setHighlightColor(color);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
 
-    // Text length does not change, so the bookmark remains valid after styling.
     restoreBookmark(editor, bookmark);
     window.requestAnimationFrame(() => restoreBookmark(editor, bookmark));
   };
@@ -508,8 +518,8 @@ export function WordColorControls() {
       {controls}
       {popovers}
       <style jsx global>{`
-        /* The original browser color inputs and every old indicator/pseudo-layer
-           are retired. New controls below intentionally use different classes. */
+        /* Retire the original browser controls and all old indicator layers.
+           The replacement controls deliberately use unrelated class names. */
         .docs-toolbar .docs-color-tool {
           display:none!important;
           pointer-events:none!important;
@@ -550,14 +560,25 @@ export function WordColorControls() {
           outline:2px solid #1a73e8;
           outline-offset:1px;
         }
-        .fwo-color-button-icon {
+        .fwo-text-color-glyph {
           display:block;
           width:20px;
           height:20px;
-          color:#3c4043!important;
-          font-size:20px!important;
-          line-height:20px!important;
-          overflow:hidden;
+          color:#3c4043;
+          font:700 18px/20px Arial,Helvetica,sans-serif;
+          text-align:center;
+          pointer-events:none;
+        }
+        .fwo-highlight-glyph {
+          display:block;
+          width:20px;
+          height:20px;
+          color:#3c4043;
+          fill:none;
+          stroke:currentColor;
+          stroke-width:1.7;
+          stroke-linecap:round;
+          stroke-linejoin:round;
           pointer-events:none;
         }
         .fwo-color-button-indicator {
