@@ -15,8 +15,15 @@ type PaletteState = {
   top: number;
 };
 
+type TextTarget = {
+  node: Text;
+  start: number;
+  end: number;
+};
+
 const DEFAULT_TEXT_COLOR = '#202124';
 const DEFAULT_HIGHLIGHT_COLOR = '#fdd663';
+const NO_HIGHLIGHT_COLOR = '#ffffff';
 
 const TEXT_COLORS = [
   '#000000', '#202124', '#3c4043', '#5f6368', '#80868b', '#9aa0a6', '#bdc1c6', '#ffffff',
@@ -131,6 +138,74 @@ function restoreBookmark(editor: HTMLElement, bookmark: SelectionBookmark | null
   }
 }
 
+function targetsForBookmark(editor: HTMLElement, bookmark: SelectionBookmark) {
+  const targets: TextTarget[] = [];
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+  let consumed = 0;
+  let node = walker.nextNode();
+
+  while (node) {
+    const text = node as Text;
+    const nodeStart = consumed;
+    const nodeEnd = consumed + text.data.length;
+    consumed = nodeEnd;
+
+    const overlapStart = Math.max(bookmark.start, nodeStart);
+    const overlapEnd = Math.min(bookmark.end, nodeEnd);
+    if (overlapEnd > overlapStart) {
+      targets.push({
+        node: text,
+        start: overlapStart - nodeStart,
+        end: overlapEnd - nodeStart,
+      });
+    }
+
+    if (nodeEnd >= bookmark.end) break;
+    node = walker.nextNode();
+  }
+
+  return targets;
+}
+
+function colorSelectedText(editor: HTMLElement, bookmark: SelectionBookmark, kind: ColorKind, color: string) {
+  const targets = targetsForBookmark(editor, bookmark);
+  if (!targets.length) return false;
+
+  // Work backwards so splitting one selected text node never invalidates the
+  // offsets or node references for text that comes later in the document.
+  for (let index = targets.length - 1; index >= 0; index -= 1) {
+    const target = targets[index];
+    const originalLength = target.node.data.length;
+    if (!target.node.parentNode || target.end <= target.start) continue;
+
+    if (target.end < originalLength) target.node.splitText(target.end);
+    const selectedNode = target.start > 0 ? target.node.splitText(target.start) : target.node;
+    const parent = selectedNode.parentElement;
+
+    // Reuse an existing DOC321 color span when this whole text node is already
+    // wrapped by one. Repeated color previews then update the same node instead
+    // of creating an unnecessary stack of spans.
+    if (
+      parent?.dataset.fwoColorSpan === kind &&
+      parent.childNodes.length === 1 &&
+      parent.firstChild === selectedNode
+    ) {
+      if (kind === 'text') parent.style.color = color;
+      else parent.style.backgroundColor = color;
+      continue;
+    }
+
+    const span = document.createElement('span');
+    span.dataset.fwoColorSpan = kind;
+    if (kind === 'text') span.style.color = color;
+    else span.style.backgroundColor = color;
+    selectedNode.parentNode?.insertBefore(span, selectedNode);
+    span.appendChild(selectedNode);
+  }
+
+  return true;
+}
+
 function rgbToHex(value: string) {
   const normalized = value.trim().toLowerCase();
   if (/^#[0-9a-f]{6}$/i.test(normalized)) return normalized;
@@ -179,16 +254,15 @@ function toolKind(target: EventTarget | null): ColorKind | null {
 function setIndicator(kind: ColorKind, color: string) {
   const tool = toolbarTool(kind);
   if (!tool) return;
-  const visible = color === 'transparent' ? '#ffffff' : color;
-  tool.style.setProperty('--fwo-selected-color', visible);
-  tool.dataset.fwoHasColor = kind === 'highlight' && color === 'transparent' ? 'false' : 'true';
+  tool.style.setProperty('--fwo-selected-color', color);
+  tool.dataset.fwoHasColor = kind === 'highlight' && color === NO_HIGHLIGHT_COLOR ? 'false' : 'true';
 }
 
 function palettePosition(tool: HTMLElement) {
   const rect = tool.getBoundingClientRect();
-  const width = 260;
-  const estimatedHeight = 250;
-  const left = Math.max(8, Math.min(rect.left - 10, window.innerWidth - width - 8));
+  const width = 264;
+  const estimatedHeight = 252;
+  const left = Math.max(8, Math.min(rect.left - 8, window.innerWidth - width - 8));
   const below = rect.bottom + 7;
   const top = below + estimatedHeight <= window.innerHeight
     ? below
@@ -218,7 +292,7 @@ export function WordColorControls() {
       const textColor = rgbToHex(getComputedStyle(element).color) || DEFAULT_TEXT_COLOR;
       const highlightColor = inheritedHighlight(element, editor);
       setIndicator('text', textColor);
-      setIndicator('highlight', highlightColor || 'transparent');
+      setIndicator('highlight', highlightColor || NO_HIGHLIGHT_COLOR);
     };
 
     const rememberFromEditor = () => {
@@ -309,109 +383,174 @@ export function WordColorControls() {
   const applyColor = (kind: ColorKind, color: string) => {
     const editor = editorElement();
     const bookmark = bookmarkRef.current;
-    if (!editor || !bookmark || !restoreBookmark(editor, bookmark)) return;
+    if (!editor || !bookmark) return;
 
-    document.execCommand('styleWithCSS', false, 'true');
-    let applied = false;
+    const appliedColor = kind === 'highlight' && color === 'transparent' ? NO_HIGHLIGHT_COLOR : color;
+    const applied = colorSelectedText(editor, bookmark, kind, appliedColor);
+    if (!applied) return;
 
-    if (kind === 'text') {
-      applied = document.execCommand('foreColor', false, color);
-    } else {
-      applied = document.execCommand('hiliteColor', false, color);
-      if (!applied) applied = document.execCommand('backColor', false, color);
-    }
+    setIndicator(kind, appliedColor);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
 
-    setIndicator(kind, color);
-    if (applied) editor.dispatchEvent(new Event('input', { bubbles: true }));
-
+    // Rebuild the browser selection from text offsets after the DOM was split
+    // into color spans. This deliberately keeps the same text visibly selected
+    // so users can click several swatches without selecting it again.
+    restoreBookmark(editor, bookmarkRef.current);
     window.requestAnimationFrame(() => restoreBookmark(editor, bookmarkRef.current));
   };
 
-  if (!palette) {
-    return (
-      <style jsx global>{`
-        .docs-color-tool { cursor:pointer!important; }
-      `}</style>
-    );
-  }
-
-  const colors = palette.kind === 'text' ? TEXT_COLORS : HIGHLIGHT_COLORS;
-  const custom = palette.kind === 'text' ? customText : customHighlight;
-  const title = palette.kind === 'text' ? 'Text color' : 'Highlight color';
+  const colors = palette?.kind === 'text' ? TEXT_COLORS : HIGHLIGHT_COLORS;
+  const custom = palette?.kind === 'text' ? customText : customHighlight;
+  const title = palette?.kind === 'text' ? 'Text color' : 'Highlight color';
 
   return (
     <>
-      <div
-        ref={paletteRef}
-        className="fwo-color-palette"
-        role="dialog"
-        aria-label={title}
-        style={{ left: palette.left, top: palette.top }}
-        onPointerDown={(event) => {
-          const target = event.target as HTMLInputElement;
-          if (!(target instanceof HTMLInputElement && target.type === 'color')) event.preventDefault();
-        }}
-      >
-        <div className="fwo-color-palette-head">
-          <strong>{title}</strong>
-          <span>Select another color to preview it on the same text</span>
-        </div>
+      {palette ? (
+        <div
+          ref={paletteRef}
+          className="fwo-color-palette"
+          role="dialog"
+          aria-label={title}
+          style={{ left: palette.left, top: palette.top }}
+          onPointerDown={(event) => {
+            const target = event.target as HTMLInputElement;
+            if (!(target instanceof HTMLInputElement && target.type === 'color')) event.preventDefault();
+          }}
+        >
+          <div className="fwo-color-palette-head">
+            <strong>{title}</strong>
+            <span>Keep the text selected and try different colors</span>
+          </div>
 
-        <div className="fwo-color-swatches" role="grid" aria-label={`${title} palette`}>
-          {colors.map((color) => (
+          <div className="fwo-color-swatches" role="grid" aria-label={`${title} palette`}>
+            {colors.map((color) => (
+              <button
+                key={color}
+                type="button"
+                className="fwo-color-swatch"
+                aria-label={`${title} ${color}`}
+                title={color}
+                style={{ backgroundColor: color }}
+                onClick={() => applyColor(palette.kind, color)}
+              />
+            ))}
+          </div>
+
+          <div className="fwo-color-palette-actions">
             <button
-              key={color}
               type="button"
-              className="fwo-color-swatch"
-              aria-label={`${title} ${color}`}
-              title={color}
-              style={{ backgroundColor: color }}
-              onClick={() => applyColor(palette.kind, color)}
-            />
-          ))}
-        </div>
+              className="fwo-color-reset"
+              onClick={() => applyColor(palette.kind, palette.kind === 'text' ? DEFAULT_TEXT_COLOR : 'transparent')}
+            >
+              {palette.kind === 'text' ? 'Default text' : 'No highlight'}
+            </button>
 
-        <div className="fwo-color-palette-actions">
-          <button
-            type="button"
-            className="fwo-color-reset"
-            onClick={() => applyColor(palette.kind, palette.kind === 'text' ? DEFAULT_TEXT_COLOR : 'transparent')}
-          >
-            {palette.kind === 'text' ? 'Default text' : 'No highlight'}
-          </button>
-
-          <label className="fwo-custom-color">
-            <span>Custom</span>
-            <input
-              type="color"
-              aria-label={`Custom ${title.toLowerCase()}`}
-              value={custom}
-              onChange={(event) => {
-                const color = event.target.value;
-                if (palette.kind === 'text') setCustomText(color);
-                else setCustomHighlight(color);
-                applyColor(palette.kind, color);
-              }}
-            />
-          </label>
+            <label className="fwo-custom-color">
+              <span>Custom</span>
+              <input
+                type="color"
+                aria-label={`Custom ${title.toLowerCase()}`}
+                value={custom}
+                onChange={(event) => {
+                  const color = event.target.value;
+                  if (palette.kind === 'text') setCustomText(color);
+                  else setCustomHighlight(color);
+                  applyColor(palette.kind, color);
+                }}
+              />
+            </label>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <style jsx global>{`
-        .docs-color-tool {
+        /* The original toolbar color inputs remain in the markup only as stable
+           accessibility hooks. They are completely non-interactive now so no
+           native picker or legacy color handler can run underneath this UI. */
+        .docs-toolbar .docs-color-tool {
+          --fwo-selected-color:#202124;
+          position:relative!important;
+          box-sizing:border-box!important;
+          width:32px!important;
+          min-width:32px!important;
+          height:30px!important;
+          min-height:30px!important;
+          margin:0!important;
+          padding:0!important;
+          display:inline-flex!important;
+          align-items:center!important;
+          justify-content:center!important;
+          border:0!important;
+          border-radius:6px!important;
+          background:transparent!important;
+          overflow:hidden!important;
           cursor:pointer!important;
-          overflow:visible!important;
+          vertical-align:middle!important;
         }
+        .docs-toolbar .docs-color-tool:hover {
+          background:#e8eaed!important;
+        }
+        .docs-toolbar .docs-color-tool:focus-within {
+          outline:2px solid #0b57d0!important;
+          outline-offset:-1px!important;
+        }
+        .docs-toolbar .docs-color-tool .material-symbols-rounded,
+        .docs-toolbar .docs-color-tool .material-symbols-outlined,
+        .docs-toolbar .docs-color-tool .material-icons {
+          position:relative!important;
+          z-index:1!important;
+          display:block!important;
+          width:20px!important;
+          height:20px!important;
+          margin:0!important;
+          padding:0!important;
+          color:#3c4043!important;
+          font-size:20px!important;
+          line-height:20px!important;
+          text-align:center!important;
+        }
+        .docs-toolbar .docs-color-tool::before {
+          content:''!important;
+          position:absolute!important;
+          left:7px!important;
+          right:7px!important;
+          bottom:2px!important;
+          height:3px!important;
+          border:0!important;
+          border-radius:2px!important;
+          background:var(--fwo-selected-color)!important;
+          box-shadow:0 0 0 1px rgba(60,64,67,.15)!important;
+          transform:none!important;
+          pointer-events:none!important;
+          z-index:2!important;
+        }
+        .docs-toolbar .docs-color-tool::after {
+          content:none!important;
+          display:none!important;
+        }
+        .docs-toolbar .docs-color-tool input[type='color'] {
+          position:absolute!important;
+          inset:0!important;
+          width:100%!important;
+          height:100%!important;
+          margin:0!important;
+          padding:0!important;
+          border:0!important;
+          opacity:0!important;
+          pointer-events:none!important;
+          visibility:hidden!important;
+        }
+
         .fwo-color-palette {
           position:fixed;
           z-index:10020;
-          width:260px;
+          width:264px;
           box-sizing:border-box;
           padding:12px;
           border:1px solid #dadce0;
-          border-radius:12px;
+          border-radius:10px;
           background:#fff;
-          box-shadow:0 12px 34px rgba(60,64,67,.26),0 2px 8px rgba(60,64,67,.14);
+          box-shadow:0 10px 30px rgba(60,64,67,.24),0 2px 7px rgba(60,64,67,.12);
           color:#202124;
           font-family:Arial,Helvetica,sans-serif;
           user-select:none;
@@ -436,11 +575,11 @@ export function WordColorControls() {
           gap:5px;
         }
         .fwo-color-swatch {
-          width:24px;
-          height:24px;
+          width:25px;
+          height:25px;
           padding:0;
           border:1px solid rgba(60,64,67,.28);
-          border-radius:6px;
+          border-radius:4px;
           cursor:pointer;
           box-sizing:border-box;
         }
@@ -462,7 +601,7 @@ export function WordColorControls() {
           min-height:30px;
           padding:0 9px;
           border:1px solid #dadce0;
-          border-radius:7px;
+          border-radius:6px;
           background:#fff;
           color:#3c4043;
           font-size:12px;
@@ -482,7 +621,7 @@ export function WordColorControls() {
           height:30px;
           padding:2px;
           border:1px solid #dadce0;
-          border-radius:7px;
+          border-radius:6px;
           background:#fff;
           cursor:pointer;
         }
