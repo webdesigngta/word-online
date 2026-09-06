@@ -83,7 +83,63 @@ try {
   });
   if (!highlightResult.ok) throw new Error(`Highlight failed: ${JSON.stringify(highlightResult)}`);
 
-  console.log('Word color smoke passed', { nativeState, textOpenState, highlightOpenState, textResult, highlightResult });
+  await page.waitForSelector('button.fwo-clear-document-button');
+  const clearButtonCount = await page.locator('button.fwo-clear-document-button').count();
+  if (clearButtonCount !== 1) throw new Error(`Expected one Clear document button, found ${clearButtonCount}`);
+
+  await page.evaluate(() => {
+    const editor = document.querySelector('.editor-page[contenteditable="true"]');
+    editor.innerHTML = '<p id="qa-indent-one">Indented paragraph</p><p id="qa-indent-two">Second paragraph</p>';
+    const text = document.querySelector('#qa-indent-one').firstChild;
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, text.textContent.length);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  await page.locator('.docs-toolbar button[aria-label="Increase indent"]').click();
+  const increasedIndent = await page.evaluate(() => Number.parseFloat(getComputedStyle(document.querySelector('#qa-indent-one')).marginLeft) || 0);
+  if (increasedIndent < 35 || increasedIndent > 37) {
+    throw new Error(`Increase indent failed: ${increasedIndent}px`);
+  }
+
+  await page.locator('.docs-toolbar button[aria-label="Decrease indent"]').click();
+  const decreasedIndent = await page.evaluate(() => Number.parseFloat(getComputedStyle(document.querySelector('#qa-indent-one')).marginLeft) || 0);
+  if (decreasedIndent > 0.5) {
+    throw new Error(`Decrease indent failed: ${decreasedIndent}px`);
+  }
+
+  page.once('dialog', async (dialog) => {
+    if (dialog.type() !== 'confirm') throw new Error(`Unexpected clear document dialog type: ${dialog.type()}`);
+    await dialog.accept();
+  });
+  await page.locator('button.fwo-clear-document-button').click();
+
+  const clearResult = await page.evaluate(() => {
+    const editor = document.querySelector('.editor-page[contenteditable="true"]');
+    return {
+      text: editor.innerText.trim(),
+      paragraphs: editor.querySelectorAll(':scope > p').length,
+      html: editor.innerHTML,
+    };
+  });
+  if (clearResult.text !== '' || clearResult.paragraphs !== 1) {
+    throw new Error(`Clear document failed: ${JSON.stringify(clearResult)}`);
+  }
+
+  console.log('Word editor smoke passed', {
+    nativeState,
+    textOpenState,
+    highlightOpenState,
+    textResult,
+    highlightResult,
+    increasedIndent,
+    decreasedIndent,
+    clearResult,
+  });
 } finally {
   await browser.close();
 }
