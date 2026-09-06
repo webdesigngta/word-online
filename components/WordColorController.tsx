@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 type ColorKind = 'text' | 'highlight';
 type SelectionBookmark = { start: number; end: number };
 type TextTarget = { node: Text; start: number; end: number };
+type TriggerHandlers = { pointerdown: EventListener; click: EventListener };
 
 const DEFAULT_TEXT_COLOR = '#202124';
 const DEFAULT_HIGHLIGHT_COLOR = '#fdd663';
@@ -209,7 +210,7 @@ export function WordColorController() {
     let activeKind: ColorKind | null = null;
     let activeTrigger: HTMLElement | null = null;
     let hintTimer = 0;
-    const triggerHandlers = new Map<HTMLElement, EventListener>();
+    const triggerHandlers = new Map<HTMLElement, TriggerHandlers>();
 
     const remember = () => {
       const next = currentBookmark(editor);
@@ -355,16 +356,27 @@ export function WordColorController() {
         trigger.dataset.kind = kind;
         trigger.setAttribute('role', 'button');
         trigger.setAttribute('tabindex', '0');
+
         const input = trigger.querySelector<HTMLInputElement>('input[type="color"]');
         if (input) {
+          input.disabled = true;
           input.tabIndex = -1;
           input.setAttribute('aria-hidden', 'true');
+          input.style.display = 'none';
         }
+
         const initial = kind === 'text' ? DEFAULT_TEXT_COLOR : DEFAULT_HIGHLIGHT_COLOR;
         trigger.style.setProperty('--fwo-selected-color', initial);
-        const handler: EventListener = (event) => open(kind, trigger, event);
-        trigger.addEventListener('pointerdown', handler, true);
-        triggerHandlers.set(trigger, handler);
+
+        const pointerdown: EventListener = (event) => open(kind, trigger, event);
+        const click: EventListener = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+        };
+        trigger.addEventListener('pointerdown', pointerdown, true);
+        trigger.addEventListener('click', click, true);
+        triggerHandlers.set(trigger, { pointerdown, click });
       }
     };
 
@@ -415,7 +427,10 @@ export function WordColorController() {
       document.removeEventListener('selectionchange', onSelectionChange);
       document.removeEventListener('pointerdown', onDocumentPointerDown, true);
       document.removeEventListener('keydown', onKeyDown, true);
-      triggerHandlers.forEach((handler, trigger) => trigger.removeEventListener('pointerdown', handler, true));
+      triggerHandlers.forEach((handlers, trigger) => {
+        trigger.removeEventListener('pointerdown', handlers.pointerdown, true);
+        trigger.removeEventListener('click', handlers.click, true);
+      });
       window.clearTimeout(hintTimer);
       document.querySelector('.fwo-color-hint')?.remove();
       closePalette();
@@ -437,6 +452,7 @@ export function WordColorController() {
       }
       .docs-color-tool.fwo-color-button:hover { background:#e8eaed!important; }
       .docs-color-tool.fwo-color-button input[type='color'] {
+        display:none!important;
         position:absolute!important;
         width:1px!important;
         height:1px!important;

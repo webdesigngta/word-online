@@ -19,10 +19,36 @@ try {
     selection.removeAllRanges();
     selection.addRange(range);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
+
+    document.querySelectorAll('.docs-toolbar input[type="color"]').forEach((input) => {
+      input.dataset.qaNativeClicks = '0';
+      input.addEventListener('click', () => {
+        input.dataset.qaNativeClicks = String(Number(input.dataset.qaNativeClicks || '0') + 1);
+      });
+    });
   });
+
+  const nativeState = await page.evaluate(() => Array.from(document.querySelectorAll('.docs-toolbar input[type="color"]')).map((input) => ({
+    label: input.getAttribute('aria-label'),
+    disabled: input.disabled,
+    tabIndex: input.tabIndex,
+    display: getComputedStyle(input).display,
+  })));
+  if (nativeState.length !== 2 || nativeState.some((item) => !item.disabled || item.tabIndex !== -1 || item.display !== 'none')) {
+    throw new Error(`Native toolbar color controls are still active: ${JSON.stringify(nativeState)}`);
+  }
 
   await page.locator('.fwo-color-button[data-kind="text"]').click();
   await page.waitForSelector('.fwo-color-palette');
+
+  const textOpenState = await page.evaluate(() => ({
+    palettes: document.querySelectorAll('.fwo-color-palette').length,
+    nativeClicks: Array.from(document.querySelectorAll('.docs-toolbar input[type="color"]')).map((input) => Number(input.dataset.qaNativeClicks || '0')),
+  }));
+  if (textOpenState.palettes !== 1 || textOpenState.nativeClicks.some((count) => count !== 0)) {
+    throw new Error(`Text color opened duplicate/native UI: ${JSON.stringify(textOpenState)}`);
+  }
+
   await page.locator('.fwo-color-swatch[title="#d93025"]').click();
 
   const textResult = await page.evaluate(() => {
@@ -36,6 +62,15 @@ try {
 
   await page.locator('.fwo-color-button[data-kind="highlight"]').click();
   await page.waitForSelector('.fwo-color-palette');
+
+  const highlightOpenState = await page.evaluate(() => ({
+    palettes: document.querySelectorAll('.fwo-color-palette').length,
+    nativeClicks: Array.from(document.querySelectorAll('.docs-toolbar input[type="color"]')).map((input) => Number(input.dataset.qaNativeClicks || '0')),
+  }));
+  if (highlightOpenState.palettes !== 1 || highlightOpenState.nativeClicks.some((count) => count !== 0)) {
+    throw new Error(`Highlight opened duplicate/native UI: ${JSON.stringify(highlightOpenState)}`);
+  }
+
   await page.locator('.fwo-color-swatch[title="#fff475"]').click();
 
   const highlightResult = await page.evaluate(() => {
@@ -48,7 +83,7 @@ try {
   });
   if (!highlightResult.ok) throw new Error(`Highlight failed: ${JSON.stringify(highlightResult)}`);
 
-  console.log('Word color smoke passed', { textResult, highlightResult });
+  console.log('Word color smoke passed', { nativeState, textOpenState, highlightOpenState, textResult, highlightResult });
 } finally {
   await browser.close();
 }
