@@ -4,28 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type ColorKind = 'text' | 'highlight';
-
-type SelectionBookmark = {
-  start: number;
-  end: number;
-};
-
-type PaletteState = {
-  kind: ColorKind;
-  left: number;
-  top: number;
-};
-
-type HintState = {
-  left: number;
-  top: number;
-};
-
-type TextTarget = {
-  node: Text;
-  start: number;
-  end: number;
-};
+type SelectionBookmark = { start: number; end: number };
+type PaletteState = { kind: ColorKind; left: number; top: number };
+type HintState = { left: number; top: number };
+type TextTarget = { node: Text; start: number; end: number };
 
 const DEFAULT_TEXT_COLOR = '#202124';
 const DEFAULT_HIGHLIGHT_COLOR = '#fdd663';
@@ -112,10 +94,7 @@ function boundaryAtOffset(editor: HTMLElement, target: number) {
     last = text;
     const next = consumed + text.data.length;
     if (target <= next) {
-      return {
-        node: text,
-        offset: Math.max(0, Math.min(text.data.length, target - consumed)),
-      };
+      return { node: text, offset: Math.max(0, Math.min(text.data.length, target - consumed)) };
     }
     consumed = next;
     node = walker.nextNode();
@@ -159,18 +138,26 @@ function targetsForBookmark(editor: HTMLElement, bookmark: SelectionBookmark) {
     const overlapStart = Math.max(bookmark.start, nodeStart);
     const overlapEnd = Math.min(bookmark.end, nodeEnd);
     if (overlapEnd > overlapStart) {
-      targets.push({
-        node: text,
-        start: overlapStart - nodeStart,
-        end: overlapEnd - nodeStart,
-      });
+      targets.push({ node: text, start: overlapStart - nodeStart, end: overlapEnd - nodeStart });
     }
-
     if (nodeEnd >= bookmark.end) break;
     node = walker.nextNode();
   }
 
   return targets;
+}
+
+function setFragmentStyle(element: HTMLElement, kind: ColorKind, color: string) {
+  if (kind === 'text') {
+    element.style.setProperty('color', color, 'important');
+    // Chrome/Safari can paint a system selection foreground over CSS color.
+    // Text fill keeps the chosen color visible while the real Range stays selected.
+    element.style.setProperty('-webkit-text-fill-color', color, 'important');
+    element.dataset.fwoTextColor = color;
+  } else {
+    element.style.setProperty('background-color', color, 'important');
+    element.dataset.fwoHighlightColor = color;
+  }
 }
 
 function applyExactColor(editor: HTMLElement, bookmark: SelectionBookmark, kind: ColorKind, color: string) {
@@ -186,22 +173,18 @@ function applyExactColor(editor: HTMLElement, bookmark: SelectionBookmark, kind:
     const selectedNode = target.start > 0 ? target.node.splitText(target.start) : target.node;
     const parent = selectedNode.parentElement;
 
-    // One DOC321 fragment owns both text and highlight styles. Alternating
-    // between the two tools therefore does not build stacks of formatting spans.
     if (
       parent?.dataset.fwoColorFragment === 'true' &&
       parent.childNodes.length === 1 &&
       parent.firstChild === selectedNode
     ) {
-      if (kind === 'text') parent.style.color = color;
-      else parent.style.backgroundColor = color;
+      setFragmentStyle(parent, kind, color);
       continue;
     }
 
     const span = document.createElement('span');
     span.dataset.fwoColorFragment = 'true';
-    if (kind === 'text') span.style.color = color;
-    else span.style.backgroundColor = color;
+    setFragmentStyle(span, kind, color);
     selectedNode.parentNode?.insertBefore(span, selectedNode);
     span.appendChild(selectedNode);
   }
@@ -248,9 +231,7 @@ function positionPopover(button: HTMLElement, width: number, height: number) {
   const rect = button.getBoundingClientRect();
   const left = Math.max(8, Math.min(rect.left - 8, window.innerWidth - width - 8));
   const below = rect.bottom + 8;
-  const top = below + height <= window.innerHeight
-    ? below
-    : Math.max(8, rect.top - height - 8);
+  const top = below + height <= window.innerHeight ? below : Math.max(8, rect.top - height - 8);
   return { left, top };
 }
 
@@ -263,17 +244,12 @@ function HighlighterGlyph() {
   );
 }
 
-function ColorToolbarButton({
-  kind,
-  color,
-  onOpen,
-}: {
+function ColorToolbarButton({ kind, color, onOpen }: {
   kind: ColorKind;
   color: string;
   onOpen: (kind: ColorKind, button: HTMLButtonElement) => void;
 }) {
   const text = kind === 'text' ? 'Text color' : 'Highlight color';
-
   return (
     <button
       type="button"
@@ -290,11 +266,7 @@ function ColorToolbarButton({
       {kind === 'text'
         ? <span className="fwo-text-color-glyph" aria-hidden="true">A</span>
         : <HighlighterGlyph />}
-      <span
-        className="fwo-color-button-indicator"
-        aria-hidden="true"
-        style={{ backgroundColor: color }}
-      />
+      <span className="fwo-color-button-indicator" aria-hidden="true" style={{ backgroundColor: color }} />
     </button>
   );
 }
@@ -314,7 +286,6 @@ export function WordColorControls() {
   useEffect(() => {
     let disposed = false;
     let attempts = 0;
-
     const findTarget = () => {
       if (disposed) return;
       const target = legacyFormatGroup();
@@ -325,22 +296,14 @@ export function WordColorControls() {
       attempts += 1;
       if (attempts < 60) window.requestAnimationFrame(findTarget);
     };
-
     findTarget();
     return () => { disposed = true; };
   }, []);
 
-  // Selection tracking is scoped to the editor and runs only when an action
-  // finishes. A normal caret explicitly clears the old bookmark, so stale text
-  // can never be recolored by a later toolbar click.
   useEffect(() => {
     const editor = editorElement();
     if (!editor) return;
-
-    const remember = () => {
-      bookmarkRef.current = currentBookmark(editor);
-    };
-
+    const remember = () => { bookmarkRef.current = currentBookmark(editor); };
     editor.addEventListener('pointerup', remember);
     editor.addEventListener('keyup', remember);
     return () => {
@@ -350,23 +313,27 @@ export function WordColorControls() {
   }, [portalTarget]);
 
   useEffect(() => {
-    if (!palette) return;
+    const editor = editorElement();
+    if (!editor) return;
+    if (palette) editor.dataset.fwoColorPreview = 'true';
+    else delete editor.dataset.fwoColorPreview;
+    return () => { delete editor.dataset.fwoColorPreview; };
+  }, [palette]);
 
+  useEffect(() => {
+    if (!palette) return;
     const closeOutside = (event: PointerEvent) => {
       const target = event.target instanceof Node ? event.target : null;
-      if (!target) return;
-      if (paletteRef.current?.contains(target)) return;
+      if (!target || paletteRef.current?.contains(target)) return;
       if ((target as Element).closest?.('.fwo-color-button')) return;
       setPalette(null);
     };
-
     const closeEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       setPalette(null);
       const editor = editorElement();
       if (editor) window.requestAnimationFrame(() => restoreBookmark(editor, bookmarkRef.current));
     };
-
     document.addEventListener('pointerdown', closeOutside, true);
     document.addEventListener('keydown', closeEscape, true);
     return () => {
@@ -389,9 +356,7 @@ export function WordColorControls() {
   const openPalette = (kind: ColorKind, button: HTMLButtonElement) => {
     const editor = editorElement();
     if (!editor) return;
-
-    const liveBookmark = currentBookmark(editor);
-    const bookmark = liveBookmark || bookmarkRef.current;
+    const bookmark = currentBookmark(editor) || bookmarkRef.current;
     if (!bookmark || !restoreBookmark(editor, bookmark)) {
       bookmarkRef.current = null;
       setPalette(null);
@@ -414,15 +379,19 @@ export function WordColorControls() {
     const bookmark = bookmarkRef.current;
     if (!editor || !bookmark) return;
 
-    const color = kind === 'highlight' && requestedColor === 'transparent'
-      ? NO_HIGHLIGHT_COLOR
-      : requestedColor;
-    if (!applyExactColor(editor, bookmark, kind, color)) return;
+    // Restore first, then mutate immediately. This happens on pointer-down, before
+    // the browser can move focus or cancel the later click event.
+    if (!restoreBookmark(editor, bookmark)) return;
+    const actualColor = kind === 'highlight' && requestedColor === 'transparent' ? 'transparent' : requestedColor;
+    if (!applyExactColor(editor, bookmark, kind, actualColor)) return;
 
-    if (kind === 'text') setTextColor(color);
-    else setHighlightColor(color);
+    if (kind === 'text') setTextColor(requestedColor);
+    else setHighlightColor(requestedColor === 'transparent' ? NO_HIGHLIGHT_COLOR : requestedColor);
+
+    // Restore synchronously before notifying autosave so both WordEditor and the
+    // rest of the formatting bridge see the exact same selected Range.
+    restoreBookmark(editor, bookmark);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
-
     restoreBookmark(editor, bookmark);
     window.requestAnimationFrame(() => restoreBookmark(editor, bookmark));
   };
@@ -473,8 +442,14 @@ export function WordColorControls() {
                 aria-label={`${title} ${color}`}
                 title={color}
                 style={{ backgroundColor: color }}
-                onPointerDown={(event) => event.preventDefault()}
-                onClick={() => applyColor(palette.kind, color)}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  applyColor(palette.kind, color);
+                }}
+                onClick={(event) => {
+                  if (event.detail === 0) applyColor(palette.kind, color);
+                }}
               />
             ))}
           </div>
@@ -483,11 +458,14 @@ export function WordColorControls() {
             <button
               type="button"
               className="fwo-color-reset"
-              onPointerDown={(event) => event.preventDefault()}
-              onClick={() => applyColor(
-                palette.kind,
-                palette.kind === 'text' ? DEFAULT_TEXT_COLOR : 'transparent',
-              )}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                applyColor(palette.kind, palette.kind === 'text' ? DEFAULT_TEXT_COLOR : 'transparent');
+              }}
+              onClick={(event) => {
+                if (event.detail === 0) applyColor(palette.kind, palette.kind === 'text' ? DEFAULT_TEXT_COLOR : 'transparent');
+              }}
             >
               {palette.kind === 'text' ? 'Default text' : 'No highlight'}
             </button>
@@ -518,8 +496,6 @@ export function WordColorControls() {
       {controls}
       {popovers}
       <style jsx global>{`
-        /* Retire the original browser controls and all old indicator layers.
-           The replacement controls deliberately use unrelated class names. */
         .docs-toolbar .docs-color-tool {
           display:none!important;
           pointer-events:none!important;
@@ -532,175 +508,78 @@ export function WordColorControls() {
           display:none!important;
         }
 
-        .fwo-color-controls {
-          display:inline-flex;
-          align-items:center;
-          gap:2px;
-          flex:0 0 auto;
+        /* While the palette is open, keep the real DOM Selection but make its
+           system paint nearly transparent. The chosen text/highlight formatting
+           therefore remains fully visible while users try several swatches. */
+        .editor-page[data-fwo-color-preview='true']::selection,
+        .editor-page[data-fwo-color-preview='true'] *::selection {
+          background:rgba(26,115,232,.08)!important;
+          color:inherit!important;
+          text-shadow:none!important;
         }
+        .editor-page[data-fwo-color-preview='true']::-moz-selection,
+        .editor-page[data-fwo-color-preview='true'] *::-moz-selection {
+          background:rgba(26,115,232,.08)!important;
+          color:inherit!important;
+          text-shadow:none!important;
+        }
+
+        .fwo-color-controls { display:inline-flex; align-items:center; gap:2px; flex:0 0 auto; }
         .fwo-color-button {
-          position:relative;
-          display:inline-grid;
-          place-items:center;
-          width:32px;
-          height:30px;
-          min-width:32px;
-          padding:0 0 4px;
-          border:0;
-          border-radius:6px;
-          background:transparent;
-          color:#3c4043;
-          cursor:pointer;
-          box-sizing:border-box;
-          -webkit-tap-highlight-color:transparent;
+          position:relative; display:inline-grid; place-items:center; width:32px; height:30px; min-width:32px;
+          padding:0 0 4px; border:0; border-radius:6px; background:transparent; color:#3c4043; cursor:pointer;
+          box-sizing:border-box; -webkit-tap-highlight-color:transparent;
         }
         .fwo-color-button:hover { background:#e8eaed; }
         .fwo-color-button:active { background:#dfe3e7; }
-        .fwo-color-button:focus-visible {
-          outline:2px solid #1a73e8;
-          outline-offset:1px;
-        }
+        .fwo-color-button:focus-visible { outline:2px solid #1a73e8; outline-offset:1px; }
         .fwo-text-color-glyph {
-          display:block;
-          width:20px;
-          height:20px;
-          color:#3c4043;
-          font:700 18px/20px Arial,Helvetica,sans-serif;
-          text-align:center;
-          pointer-events:none;
+          display:block; width:20px; height:20px; color:#3c4043; font:700 18px/20px Arial,Helvetica,sans-serif;
+          text-align:center; pointer-events:none;
         }
         .fwo-highlight-glyph {
-          display:block;
-          width:20px;
-          height:20px;
-          color:#3c4043;
-          fill:none;
-          stroke:currentColor;
-          stroke-width:1.7;
-          stroke-linecap:round;
-          stroke-linejoin:round;
-          pointer-events:none;
+          display:block; width:20px; height:20px; color:#3c4043; fill:none; stroke:currentColor; stroke-width:1.7;
+          stroke-linecap:round; stroke-linejoin:round; pointer-events:none;
         }
         .fwo-color-button-indicator {
-          position:absolute;
-          left:7px;
-          right:7px;
-          bottom:2px;
-          height:3px;
-          border:1px solid rgba(60,64,67,.20);
-          border-radius:3px;
-          box-sizing:border-box;
-          pointer-events:none;
+          position:absolute; left:7px; right:7px; bottom:2px; height:3px; border:1px solid rgba(60,64,67,.20);
+          border-radius:3px; box-sizing:border-box; pointer-events:none;
         }
-
         .fwo-color-hint {
-          position:fixed;
-          z-index:10030;
-          box-sizing:border-box;
-          min-width:142px;
-          padding:8px 10px;
-          border-radius:7px;
-          background:#202124;
-          color:#fff;
-          box-shadow:0 4px 14px rgba(60,64,67,.22);
-          font:500 12px/1.3 Arial,Helvetica,sans-serif;
-          text-align:center;
-          pointer-events:none;
+          position:fixed; z-index:10030; box-sizing:border-box; min-width:142px; padding:8px 10px; border-radius:7px;
+          background:#202124; color:#fff; box-shadow:0 4px 14px rgba(60,64,67,.22);
+          font:500 12px/1.3 Arial,Helvetica,sans-serif; text-align:center; pointer-events:none;
         }
         .fwo-color-palette {
-          position:fixed;
-          z-index:10020;
-          width:270px;
-          box-sizing:border-box;
-          padding:12px;
-          border:1px solid #dadce0;
-          border-radius:10px;
-          background:#fff;
-          box-shadow:0 10px 28px rgba(60,64,67,.22),0 2px 7px rgba(60,64,67,.12);
-          color:#202124;
-          font-family:Arial,Helvetica,sans-serif;
-          user-select:none;
+          position:fixed; z-index:10020; width:270px; box-sizing:border-box; padding:12px; border:1px solid #dadce0;
+          border-radius:10px; background:#fff; box-shadow:0 10px 28px rgba(60,64,67,.22),0 2px 7px rgba(60,64,67,.12);
+          color:#202124; font-family:Arial,Helvetica,sans-serif; user-select:none;
         }
-        .fwo-color-palette-head {
-          display:grid;
-          gap:3px;
-          margin-bottom:10px;
-        }
-        .fwo-color-palette-head strong {
-          font-size:13px;
-          line-height:1.2;
-        }
-        .fwo-color-palette-head span {
-          color:#5f6368;
-          font-size:11px;
-          line-height:1.35;
-        }
-        .fwo-color-swatches {
-          display:grid;
-          grid-template-columns:repeat(8, 1fr);
-          gap:5px;
-        }
+        .fwo-color-palette-head { display:grid; gap:3px; margin-bottom:10px; }
+        .fwo-color-palette-head strong { font-size:13px; line-height:1.2; }
+        .fwo-color-palette-head span { color:#5f6368; font-size:11px; line-height:1.35; }
+        .fwo-color-swatches { display:grid; grid-template-columns:repeat(8,1fr); gap:5px; }
         .fwo-color-swatch {
-          width:25px;
-          height:25px;
-          padding:0;
-          border:1px solid rgba(60,64,67,.28);
-          border-radius:5px;
-          cursor:pointer;
-          box-sizing:border-box;
+          width:25px; height:25px; padding:0; border:1px solid rgba(60,64,67,.28); border-radius:5px;
+          cursor:pointer; box-sizing:border-box;
         }
-        .fwo-color-swatch:hover,
-        .fwo-color-swatch:focus-visible {
-          outline:2px solid #1a73e8;
-          outline-offset:1px;
-        }
+        .fwo-color-swatch:hover,.fwo-color-swatch:focus-visible { outline:2px solid #1a73e8; outline-offset:1px; }
         .fwo-color-palette-actions {
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:8px;
-          margin-top:11px;
-          padding-top:10px;
+          display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:11px; padding-top:10px;
           border-top:1px solid #edf0f2;
         }
         .fwo-color-reset {
-          min-height:30px;
-          padding:0 10px;
-          border:1px solid #dadce0;
-          border-radius:6px;
-          background:#fff;
-          color:#3c4043;
-          font-size:12px;
-          cursor:pointer;
+          min-height:30px; padding:0 10px; border:1px solid #dadce0; border-radius:6px; background:#fff;
+          color:#3c4043; font-size:12px; cursor:pointer;
         }
         .fwo-color-reset:hover { background:#f8fafd; }
-        .fwo-custom-color {
-          display:flex;
-          align-items:center;
-          gap:6px;
-          color:#5f6368;
-          font-size:12px;
-          cursor:pointer;
-        }
+        .fwo-custom-color { display:flex; align-items:center; gap:6px; color:#5f6368; font-size:12px; cursor:pointer; }
         .fwo-custom-color input[type='color'] {
-          width:30px;
-          height:30px;
-          padding:2px;
-          border:1px solid #dadce0;
-          border-radius:6px;
-          background:#fff;
-          cursor:pointer;
+          width:30px; height:30px; padding:2px; border:1px solid #dadce0; border-radius:6px; background:#fff; cursor:pointer;
         }
-
         @media (max-width:720px) {
-          .fwo-color-button {
-            width:34px;
-            min-width:34px;
-            height:32px;
-          }
-          .fwo-color-palette {
-            width:min(270px,calc(100vw - 16px));
-          }
+          .fwo-color-button { width:34px; min-width:34px; height:32px; }
+          .fwo-color-palette { width:min(270px,calc(100vw - 16px)); }
         }
       `}</style>
     </>
