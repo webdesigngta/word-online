@@ -199,6 +199,25 @@ function positionPalette(trigger: HTMLElement, palette: HTMLElement) {
   });
 }
 
+function addVisuals(trigger: HTMLElement, kind: ColorKind) {
+  trigger.querySelectorAll(':scope > .fwo-color-glyph,:scope > .fwo-color-indicator').forEach((node) => node.remove());
+
+  const glyph = document.createElement('span');
+  glyph.className = `fwo-color-glyph fwo-color-glyph-${kind}`;
+  glyph.setAttribute('aria-hidden', 'true');
+  if (kind === 'text') {
+    glyph.textContent = 'A';
+  } else {
+    glyph.innerHTML = '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M6.8 16.1 15 7.9l3.1 3.1-8.2 8.2H6.8v-3.1Z"/><path d="m15 7.9 1.1-1.1a1.45 1.45 0 0 1 2 0l1.1 1.1a1.45 1.45 0 0 1 0 2L18.1 11"/></svg>';
+  }
+
+  const indicator = document.createElement('span');
+  indicator.className = 'fwo-color-indicator';
+  indicator.setAttribute('aria-hidden', 'true');
+
+  trigger.append(glyph, indicator);
+}
+
 export function WordColorController() {
   useEffect(() => {
     const editor = editorElement();
@@ -351,7 +370,8 @@ export function WordColorController() {
         ['highlight', toolbar.querySelector<HTMLElement>('label[title="Highlight color"]')],
       ];
       for (const [kind, trigger] of pairs) {
-        if (!trigger || triggerHandlers.has(trigger)) continue;
+        if (!trigger) continue;
+
         trigger.classList.add('fwo-color-button');
         trigger.dataset.kind = kind;
         trigger.setAttribute('role', 'button');
@@ -366,8 +386,15 @@ export function WordColorController() {
         }
 
         const initial = kind === 'text' ? DEFAULT_TEXT_COLOR : DEFAULT_HIGHLIGHT_COLOR;
-        trigger.style.setProperty('--fwo-selected-color', initial);
+        if (!trigger.style.getPropertyValue('--fwo-selected-color')) {
+          trigger.style.setProperty('--fwo-selected-color', initial);
+        }
 
+        if (!trigger.querySelector(':scope > .fwo-color-glyph') || !trigger.querySelector(':scope > .fwo-color-indicator')) {
+          addVisuals(trigger, kind);
+        }
+
+        if (triggerHandlers.has(trigger)) continue;
         const pointerdown: EventListener = (event) => open(kind, trigger, event);
         const click: EventListener = (event) => {
           event.preventDefault();
@@ -430,6 +457,7 @@ export function WordColorController() {
       triggerHandlers.forEach((handlers, trigger) => {
         trigger.removeEventListener('pointerdown', handlers.pointerdown, true);
         trigger.removeEventListener('click', handlers.click, true);
+        trigger.querySelectorAll(':scope > .fwo-color-glyph,:scope > .fwo-color-indicator').forEach((node) => node.remove());
       });
       window.clearTimeout(hintTimer);
       document.querySelector('.fwo-color-hint')?.remove();
@@ -449,6 +477,7 @@ export function WordColorController() {
         border-radius:6px!important;
         overflow:hidden!important;
         cursor:pointer!important;
+        opacity:1!important;
       }
       .docs-color-tool.fwo-color-button:hover { background:#e8eaed!important; }
       .docs-color-tool.fwo-color-button input[type='color'] {
@@ -459,26 +488,14 @@ export function WordColorController() {
         opacity:0!important;
         pointer-events:none!important;
       }
-      .docs-color-tool.fwo-color-button::before {
-        content:''!important;
-        position:absolute!important;
-        left:7px!important;
-        right:7px!important;
-        bottom:2px!important;
-        height:3px!important;
+      .docs-color-tool.fwo-color-button::before,
+      .docs-color-tool.fwo-color-button::after,
+      .docs-color-tool.fwo-color-button.highlight::before,
+      .docs-color-tool.fwo-color-button.highlight::after {
+        content:none!important;
+        display:none!important;
+        background:none!important;
         border:0!important;
-        border-radius:2px!important;
-        background:var(--fwo-selected-color)!important;
-        z-index:3!important;
-        pointer-events:none!important;
-      }
-      .docs-color-tool.fwo-color-button[data-kind='text']::before {
-        left:9px!important;
-        right:9px!important;
-        top:20px!important;
-        bottom:auto!important;
-        height:2px!important;
-        border-radius:1px!important;
         box-shadow:none!important;
       }
       .docs-color-tool.fwo-color-button .material-symbols-rounded,
@@ -486,37 +503,53 @@ export function WordColorController() {
       .docs-color-tool.fwo-color-button .material-icons {
         display:none!important;
       }
-      .docs-color-tool.fwo-color-button::after {
+      .docs-color-tool.fwo-color-button > .fwo-color-glyph {
         position:absolute!important;
         left:50%!important;
         top:3px!important;
-        z-index:2!important;
+        width:18px!important;
+        height:18px!important;
+        display:grid!important;
+        place-items:center!important;
         margin:0!important;
         padding:0!important;
-        border:0!important;
-        border-radius:0!important;
-        box-shadow:none!important;
-        pointer-events:none!important;
         transform:translateX(-50%)!important;
-      }
-      .docs-color-tool.fwo-color-button[data-kind='text']::after {
-        content:'A'!important;
-        width:auto!important;
-        height:18px!important;
-        background:transparent!important;
         color:#3c4043!important;
+        opacity:1!important;
+        z-index:2!important;
+        pointer-events:none!important;
+      }
+      .docs-color-tool.fwo-color-button > .fwo-color-glyph-text {
         font:700 17px/18px Arial,Helvetica,sans-serif!important;
         letter-spacing:0!important;
       }
-      .docs-color-tool.fwo-color-button[data-kind='highlight']::after {
-        content:''!important;
-        width:17px!important;
-        height:17px!important;
-        background-color:transparent!important;
-        background-repeat:no-repeat!important;
-        background-position:center!important;
-        background-size:17px 17px!important;
-        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.2 15.7 14.9 8l3.1 3.1-7.7 7.7H7.2v-3.1Z' fill='none' stroke='%233c4043' stroke-width='1.8' stroke-linejoin='round'/%3E%3Cpath d='m14.9 8 1.2-1.2a1.3 1.3 0 0 1 1.8 0l1.3 1.3a1.3 1.3 0 0 1 0 1.8L18 11.1' fill='none' stroke='%233c4043' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E")!important;
+      .docs-color-tool.fwo-color-button > .fwo-color-glyph-highlight svg {
+        width:18px!important;
+        height:18px!important;
+        display:block!important;
+        overflow:visible!important;
+        fill:none!important;
+        stroke:currentColor!important;
+        stroke-width:2!important;
+        stroke-linecap:round!important;
+        stroke-linejoin:round!important;
+      }
+      .docs-color-tool.fwo-color-button > .fwo-color-indicator {
+        position:absolute!important;
+        left:7px!important;
+        right:7px!important;
+        bottom:2px!important;
+        height:3px!important;
+        display:block!important;
+        box-sizing:border-box!important;
+        margin:0!important;
+        padding:0!important;
+        border:1px solid rgba(60,64,67,.18)!important;
+        border-radius:3px!important;
+        background:var(--fwo-selected-color)!important;
+        opacity:1!important;
+        z-index:3!important;
+        pointer-events:none!important;
       }
       .fwo-color-palette {
         position:fixed;z-index:10050;width:278px;box-sizing:border-box;padding:12px;
