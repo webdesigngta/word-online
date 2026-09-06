@@ -1,0 +1,30 @@
+/* DOC321 Word editor selection preview
+   Keep the actual text/highlight formatting visible while text remains selected.
+   Browsers normally replace the selected text color with white and cover the
+   element background with an opaque blue selection, which made live color
+   changes look like they were not applying until the selection was cleared. */
+.editor-page::selection,
+.editor-page *::selection {
+  background-color: rgba(26, 115, 232, 0.24) !important;
+  color: currentColor !important;
+  text-shadow: none !important;
+}
+
+.editor-page::-moz-selection,
+.editor-page *::-moz-selection {
+  background-color: rgba(26, 115, 232, 0.24) !important;
+  color: currentColor !important;
+  text-shadow: none !important;
+}
+
+/* Color fragments should always show their chosen foreground/background while
+   selected so users can try multiple swatches without deselecting the text. */
+.editor-page [data-fwo-color-fragment='true']::selection {
+  background-color: rgba(26, 115, 232, 0.20) !important;
+  color: currentColor !important;
+}
+
+.editor-page [data-fwo-color-fragment='true']::-moz-selection {
+  background-color: rgba(26, 115, 232, 0.20) !important;
+  color: currentColor !important;
+}
