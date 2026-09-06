@@ -7,6 +7,42 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 try {
   await page.goto(url, { waitUntil: 'networkidle' });
   await page.waitForSelector('.editor-page[contenteditable="true"]');
+  await page.waitForSelector('.fwo-color-button[data-kind="text"] > .fwo-color-indicator');
+  await page.waitForSelector('.fwo-color-button[data-kind="highlight"] > .fwo-color-indicator');
+
+  const visualState = await page.evaluate(() => Array.from(document.querySelectorAll('.fwo-color-button')).map((button) => {
+    const glyph = button.querySelector(':scope > .fwo-color-glyph');
+    const indicator = button.querySelector(':scope > .fwo-color-indicator');
+    const rect = indicator?.getBoundingClientRect();
+    const buttonRect = button.getBoundingClientRect();
+    const glyphStyle = glyph ? getComputedStyle(glyph) : null;
+    return {
+      kind: button.dataset.kind,
+      glyphs: button.querySelectorAll(':scope > .fwo-color-glyph').length,
+      indicators: button.querySelectorAll(':scope > .fwo-color-indicator').length,
+      beforeContent: getComputedStyle(button, '::before').content,
+      afterContent: getComputedStyle(button, '::after').content,
+      indicatorWidth: rect?.width || 0,
+      indicatorHeight: rect?.height || 0,
+      indicatorBottom: rect ? Math.round((buttonRect.bottom - rect.bottom) * 10) / 10 : -1,
+      glyphColor: glyphStyle?.color || '',
+      glyphOpacity: glyphStyle?.opacity || '',
+    };
+  }));
+
+  if (visualState.length !== 2) throw new Error(`Expected two color toolbar buttons: ${JSON.stringify(visualState)}`);
+  if (visualState.some((item) => item.glyphs !== 1 || item.indicators !== 1)) {
+    throw new Error(`Color controls contain duplicate visual layers: ${JSON.stringify(visualState)}`);
+  }
+  if (visualState.some((item) => item.beforeContent !== 'none' || item.afterContent !== 'none')) {
+    throw new Error(`Legacy pseudo-element color layers are still visible: ${JSON.stringify(visualState)}`);
+  }
+  if (visualState.some((item) => Math.abs(item.indicatorHeight - 3) > 0.2 || Math.abs(item.indicatorWidth - 18) > 0.5 || Math.abs(item.indicatorBottom - 2) > 0.5)) {
+    throw new Error(`Color swatch bars are not consistently aligned: ${JSON.stringify(visualState)}`);
+  }
+  if (visualState.some((item) => item.glyphColor !== 'rgb(60, 64, 67)' || item.glyphOpacity !== '1')) {
+    throw new Error(`Color toolbar glyph is faint or incorrectly colored: ${JSON.stringify(visualState)}`);
+  }
 
   await page.evaluate(() => {
     const editor = document.querySelector('.editor-page[contenteditable="true"]');
@@ -131,6 +167,7 @@ try {
   }
 
   console.log('Word editor smoke passed', {
+    visualState,
     nativeState,
     textOpenState,
     highlightOpenState,
