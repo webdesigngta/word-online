@@ -7,9 +7,14 @@ on:
     paths:
       - 'app/qa/word-compatibility/**'
       - 'components/WordCompatibilityQa.tsx'
+      - 'components/WordColorControls.tsx'
+      - 'components/WordEditor.tsx'
+      - 'components/WordEditorClientRuntime.tsx'
+      - 'components/WordFormattingSelectionBridge.tsx'
       - 'tools/word/import/**'
       - 'tools/word/export/**'
       - 'qa/run-word-compatibility.mjs'
+      - 'qa/run-word-color-smoke.mjs'
       - '.github/workflows/word-compatibility.yml'
   pull_request:
     branches:
@@ -17,9 +22,14 @@ on:
     paths:
       - 'app/qa/word-compatibility/**'
       - 'components/WordCompatibilityQa.tsx'
+      - 'components/WordColorControls.tsx'
+      - 'components/WordEditor.tsx'
+      - 'components/WordEditorClientRuntime.tsx'
+      - 'components/WordFormattingSelectionBridge.tsx'
       - 'tools/word/import/**'
       - 'tools/word/export/**'
       - 'qa/run-word-compatibility.mjs'
+      - 'qa/run-word-color-smoke.mjs'
       - '.github/workflows/word-compatibility.yml'
   workflow_dispatch:
 
@@ -79,6 +89,9 @@ jobs:
 
       - name: Run 20-case Word compatibility gate
         run: node qa/run-word-compatibility.mjs
+
+      - name: Run Word text/highlight color browser smoke
+        run: node qa/run-word-color-smoke.mjs
 
       - name: Stop QA server
         if: always()
