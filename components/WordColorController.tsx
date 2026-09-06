@@ -173,12 +173,12 @@ function rgbToHex(value: string) {
 
 function colorAtSelection(editor: HTMLElement, bookmark: SelectionBookmark, kind: ColorKind) {
   const point = boundaryAtOffset(editor, bookmark.start);
-  let element = point?.node.parentElement ?? editor;
+  let element: HTMLElement | null = point?.node.parentElement ?? editor;
   if (kind === 'text') return rgbToHex(getComputedStyle(element).color) || DEFAULT_TEXT_COLOR;
   while (element && element !== editor) {
     const value = getComputedStyle(element).backgroundColor;
     if (value !== 'rgba(0, 0, 0, 0)' && value !== 'transparent') return rgbToHex(value) || DEFAULT_HIGHLIGHT_COLOR;
-    element = element.parentElement as HTMLElement | null;
+    element = element.parentElement;
   }
   return DEFAULT_HIGHLIGHT_COLOR;
 }
@@ -325,7 +325,7 @@ export function WordColorController() {
     const open = (kind: ColorKind, trigger: HTMLElement, event: Event) => {
       event.preventDefault();
       event.stopPropagation();
-      if ('stopImmediatePropagation' in event) event.stopImmediatePropagation();
+      event.stopImmediatePropagation();
 
       const live = currentBookmark(editor);
       if (live) bookmark = live;
