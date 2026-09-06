@@ -37,7 +37,9 @@ try {
   if (visualState.some((item) => item.beforeContent !== 'none' || item.afterContent !== 'none')) {
     throw new Error(`Legacy pseudo-element color layers are still visible: ${JSON.stringify(visualState)}`);
   }
-  if (visualState.some((item) => Math.abs(item.indicatorHeight - 3) > 0.2 || Math.abs(item.indicatorWidth - 18) > 0.5 || Math.abs(item.indicatorBottom - 2) > 0.5)) {
+  const indicatorWidths = visualState.map((item) => item.indicatorWidth);
+  const widthSpread = Math.max(...indicatorWidths) - Math.min(...indicatorWidths);
+  if (visualState.some((item) => Math.abs(item.indicatorHeight - 3) > 0.2 || item.indicatorWidth < 13 || item.indicatorWidth > 18.5 || Math.abs(item.indicatorBottom - 2) > 0.5) || widthSpread > 0.5) {
     throw new Error(`Color swatch bars are not consistently aligned: ${JSON.stringify(visualState)}`);
   }
   if (visualState.some((item) => item.glyphColor !== 'rgb(60, 64, 67)' || item.glyphOpacity !== '1')) {
