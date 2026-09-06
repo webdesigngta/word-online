@@ -466,17 +466,48 @@ export function WordColorController() {
         right:7px!important;
         bottom:2px!important;
         height:3px!important;
-        border:1px solid rgba(60,64,67,.20)!important;
-        border-radius:3px!important;
+        border:0!important;
+        border-radius:2px!important;
         background:var(--fwo-selected-color)!important;
         z-index:3!important;
+        pointer-events:none!important;
       }
       .docs-color-tool.fwo-color-button .material-symbols-rounded,
       .docs-color-tool.fwo-color-button .material-symbols-outlined,
       .docs-color-tool.fwo-color-button .material-icons {
-        color:#3c4043!important;
-        font-size:20px!important;
+        display:none!important;
+      }
+      .docs-color-tool.fwo-color-button::after {
+        position:absolute!important;
+        left:50%!important;
+        top:3px!important;
+        z-index:2!important;
+        margin:0!important;
+        padding:0!important;
+        border:0!important;
+        border-radius:0!important;
+        box-shadow:none!important;
         pointer-events:none!important;
+        transform:translateX(-50%)!important;
+      }
+      .docs-color-tool.fwo-color-button[data-kind='text']::after {
+        content:'A'!important;
+        width:auto!important;
+        height:18px!important;
+        background:transparent!important;
+        color:#3c4043!important;
+        font:700 17px/18px Arial,Helvetica,sans-serif!important;
+        letter-spacing:0!important;
+      }
+      .docs-color-tool.fwo-color-button[data-kind='highlight']::after {
+        content:''!important;
+        width:17px!important;
+        height:17px!important;
+        background-color:transparent!important;
+        background-repeat:no-repeat!important;
+        background-position:center!important;
+        background-size:17px 17px!important;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.2 15.7 14.9 8l3.1 3.1-7.7 7.7H7.2v-3.1Z' fill='none' stroke='%233c4043' stroke-width='1.8' stroke-linejoin='round'/%3E%3Cpath d='m14.9 8 1.2-1.2a1.3 1.3 0 0 1 1.8 0l1.3 1.3a1.3 1.3 0 0 1 0 1.8L18 11.1' fill='none' stroke='%233c4043' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E")!important;
       }
       .fwo-color-palette {
         position:fixed;z-index:10050;width:278px;box-sizing:border-box;padding:12px;
