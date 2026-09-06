@@ -4,6 +4,7 @@ import './globals.css';
 import './google-style.css';
 import './material-icons.css';
 import './docs-editor.css';
+import './editor-selection-preview.css';
 import './doc321-brand.css';
 import './tool-pages.css';
 import './tool-pages-special.css';
