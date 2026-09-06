@@ -472,6 +472,11 @@ export function WordColorController() {
         z-index:3!important;
         pointer-events:none!important;
       }
+      .docs-color-tool.fwo-color-button[data-kind='text']::before {
+        left:8px!important;
+        right:8px!important;
+        bottom:5px!important;
+      }
       .docs-color-tool.fwo-color-button .material-symbols-rounded,
       .docs-color-tool.fwo-color-button .material-symbols-outlined,
       .docs-color-tool.fwo-color-button .material-icons {
