@@ -7,7 +7,7 @@ on:
     paths:
       - 'app/qa/word-compatibility/**'
       - 'components/WordCompatibilityQa.tsx'
-      - 'components/WordColorControls.tsx'
+      - 'components/WordColorController.tsx'
       - 'components/WordEditor.tsx'
       - 'components/WordEditorClientRuntime.tsx'
       - 'components/WordFormattingSelectionBridge.tsx'
@@ -22,7 +22,7 @@ on:
     paths:
       - 'app/qa/word-compatibility/**'
       - 'components/WordCompatibilityQa.tsx'
-      - 'components/WordColorControls.tsx'
+      - 'components/WordColorController.tsx'
       - 'components/WordEditor.tsx'
       - 'components/WordEditorClientRuntime.tsx'
       - 'components/WordFormattingSelectionBridge.tsx'
