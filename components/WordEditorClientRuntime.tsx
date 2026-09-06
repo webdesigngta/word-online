@@ -25,6 +25,7 @@ import { ToolbarGalleryMenus } from '@/components/ToolbarGalleryMenus';
 import { UnifiedToolbarMenuTriggers } from '@/components/UnifiedToolbarMenuTriggers';
 import { VersionHistoryToolbarButton } from '@/components/VersionHistoryToolbarButton';
 import { WordColorController } from '@/components/WordColorController';
+import { WordDocumentToolsController } from '@/components/WordDocumentToolsController';
 import { WordEditorBrandMobilePolish } from '@/components/WordEditorBrandMobilePolish';
 import { WordEditorMobileUsability } from '@/components/WordEditorMobileUsability';
 import { WordExactParagraphStyles } from '@/components/WordExactParagraphStyles';
@@ -65,6 +66,7 @@ export function WordEditorClientRuntime({
       <EditorFeatureCleanup />
       <EditorNativeSelectionGuard />
       <WordColorController />
+      <WordDocumentToolsController />
       <WordFormattingSelectionBridge />
       <WordEditorBrandMobilePolish />
       <WordEditorMobileUsability />
