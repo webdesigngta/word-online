@@ -473,9 +473,13 @@ export function WordColorController() {
         pointer-events:none!important;
       }
       .docs-color-tool.fwo-color-button[data-kind='text']::before {
-        left:8px!important;
-        right:8px!important;
-        bottom:5px!important;
+        left:9px!important;
+        right:9px!important;
+        top:20px!important;
+        bottom:auto!important;
+        height:2px!important;
+        border-radius:1px!important;
+        box-shadow:none!important;
       }
       .docs-color-tool.fwo-color-button .material-symbols-rounded,
       .docs-color-tool.fwo-color-button .material-symbols-outlined,
