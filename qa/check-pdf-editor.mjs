@@ -38,11 +38,11 @@ expect(workspace, 'event.dataTransfer.files?.[0] || null', 'Drag and drop PDF op
 expect(workspace, "pdfjs.getDocument({ data: new Uint8Array(await next.arrayBuffer()) }).promise", 'Selected PDFs must be opened through PDF.js.');
 expect(workspace, "await import('tesseract.js')", 'Scanned PDFs must retain OCR fallback.');
 expect(workspace, "worker.recognize(sample, {}, { blocks: true })", 'Tesseract.js 6+ must explicitly request structured blocks for editable OCR geometry.');
-expect(workspace, 'extractOcrLines(recognized.data.blocks)', 'OCR regions must preserve Tesseract line boundaries from the current blocks hierarchy.');
-expect(workspace, 'estimateOcrFontSize(line, width, meta.family, meta.bold, meta.italic)', 'OCR font size must combine glyph-height and rendered-width estimates.');
+expect(workspace, 'extractOcrParagraphs(recognized.data.blocks)', 'OCR regions must preserve Tesseract paragraph structure instead of exposing every OCR line as a separate editor box.');
+expect(workspace, 'estimateOcrFontSize(representative, Math.max(8, (representative.x1 - representative.x0) / OCR_SCALE), meta.family, meta.bold, meta.italic)', 'OCR paragraph font size must still combine glyph-height and rendered-width estimates.');
 expect(workspace, "value.includes('sans-serif')", 'Generic sans-serif PDF fonts must not be misclassified as serif fonts.');
-expect(workspace, 'fitSingleLineFontSize(box.text, font, size, maxWidth)', 'Edited single-line text should shrink to fit its detected region before wrapping.');
-expect(workspace, "box.source === 'ocr' ? 1.08 : 1.05", 'OCR preview must use calibrated line height.');
+expect(workspace, 'fitSingleLineFontSize(box.text, font, size, maxWidth, box.letterSpacing)', 'Edited single-line text should shrink to fit its detected region while respecting letter spacing.');
+expect(workspace, 'lineHeight: box.lineHeight', 'Preview must preserve detected or user-adjusted line spacing.');
 expect(workspace, 'font_name', 'OCR font metadata should be retained when Tesseract provides it.');
 reject(workspace, 'recognized.data.words || []', 'Do not use the pre-v6 Tesseract data.words output; it is no longer returned by default.');
 expect(workspace, "await import('pdf-lib')", 'Edited PDF export must remain available.');
@@ -53,6 +53,19 @@ expect(workspace, "pdfDocument.embedFont(asset.bytes, { subset: true })", 'Origi
 expect(workspace, 'fontSupportsText(asset, box.text)', 'Subset fonts must be checked for replacement glyph coverage before export.');
 expect(workspace, 'accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"', 'Users must be able to load a local custom font without uploading it to a server.');
 expect(workspace, "detectedFontName: sourceName", 'Native PDF regions must retain a human-readable detected font identity.');
+expect(workspace, 'groupNativeParagraphBoxes(rawBoxes)', 'Digital PDF text must be grouped into style-aware, column-aware paragraph regions.');
+expect(workspace, 'extractOcrParagraphs(recognized.data.blocks)', 'Scanned PDFs must expose paragraph-level OCR editing regions.');
+expect(workspace, 'sampleBackgroundRing(', 'Text removal must sample the surrounding page background instead of relying only on pixels inside the text box.');
+expect(workspace, 'fontWeight: number', 'Editable regions must preserve richer font-weight metadata.');
+expect(workspace, 'align: TextAlign', 'Editable regions must preserve paragraph alignment.');
+expect(workspace, 'letterSpacing: number', 'Editable regions must preserve letter spacing.');
+expect(workspace, 'lineHeight: number', 'Editable regions must preserve line spacing.');
+expect(workspace, 'rotation: number', 'Editable regions must preserve rotated text geometry.');
+expect(workspace, 'estimateEditedBoxSize(currentBox, text, pageModel.width, pageModel.height)', 'Edited paragraph regions must auto-grow to fit replacement text.');
+expect(workspace, 'drawAlignedLine(', 'Export must render alignment, justification, letter spacing and rotation through a shared layout renderer.');
+expect(workspace, 'pdfLib.degrees', 'Rotated text export must use PDF rotation operators.');
+expect(workspace, 'textAlign: box.align', 'On-page preview must show the selected alignment.');
+expect(workspace, 'transform: `rotate(${box.rotation}deg)`', 'On-page preview must preserve text rotation.');
 
 // The build must continue copying the PDF.js module worker to a .js filename
 // because the production Apache host may serve .mjs with the wrong MIME type.
