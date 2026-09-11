@@ -12,6 +12,7 @@ const FONT_CHOICES = ['Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Calib
 const MAX_CUSTOM_FONT_BYTES = 12 * 1024 * 1024;
 
 type SourceKind = 'native' | 'ocr' | 'added';
+type TextAlign = 'left' | 'center' | 'right' | 'justify';
 
 type TextBox = {
   id: string;
@@ -37,6 +38,18 @@ type TextBox = {
   detectedFontName: string;
   fontAssetId: string | null;
   originalFontAssetId: string | null;
+  fontWeight: number;
+  originalFontWeight: number;
+  align: TextAlign;
+  originalAlign: TextAlign;
+  letterSpacing: number;
+  originalLetterSpacing: number;
+  lineHeight: number;
+  originalLineHeight: number;
+  rotation: number;
+  originalRotation: number;
+  baselineOffset: number;
+  originalBaselineOffset: number;
   color: string;
   originalColor: string;
   background: string;
@@ -71,6 +84,22 @@ type OcrLine = {
   y1: number;
   glyphHeight: number;
   fontName: string;
+  baselineY: number | null;
+};
+
+type OcrParagraph = {
+  lines: OcrLine[];
+  text: string;
+  confidence: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  glyphHeight: number;
+  fontName: string;
+  align: TextAlign;
+  lineHeight: number;
+  baselineOffset: number;
 };
 
 type FontAsset = {
@@ -86,6 +115,7 @@ type FontAsset = {
   characters: Set<number> | null;
   bold: boolean;
   italic: boolean;
+  weight: number;
   fileName: string | null;
 };
 
@@ -110,6 +140,29 @@ function rgb(hexColor: string) {
   };
 }
 
+function detectFontWeight(...values: Array<string | number | null | undefined>) {
+  const numeric = values.find((value) => typeof value === 'number' && Number.isFinite(value)) as number | undefined;
+  if (numeric != null) return clamp(Math.round(numeric / 100) * 100, 100, 900);
+  const value = values.filter(Boolean).join(' ').toLowerCase();
+  if (/thin|hairline/.test(value)) return 100;
+  if (/extralight|ultralight/.test(value)) return 200;
+  if (/light/.test(value)) return 300;
+  if (/semibold|demibold|demi/.test(value)) return 600;
+  if (/extrabold|ultrabold/.test(value)) return 800;
+  if (/black|heavy/.test(value)) return 900;
+  if (/bold/.test(value)) return 700;
+  if (/medium/.test(value)) return 500;
+  return 400;
+}
+
+function normalizeRotation(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  let result = ((value + 180) % 360 + 360) % 360 - 180;
+  const snapped = Math.round(result / 90) * 90;
+  if (Math.abs(result - snapped) < 1.2) result = snapped;
+  return Number(result.toFixed(2));
+}
+
 function inferFont(fontName = '', family = '') {
   const value = `${fontName} ${family}`.toLowerCase();
   let resolved = 'Arial';
@@ -120,10 +173,12 @@ function inferFont(fontName = '', family = '') {
   else if (value.includes('helvetica')) resolved = 'Helvetica';
   else if (value.includes('arial') || value.includes('sans-serif') || value.includes('sans serif')) resolved = 'Arial';
   else if (value.includes('times') || /(^|[^-])serif/.test(value)) resolved = 'Times New Roman';
+  const weight = detectFontWeight(value);
   return {
     family: resolved,
-    bold: /bold|black|heavy|semibold|demi/.test(value),
+    bold: weight >= 600,
     italic: /italic|oblique/.test(value),
+    weight,
   };
 }
 
@@ -210,8 +265,9 @@ async function createFontAsset(
       previewLoaded,
       bytes,
       characters: Array.isArray(parsed.characterSet) ? new Set<number>(parsed.characterSet) : null,
-      bold: /bold|black|heavy|semibold|demi/.test(styleIdentity),
+      bold: detectFontWeight(styleIdentity) >= 600,
       italic: /italic|oblique/.test(styleIdentity),
+      weight: detectFontWeight(styleIdentity),
       fileName,
     };
   } catch {
@@ -227,6 +283,11 @@ function changed(box: TextBox) {
     || box.bold !== box.originalBold
     || box.italic !== box.originalItalic
     || box.fontAssetId !== box.originalFontAssetId
+    || box.fontWeight !== box.originalFontWeight
+    || box.align !== box.originalAlign
+    || Math.abs(box.letterSpacing - box.originalLetterSpacing) > 0.02
+    || Math.abs(box.lineHeight - box.originalLineHeight) > 0.02
+    || Math.abs(box.rotation - box.originalRotation) > 0.02
     || box.color !== box.originalColor
     || Math.abs(box.x - box.originalX) > 0.05
     || Math.abs(box.top - box.originalTop) > 0.05
@@ -240,19 +301,29 @@ function clonePages(pages: PageModel[]) {
 
 function fontKey(box: TextBox) {
   const family = box.fontFamily.toLowerCase();
-  if (family.includes('times') || family.includes('georgia')) return `TimesRoman${box.bold ? 'Bold' : ''}${box.italic ? 'Italic' : ''}`;
-  if (family.includes('courier')) return `Courier${box.bold ? 'Bold' : ''}${box.italic ? 'Oblique' : ''}`;
-  return `Helvetica${box.bold ? 'Bold' : ''}${box.italic ? 'Oblique' : ''}`;
+  const bold = box.fontWeight >= 600 || box.bold;
+  if (family.includes('times') || family.includes('georgia')) return `TimesRoman${bold ? 'Bold' : ''}${box.italic ? 'Italic' : ''}`;
+  if (family.includes('courier')) return `Courier${bold ? 'Bold' : ''}${box.italic ? 'Oblique' : ''}`;
+  return `Helvetica${bold ? 'Bold' : ''}${box.italic ? 'Oblique' : ''}`;
 }
 
-function fitSingleLineFontSize(text: string, font: any, size: number, maxWidth: number) {
+function pdfTextWidth(text: string, font: any, size: number, letterSpacing = 0) {
+  const glyphWidth = font.widthOfTextAtSize(text, size);
+  const gaps = Math.max(0, Array.from(text).length - 1);
+  return glyphWidth + gaps * letterSpacing;
+}
+
+function fitSingleLineFontSize(text: string, font: any, size: number, maxWidth: number, letterSpacing = 0) {
   if (!text.trim() || text.includes('\n')) return size;
-  const measured = font.widthOfTextAtSize(text, size);
+  const measured = pdfTextWidth(text, font, size, letterSpacing);
   if (!Number.isFinite(measured) || measured <= maxWidth) return size;
-  return clamp(size * (maxWidth / measured) * 0.985, 4, size);
+  const spacingWidth = Math.max(0, Array.from(text).length - 1) * letterSpacing;
+  const glyphWidth = Math.max(1, measured - spacingWidth);
+  const targetGlyphWidth = Math.max(1, maxWidth - spacingWidth);
+  return clamp(size * (targetGlyphWidth / glyphWidth) * 0.985, 4, size);
 }
 
-function wrapText(text: string, font: any, size: number, maxWidth: number) {
+function wrapText(text: string, font: any, size: number, maxWidth: number, letterSpacing = 0) {
   const lines: string[] = [];
   for (const raw of text.replace(/\r/g, '').split('\n')) {
     const words = raw.split(/\s+/).filter(Boolean);
@@ -263,7 +334,7 @@ function wrapText(text: string, font: any, size: number, maxWidth: number) {
     let line = words[0];
     for (let index = 1; index < words.length; index += 1) {
       const candidate = `${line} ${words[index]}`;
-      if (font.widthOfTextAtSize(candidate, size) <= maxWidth) line = candidate;
+      if (pdfTextWidth(candidate, font, size, letterSpacing) <= maxWidth) line = candidate;
       else {
         lines.push(line);
         line = words[index];
@@ -272,6 +343,59 @@ function wrapText(text: string, font: any, size: number, maxWidth: number) {
     lines.push(line);
   }
   return lines;
+}
+
+function alignedOffset(align: TextAlign, maxWidth: number, lineWidth: number, isLastLine: boolean) {
+  if (align === 'center') return Math.max(0, (maxWidth - lineWidth) / 2);
+  if (align === 'right') return Math.max(0, maxWidth - lineWidth);
+  if (align === 'justify' && !isLastLine) return 0;
+  return 0;
+}
+
+function drawAlignedLine(
+  pdfPage: any,
+  line: string,
+  font: any,
+  size: number,
+  originX: number,
+  originY: number,
+  maxWidth: number,
+  align: TextAlign,
+  letterSpacing: number,
+  color: any,
+  rotation: number,
+  isLastLine: boolean,
+  degrees: (angle: number) => any,
+) {
+  if (!line) return;
+  const characters = Array.from(line);
+  const baseWidth = pdfTextWidth(line, font, size, letterSpacing);
+  const spaceCount = characters.filter((character) => character === ' ').length;
+  const justifyExtra = align === 'justify' && !isLastLine && spaceCount > 0 && baseWidth < maxWidth
+    ? (maxWidth - baseWidth) / spaceCount
+    : 0;
+  const effectiveWidth = justifyExtra ? maxWidth : baseWidth;
+  const offset = alignedOffset(align, maxWidth, effectiveWidth, isLastLine);
+  const pdfAngle = -rotation;
+  const radians = pdfAngle * Math.PI / 180;
+  const directionX = Math.cos(radians);
+  const directionY = Math.sin(radians);
+  let cursorX = originX + offset * directionX;
+  let cursorY = originY + offset * directionY;
+
+  if (Math.abs(letterSpacing) < 0.01 && justifyExtra === 0) {
+    pdfPage.drawText(line, { x: cursorX, y: cursorY, size, font, color, rotate: degrees(pdfAngle) });
+    return;
+  }
+
+  characters.forEach((character, index) => {
+    pdfPage.drawText(character, { x: cursorX, y: cursorY, size, font, color, rotate: degrees(pdfAngle) });
+    const advance = font.widthOfTextAtSize(character, size)
+      + (index < characters.length - 1 ? letterSpacing : 0)
+      + (character === ' ' ? justifyExtra : 0);
+    cursorX += advance * directionX;
+    cursorY += advance * directionY;
+  });
 }
 
 async function renderCanvas(page: any, scale: number) {
@@ -356,6 +480,40 @@ function sampleColors(canvas: HTMLCanvasElement, x: number, top: number, width: 
   };
 }
 
+function sampleBackgroundRing(canvas: HTMLCanvasElement, x: number, top: number, width: number, height: number, scale: number) {
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) return '#ffffff';
+  const innerLeft = clamp(Math.floor(x * scale), 0, canvas.width - 1);
+  const innerTop = clamp(Math.floor(top * scale), 0, canvas.height - 1);
+  const innerRight = clamp(Math.ceil((x + width) * scale), innerLeft + 1, canvas.width);
+  const innerBottom = clamp(Math.ceil((top + height) * scale), innerTop + 1, canvas.height);
+  const pad = Math.max(3, Math.round(scale * 3));
+  const left = clamp(innerLeft - pad, 0, canvas.width - 1);
+  const y = clamp(innerTop - pad, 0, canvas.height - 1);
+  const right = clamp(innerRight + pad, left + 1, canvas.width);
+  const bottom = clamp(innerBottom + pad, y + 1, canvas.height);
+  const image = context.getImageData(left, y, right - left, bottom - y).data;
+  const pixels: Array<[number, number, number]> = [];
+  const w = right - left;
+  const h = bottom - y;
+  const step = Math.max(1, Math.floor(Math.min(w, h) / 12));
+  for (let py = 0; py < h; py += step) {
+    for (let px = 0; px < w; px += step) {
+      const absoluteX = left + px;
+      const absoluteY = y + py;
+      if (absoluteX >= innerLeft && absoluteX < innerRight && absoluteY >= innerTop && absoluteY < innerBottom) continue;
+      const index = (py * w + px) * 4;
+      pixels.push([image[index], image[index + 1], image[index + 2]]);
+    }
+  }
+  if (!pixels.length) return '#ffffff';
+  const channelMedian = (channel: 0 | 1 | 2) => {
+    const values = pixels.map((pixel) => pixel[channel]).sort((a, b) => a - b);
+    return values[Math.floor(values.length / 2)];
+  };
+  return hex(channelMedian(0), channelMedian(1), channelMedian(2));
+}
+
 function toOcrWord(word: any): OcrWord | null {
   if (!word?.bbox || typeof word.text !== 'string') return null;
   const bbox = word.bbox;
@@ -388,37 +546,105 @@ function dominantFontName(words: OcrWord[]) {
   return best;
 }
 
+function toOcrLine(line: any): OcrLine | null {
+  const words: OcrWord[] = (line?.words || [])
+    .map((word: any) => toOcrWord(word))
+    .filter((word: OcrWord | null): word is OcrWord => Boolean(word && word.text.trim() && word.confidence >= 18));
+  if (!words.length) return null;
+  words.sort((a, b) => a.bbox.x0 - b.bbox.x0);
+  const text = words.map((word) => word.text.trim()).filter(Boolean).join(' ');
+  if (!text) return null;
+  const weights = words.map((word) => Math.max(1, word.text.trim().length));
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+  const confidence = words.reduce((sum, word, index) => sum + word.confidence * weights[index], 0) / Math.max(1, totalWeight);
+  const heights = words.map((word) => word.bbox.y1 - word.bbox.y0).sort((a, b) => a - b);
+  const baseline = line?.baseline;
+  const baselineY = Number.isFinite(baseline?.y0) ? baseline.y0 : Number.isFinite(baseline?.y1) ? baseline.y1 : null;
+  return {
+    text,
+    confidence,
+    x0: Math.min(...words.map((word) => word.bbox.x0)),
+    y0: Math.min(...words.map((word) => word.bbox.y0)),
+    x1: Math.max(...words.map((word) => word.bbox.x1)),
+    y1: Math.max(...words.map((word) => word.bbox.y1)),
+    glyphHeight: heights[Math.floor(heights.length / 2)] || 1,
+    fontName: dominantFontName(words),
+    baselineY,
+  };
+}
+
 function extractOcrLines(blocks: any[] | null | undefined): OcrLine[] {
   if (!Array.isArray(blocks)) return [];
   const lines: OcrLine[] = [];
   for (const block of blocks) {
     for (const paragraph of block?.paragraphs || []) {
       for (const line of paragraph?.lines || []) {
-        const words: OcrWord[] = (line?.words || [])
-          .map((word: any) => toOcrWord(word))
-          .filter((word: OcrWord | null): word is OcrWord => Boolean(word && word.text.trim() && word.confidence >= 18));
-        if (!words.length) continue;
-        words.sort((a, b) => a.bbox.x0 - b.bbox.x0);
-        const text = words.map((word) => word.text.trim()).filter(Boolean).join(' ');
-        if (!text) continue;
-        const weights = words.map((word) => Math.max(1, word.text.trim().length));
-        const totalWeight = weights.reduce((sum, value) => sum + value, 0);
-        const confidence = words.reduce((sum, word, index) => sum + word.confidence * weights[index], 0) / Math.max(1, totalWeight);
-        const heights = words.map((word) => word.bbox.y1 - word.bbox.y0).sort((a, b) => a - b);
-        lines.push({
-          text,
-          confidence,
-          x0: Math.min(...words.map((word) => word.bbox.x0)),
-          y0: Math.min(...words.map((word) => word.bbox.y0)),
-          x1: Math.max(...words.map((word) => word.bbox.x1)),
-          y1: Math.max(...words.map((word) => word.bbox.y1)),
-          glyphHeight: heights[Math.floor(heights.length / 2)] || 1,
-          fontName: dominantFontName(words),
-        });
+        const parsed = toOcrLine(line);
+        if (parsed) lines.push(parsed);
       }
     }
   }
   return lines;
+}
+
+function detectParagraphAlignment(lines: Array<{ x0: number; x1: number }>): TextAlign {
+  if (lines.length < 2) return 'left';
+  const left = Math.min(...lines.map((line) => line.x0));
+  const right = Math.max(...lines.map((line) => line.x1));
+  const width = Math.max(1, right - left);
+  const leftMargins = lines.map((line) => line.x0 - left);
+  const rightMargins = lines.map((line) => right - line.x1);
+  const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length);
+  const meanLeft = mean(leftMargins);
+  const meanRight = mean(rightMargins);
+  const fillRatios = lines.slice(0, -1).map((line) => (line.x1 - line.x0) / width);
+  if (fillRatios.length && mean(fillRatios) > 0.88 && lines[lines.length - 1].x1 - lines[lines.length - 1].x0 < width * 0.82) return 'justify';
+  if (Math.abs(meanLeft - meanRight) < width * 0.05 && meanLeft > width * 0.04) return 'center';
+  if (meanRight < width * 0.035 && meanLeft > width * 0.06) return 'right';
+  return 'left';
+}
+
+function extractOcrParagraphs(blocks: any[] | null | undefined): OcrParagraph[] {
+  if (!Array.isArray(blocks)) return [];
+  const paragraphs: OcrParagraph[] = [];
+  for (const block of blocks) {
+    for (const paragraph of block?.paragraphs || []) {
+      const lines: OcrLine[] = (paragraph?.lines || []).map((line: any) => toOcrLine(line)).filter((line: OcrLine | null): line is OcrLine => Boolean(line));
+      if (!lines.length) continue;
+      lines.sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0);
+      const text = lines.map((line) => line.text).join('\n');
+      const weights = lines.map((line) => Math.max(1, line.text.length));
+      const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+      const confidence = lines.reduce((sum, line, index) => sum + line.confidence * weights[index], 0) / Math.max(1, totalWeight);
+      const glyphHeights = lines.map((line) => line.glyphHeight).sort((a, b) => a - b);
+      const glyphHeight = glyphHeights[Math.floor(glyphHeights.length / 2)] || 1;
+      const lineGaps = lines.slice(1).map((line, index) => Math.max(1, line.y0 - lines[index].y0)).sort((a, b) => a - b);
+      const lineHeight = lineGaps.length ? clamp((lineGaps[Math.floor(lineGaps.length / 2)] || glyphHeight * 1.18) / glyphHeight, 0.85, 2.5) : 1.08;
+      const first = lines[0];
+      const baselineOffset = first.baselineY != null ? clamp(first.baselineY - first.y0, glyphHeight * 0.55, glyphHeight * 1.35) : glyphHeight * 0.82;
+      const fontCounts = new Map<string, number>();
+      lines.forEach((line) => {
+        if (!line.fontName) return;
+        fontCounts.set(line.fontName, (fontCounts.get(line.fontName) || 0) + line.text.length);
+      });
+      const fontName = [...fontCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+      paragraphs.push({
+        lines,
+        text,
+        confidence,
+        x0: Math.min(...lines.map((line) => line.x0)),
+        y0: Math.min(...lines.map((line) => line.y0)),
+        x1: Math.max(...lines.map((line) => line.x1)),
+        y1: Math.max(...lines.map((line) => line.y1)),
+        glyphHeight,
+        fontName,
+        align: detectParagraphAlignment(lines),
+        lineHeight,
+        baselineOffset,
+      });
+    }
+  }
+  return paragraphs;
 }
 
 function estimateOcrFontSize(line: OcrLine, width: number, family: string, bold: boolean, italic: boolean) {
@@ -436,6 +662,180 @@ function estimateOcrFontSize(line: OcrLine, width: number, family: string, bold:
   const widthEstimate = clamp((width / measured) * 100, 4, 96);
   if (widthEstimate < heightEstimate * 0.58 || widthEstimate > heightEstimate * 1.65) return heightEstimate;
   return clamp(heightEstimate * 0.62 + widthEstimate * 0.38, 6, 72);
+}
+
+function estimateLetterSpacing(text: string, width: number, fontSize: number, family: string, weight: number, italic: boolean) {
+  const characters = Array.from(text.replace(/\s+/g, ' ').trim());
+  if (typeof window === 'undefined' || characters.length < 2 || width <= 0) return 0;
+  const canvas = window.document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) return 0;
+  context.font = `${italic ? 'italic ' : ''}${weight} ${fontSize}px "${family}", Arial, sans-serif`;
+  const measured = context.measureText(characters.join('')).width;
+  canvas.width = 0;
+  canvas.height = 0;
+  if (!Number.isFinite(measured)) return 0;
+  return clamp((width - measured) / Math.max(1, characters.length - 1), -2.5, 8);
+}
+
+function compatibleNativeStyle(a: TextBox, b: TextBox) {
+  return a.fontAssetId === b.fontAssetId
+    && normalizeFontIdentity(a.detectedFontName) === normalizeFontIdentity(b.detectedFontName)
+    && Math.abs(a.fontSize - b.fontSize) <= Math.max(0.8, Math.min(a.fontSize, b.fontSize) * 0.12)
+    && Math.abs(a.fontWeight - b.fontWeight) <= 100
+    && a.italic === b.italic
+    && Math.abs(a.rotation - b.rotation) < 1.5;
+}
+
+function mergeNativeLine(parts: TextBox[]) {
+  const sorted = [...parts].sort((a, b) => a.x - b.x);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  let text = first.text;
+  for (let index = 1; index < sorted.length; index += 1) {
+    const previous = sorted[index - 1];
+    const current = sorted[index];
+    const gap = current.x - (previous.x + previous.width);
+    const needsSpace = gap > Math.max(0.7, first.fontSize * 0.18) && !/\s$/.test(text) && !/^\s/.test(current.text);
+    text += `${needsSpace ? ' ' : ''}${current.text}`;
+  }
+  const x = first.x;
+  const top = Math.min(...sorted.map((box) => box.top));
+  const right = Math.max(...sorted.map((box) => box.x + box.width));
+  const bottom = Math.max(...sorted.map((box) => box.top + box.height));
+  const totalChars = sorted.reduce((sum, box) => sum + Math.max(1, box.text.length), 0);
+  const letterSpacing = sorted.reduce((sum, box) => sum + box.letterSpacing * Math.max(1, box.text.length), 0) / Math.max(1, totalChars);
+  return {
+    ...first,
+    id: `${first.id}-line`,
+    text,
+    originalText: text,
+    x,
+    top,
+    width: Math.max(8, right - x),
+    height: Math.max(6, bottom - top),
+    originalX: x,
+    originalTop: top,
+    originalWidth: Math.max(8, right - x),
+    originalHeight: Math.max(6, bottom - top),
+    letterSpacing,
+    originalLetterSpacing: letterSpacing,
+    baselineOffset: first.baselineOffset + (first.top - top),
+    originalBaselineOffset: first.baselineOffset + (first.top - top),
+  } satisfies TextBox;
+}
+
+function mergeNativeParagraph(lines: TextBox[]) {
+  const sorted = [...lines].sort((a, b) => a.top - b.top || a.x - b.x);
+  const first = sorted[0];
+  const x = Math.min(...sorted.map((line) => line.x));
+  const top = Math.min(...sorted.map((line) => line.top));
+  const right = Math.max(...sorted.map((line) => line.x + line.width));
+  const bottom = Math.max(...sorted.map((line) => line.top + line.height));
+  const lineSteps = sorted.slice(1).map((line, index) => line.top - sorted[index].top).filter((value) => value > 1).sort((a, b) => a - b);
+  const lineHeight = lineSteps.length ? clamp((lineSteps[Math.floor(lineSteps.length / 2)] || first.fontSize * 1.18) / first.fontSize, 0.85, 2.5) : first.lineHeight;
+  const geometry = sorted.map((line) => ({ x0: line.x, x1: line.x + line.width }));
+  const align = detectParagraphAlignment(geometry);
+  const totalChars = sorted.reduce((sum, line) => sum + Math.max(1, line.text.length), 0);
+  const letterSpacing = sorted.reduce((sum, line) => sum + line.letterSpacing * Math.max(1, line.text.length), 0) / Math.max(1, totalChars);
+  const text = sorted.map((line) => line.text).join('\n');
+  return {
+    ...first,
+    id: `${first.id}-paragraph`,
+    text,
+    originalText: text,
+    x,
+    top,
+    width: Math.max(8, right - x),
+    height: Math.max(6, bottom - top),
+    originalX: x,
+    originalTop: top,
+    originalWidth: Math.max(8, right - x),
+    originalHeight: Math.max(6, bottom - top),
+    align,
+    originalAlign: align,
+    letterSpacing,
+    originalLetterSpacing: letterSpacing,
+    lineHeight,
+    originalLineHeight: lineHeight,
+    baselineOffset: first.baselineOffset + (first.top - top),
+    originalBaselineOffset: first.baselineOffset + (first.top - top),
+  } satisfies TextBox;
+}
+
+function groupNativeParagraphBoxes(boxes: TextBox[]) {
+  const rotated = boxes.filter((box) => Math.abs(box.rotation) > 3);
+  const horizontal = boxes.filter((box) => Math.abs(box.rotation) <= 3).sort((a, b) => a.top - b.top || a.x - b.x);
+  const rawLines: TextBox[][] = [];
+  for (const box of horizontal) {
+    const current = rawLines[rawLines.length - 1];
+    const reference = current?.[0];
+    if (current && reference && compatibleNativeStyle(reference, box) && Math.abs(reference.top - box.top) <= Math.max(2, reference.fontSize * 0.42)) {
+      current.push(box);
+    } else {
+      rawLines.push([box]);
+    }
+  }
+
+  const lineBoxes: TextBox[] = [];
+  rawLines.forEach((parts) => {
+    const sorted = [...parts].sort((a, b) => a.x - b.x);
+    let segment: TextBox[] = [];
+    const flush = () => {
+      if (segment.length) lineBoxes.push(mergeNativeLine(segment));
+      segment = [];
+    };
+    sorted.forEach((part) => {
+      const previous = segment[segment.length - 1];
+      const gap = previous ? part.x - (previous.x + previous.width) : 0;
+      if (previous && gap > Math.max(28, previous.fontSize * 3.2)) flush();
+      segment.push(part);
+    });
+    flush();
+  });
+
+  const paragraphGroups: TextBox[][] = [];
+  for (const line of lineBoxes.sort((a, b) => a.top - b.top || a.x - b.x)) {
+    let target: TextBox[] | null = null;
+    for (let index = paragraphGroups.length - 1; index >= 0; index -= 1) {
+      const group = paragraphGroups[index];
+      const last = group[group.length - 1];
+      const verticalGap = line.top - (last.top + last.height);
+      if (verticalGap > Math.max(last.fontSize * 2.1, 22)) break;
+      const overlap = Math.max(0, Math.min(line.x + line.width, last.x + last.width) - Math.max(line.x, last.x));
+      const overlapRatio = overlap / Math.max(1, Math.min(line.width, last.width));
+      const sameColumn = overlapRatio > 0.24 || Math.abs(line.x - last.x) <= Math.max(12, last.fontSize * 1.7);
+      if (verticalGap >= -3 && sameColumn && compatibleNativeStyle(last, line)) {
+        target = group;
+        break;
+      }
+    }
+    if (target) target.push(line);
+    else paragraphGroups.push([line]);
+  }
+
+  return [...paragraphGroups.map((group) => mergeNativeParagraph(group)), ...rotated].sort((a, b) => a.top - b.top || a.x - b.x);
+}
+
+function estimateEditedBoxSize(box: TextBox, text: string, pageWidth: number, pageHeight: number) {
+  const canvas = typeof window !== 'undefined' ? window.document.createElement('canvas') : null;
+  const context = canvas?.getContext('2d') || null;
+  if (context) context.font = `${box.italic ? 'italic ' : ''}${box.fontWeight} ${box.fontSize}px "${box.fontFamily}", Arial, sans-serif`;
+  const measure = (value: string) => context ? context.measureText(value).width + Math.max(0, Array.from(value).length - 1) * box.letterSpacing : value.length * box.fontSize * 0.55;
+  const explicit = text.replace(/\r/g, '').split('\n');
+  let visualLines = 0;
+  let widest = 0;
+  explicit.forEach((line) => {
+    const measured = measure(line || ' ');
+    widest = Math.max(widest, measured);
+    visualLines += Math.max(1, Math.ceil(measured / Math.max(12, box.width)));
+  });
+  if (canvas) { canvas.width = 0; canvas.height = 0; }
+  const desiredHeight = clamp(Math.max(box.originalHeight, visualLines * box.fontSize * box.lineHeight + 3), 8, Math.max(8, pageHeight - box.top));
+  const desiredWidth = box.isNew && explicit.length === 1
+    ? clamp(Math.max(box.width, widest + 6), 12, Math.max(12, pageWidth - box.x))
+    : box.width;
+  return { width: desiredWidth, height: desiredHeight };
 }
 
 export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
@@ -490,8 +890,9 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
         patchBox(targetId, {
           fontAssetId: asset.id,
           fontFamily: asset.previewLoaded ? asset.previewFamily : inferFont(asset.fullName, asset.family).family,
-          bold: asset.bold,
+          bold: asset.weight >= 600,
           italic: asset.italic,
+          fontWeight: asset.weight,
         });
       }
       setStatus(`Loaded ${asset.fullName || asset.family}. It will be embedded directly into edited PDF text${targetId ? ' for the selected region' : ''}.`);
@@ -510,8 +911,9 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
       patchBox(selected.id, {
         fontAssetId: asset.id,
         fontFamily: asset.previewLoaded ? asset.previewFamily : inferFont(asset.fullName, asset.family).family,
-        bold: asset.bold,
+        bold: asset.weight >= 600,
         italic: asset.italic,
+        fontWeight: asset.weight,
       });
       return;
     }
@@ -562,15 +964,17 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
 
   function commitText(id: string, text: string) {
     const current = pagesRef.current;
-    const currentBox = current.find((item) => item.pageNumber === pageNumber)?.boxes.find((box) => box.id === id);
-    if (!currentBox || currentBox.text === text) {
+    const pageModel = current.find((item) => item.pageNumber === pageNumber);
+    const currentBox = pageModel?.boxes.find((box) => box.id === id);
+    if (!currentBox || currentBox.text === text || !pageModel) {
       textEditSnapshot.current = null;
       return;
     }
+    const fitted = estimateEditedBoxSize(currentBox, text, pageModel.width, pageModel.height);
     const snapshot = textEditSnapshot.current || clonePages(current);
     const next = current.map((item) => item.pageNumber !== pageNumber ? item : {
       ...item,
-      boxes: item.boxes.map((box) => box.id === id ? { ...box, text } : box),
+      boxes: item.boxes.map((box) => box.id === id ? { ...box, text, ...fitted } : box),
     });
     setUndoStack((history) => [...history.slice(-(HISTORY_LIMIT - 1)), clonePages(snapshot)]);
     setRedoStack([]);
@@ -617,6 +1021,12 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
       bold: selected.originalBold,
       italic: selected.originalItalic,
       fontAssetId: selected.originalFontAssetId,
+      fontWeight: selected.originalFontWeight,
+      align: selected.originalAlign,
+      letterSpacing: selected.originalLetterSpacing,
+      lineHeight: selected.originalLineHeight,
+      rotation: selected.originalRotation,
+      baselineOffset: selected.originalBaselineOffset,
       color: selected.originalColor,
     });
   }
@@ -650,6 +1060,18 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
       detectedFontName: 'Arial',
       fontAssetId: null,
       originalFontAssetId: null,
+      fontWeight: 400,
+      originalFontWeight: 400,
+      align: 'left',
+      originalAlign: 'left',
+      letterSpacing: 0,
+      originalLetterSpacing: 0,
+      lineHeight: 1.18,
+      originalLineHeight: 1.18,
+      rotation: 0,
+      originalRotation: 0,
+      baselineOffset: 12,
+      originalBaselineOffset: 12,
       color: '#202124',
       originalColor: '#202124',
       background: '#ffffff',
@@ -728,18 +1150,21 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
             const style = (textContent.styles as Record<string, any>)[fontName] || {};
             embeddedAssets.set(fontName, await resolveEmbeddedFontAsset(pdfPage, pageIndex, fontName, style));
           }
-          const boxes: TextBox[] = items.map((item: any, index: number) => {
+          const rawBoxes: TextBox[] = items.map((item: any, index: number) => {
             const tx = pdfjs.Util.transform(viewport.transform, item.transform);
             const fontSize = Math.max(4, Math.hypot(tx[2], tx[3]));
+            const rotation = normalizeRotation(Math.atan2(tx[1], tx[0]) * 180 / Math.PI);
             const style = (textContent.styles as Record<string, any>)[item.fontName] || {};
             const embeddedAsset = embeddedAssets.get(item.fontName) || null;
             const sourceName = detectedFontName(embeddedAsset?.fullName, embeddedAsset?.family, style.fontFamily, item.fontName);
             const meta = inferFont(sourceName, style.fontFamily);
+            const fontWeight = embeddedAsset?.weight ?? meta.weight;
             const x = clamp(tx[4], 0, viewport.width);
             const top = clamp(tx[5] - fontSize, 0, viewport.height);
             const width = clamp(Math.max(Math.abs(item.width || 0), fontSize * 0.45), 6, Math.max(6, viewport.width - x));
             const height = clamp(fontSize * 1.12, 6, Math.max(6, viewport.height - top));
             const sampled = sampleColors(sample, x, top, width, height, sampleScale);
+            const letterSpacing = estimateLetterSpacing(item.str, width, fontSize, embeddedAsset?.previewLoaded ? embeddedAsset.previewFamily : meta.family, fontWeight, embeddedAsset?.italic ?? meta.italic);
             return {
               id: `native-${pageIndex}-${index}`,
               page: pageIndex,
@@ -757,13 +1182,25 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
               originalFontFamily: embeddedAsset?.previewLoaded ? embeddedAsset.previewFamily : meta.family,
               fontSize,
               originalFontSize: fontSize,
-              bold: meta.bold,
-              originalBold: meta.bold,
+              bold: fontWeight >= 600,
+              originalBold: fontWeight >= 600,
               italic: embeddedAsset?.italic ?? meta.italic,
               originalItalic: embeddedAsset?.italic ?? meta.italic,
               detectedFontName: sourceName,
               fontAssetId: embeddedAsset?.id || null,
               originalFontAssetId: embeddedAsset?.id || null,
+              fontWeight,
+              originalFontWeight: fontWeight,
+              align: 'left',
+              originalAlign: 'left',
+              letterSpacing,
+              originalLetterSpacing: letterSpacing,
+              lineHeight: 1.18,
+              originalLineHeight: 1.18,
+              rotation,
+              originalRotation: rotation,
+              baselineOffset: fontSize,
+              originalBaselineOffset: fontSize,
               color: sampled.color,
               originalColor: sampled.color,
               background: sampled.background,
@@ -772,6 +1209,10 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
               isNew: false,
             };
           });
+          const boxes = groupNativeParagraphBoxes(rawBoxes).map((box) => ({
+            ...box,
+            background: sampleBackgroundRing(sample, box.originalX, box.originalTop, box.originalWidth, box.originalHeight, sampleScale),
+          }));
           models.push({ pageNumber: pageIndex, width: viewport.width, height: viewport.height, source: 'native', confidence: 100, thumbnail, boxes });
         } else {
           if (!worker) {
@@ -789,21 +1230,23 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
           // structured blocks output explicitly so scanned PDFs keep word
           // boxes, confidence values and font metadata for editable regions.
           const recognized = await worker.recognize(sample, {}, { blocks: true });
-          const lines = extractOcrLines(recognized.data.blocks);
-          const boxes: TextBox[] = lines.map((line, index) => {
-            const x = line.x0 / OCR_SCALE;
-            const top = line.y0 / OCR_SCALE;
-            const width = Math.max(8, (line.x1 - line.x0) / OCR_SCALE);
-            const rawHeight = Math.max(6, (line.y1 - line.y0) / OCR_SCALE);
-            const height = rawHeight * 1.14;
+          const paragraphs = extractOcrParagraphs(recognized.data.blocks);
+          const boxes: TextBox[] = paragraphs.map((paragraph, index) => {
+            const x = paragraph.x0 / OCR_SCALE;
+            const top = paragraph.y0 / OCR_SCALE;
+            const width = Math.max(8, (paragraph.x1 - paragraph.x0) / OCR_SCALE);
+            const rawHeight = Math.max(6, (paragraph.y1 - paragraph.y0) / OCR_SCALE);
+            const representative = paragraph.lines[0];
+            const meta = inferFont(paragraph.fontName);
+            const size = estimateOcrFontSize(representative, Math.max(8, (representative.x1 - representative.x0) / OCR_SCALE), meta.family, meta.bold, meta.italic);
+            const height = Math.max(rawHeight * 1.08, paragraph.lines.length * size * paragraph.lineHeight);
             const sampled = sampleColors(sample, x, top, width, rawHeight, OCR_SCALE);
-            const meta = inferFont(line.fontName);
-            const size = estimateOcrFontSize(line, width, meta.family, meta.bold, meta.italic);
+            const background = sampleBackgroundRing(sample, x, top, width, rawHeight, OCR_SCALE);
             return {
               id: `ocr-${pageIndex}-${index}`,
               page: pageIndex,
-              text: line.text,
-              originalText: line.text,
+              text: paragraph.text,
+              originalText: paragraph.text,
               x,
               top,
               width,
@@ -816,18 +1259,30 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
               originalFontFamily: meta.family,
               fontSize: size,
               originalFontSize: size,
-              bold: meta.bold,
-              originalBold: meta.bold,
+              bold: meta.weight >= 600,
+              originalBold: meta.weight >= 600,
               italic: meta.italic,
               originalItalic: meta.italic,
-              detectedFontName: detectedFontName(line.fontName, meta.family),
+              detectedFontName: detectedFontName(paragraph.fontName, meta.family),
               fontAssetId: null,
               originalFontAssetId: null,
+              fontWeight: meta.weight,
+              originalFontWeight: meta.weight,
+              align: paragraph.align,
+              originalAlign: paragraph.align,
+              letterSpacing: 0,
+              originalLetterSpacing: 0,
+              lineHeight: paragraph.lineHeight,
+              originalLineHeight: paragraph.lineHeight,
+              rotation: 0,
+              originalRotation: 0,
+              baselineOffset: paragraph.baselineOffset / OCR_SCALE,
+              originalBaselineOffset: paragraph.baselineOffset / OCR_SCALE,
               color: sampled.color,
               originalColor: sampled.color,
-              background: sampled.background,
+              background,
               source: 'ocr' as const,
-              confidence: line.confidence,
+              confidence: paragraph.confidence,
               isNew: false,
             };
           });
@@ -924,10 +1379,11 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
         const pageHeight = pdfPage.getHeight();
 
         if (!box.isNew) {
-          const coverX = clamp(box.originalX - 1.5, 0, pageWidth);
-          const coverTop = clamp(box.originalTop - 1.5, 0, pageHeight);
-          const coverWidth = clamp(box.originalWidth + 3, 1, Math.max(1, pageWidth - coverX));
-          const coverHeight = clamp(Math.max(box.originalHeight + 3, box.originalFontSize * 1.25), 1, Math.max(1, pageHeight - coverTop));
+          const coverPad = Math.max(1.5, box.originalFontSize * 0.09);
+          const coverX = clamp(box.originalX - coverPad, 0, pageWidth);
+          const coverTop = clamp(box.originalTop - coverPad, 0, pageHeight);
+          const coverWidth = clamp(box.originalWidth + coverPad * 2, 1, Math.max(1, pageWidth - coverX));
+          const coverHeight = clamp(Math.max(box.originalHeight + coverPad * 2, box.originalFontSize * 1.25), 1, Math.max(1, pageHeight - coverTop));
           const bg = rgb(box.background);
           pdfPage.drawRectangle({
             x: coverX,
@@ -967,28 +1423,36 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
         }
         const maxWidth = Math.max(8, box.width);
         let size = clamp(box.fontSize, 4, 96);
-        size = fitSingleLineFontSize(box.text, font, size, maxWidth);
-        let lines = box.text.includes('\n') ? wrapText(box.text, font, size, maxWidth) : [box.text];
-        let lineHeight = box.source === 'ocr' ? size * 1.08 : size * 1.18;
-        while (size > 5 && lines.length * lineHeight > Math.max(box.height * 2.6, size * 1.3)) {
+        const singleLineRegion = !box.originalText.includes('\n') && box.originalHeight <= box.originalFontSize * 1.7;
+        if (singleLineRegion) size = fitSingleLineFontSize(box.text, font, size, maxWidth, box.letterSpacing);
+        let lines = singleLineRegion && !box.text.includes('\n') ? [box.text] : wrapText(box.text, font, size, maxWidth, box.letterSpacing);
+        let lineHeight = size * box.lineHeight;
+        while (size > 5 && lines.length * lineHeight > Math.max(box.height, size * 1.2)) {
           size -= 0.5;
-          lines = box.text.includes('\n') ? wrapText(box.text, font, size, maxWidth) : [box.text];
-          lineHeight = box.source === 'ocr' ? size * 1.08 : size * 1.18;
+          lines = singleLineRegion && !box.text.includes('\n') ? [box.text] : wrapText(box.text, font, size, maxWidth, box.letterSpacing);
+          lineHeight = size * box.lineHeight;
         }
         const fg = rgb(box.color);
-        const baselineOffset = box.source === 'ocr'
-          ? clamp(box.height * 0.82, size * 0.72, size * 1.02)
-          : size;
+        const scaleRatio = size / Math.max(1, box.fontSize);
+        const baselineOffset = clamp(box.baselineOffset * scaleRatio, size * 0.62, size * 1.35);
         const baseline = pageHeight - box.top - baselineOffset;
         lines.forEach((line, index) => {
           if (!line) return;
-          pdfPage.drawText(line, {
-            x: clamp(box.x, 0, pageWidth),
-            y: baseline - index * lineHeight,
-            size,
+          drawAlignedLine(
+            pdfPage,
+            line,
             font,
-            color: pdfLib.rgb(fg.r, fg.g, fg.b),
-          });
+            size,
+            clamp(box.x, 0, pageWidth),
+            baseline - index * lineHeight,
+            maxWidth,
+            box.align,
+            box.letterSpacing,
+            pdfLib.rgb(fg.r, fg.g, fg.b),
+            box.rotation,
+            index === lines.length - 1,
+            pdfLib.degrees,
+          );
         });
       }
       const bytes = await pdfDocument.save();
@@ -1147,8 +1611,22 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
                 <button className="spe-btn" type="button" disabled={busy} onClick={() => { if (fontInput.current) { fontInput.current.value = ''; fontInput.current.click(); } }}><FileUp size={14} />Load font</button>
                 <label>Size</label>
                 <input className="spe-number small" disabled={!selected} type="number" min="4" max="96" step="0.5" value={numberValue(selected?.fontSize, 12)} onChange={(event) => selected && patchBox(selected.id, { fontSize: clamp(Number(event.target.value) || selected.fontSize, 4, 96) })} />
-                <button className={`spe-btn ${selected?.bold ? 'active' : ''}`} type="button" disabled={!selected || Boolean(selectedFontAsset)} title={selectedFontAsset ? 'Weight comes from the embedded font file.' : undefined} onClick={() => selected && patchBox(selected.id, { bold: !selected.bold })}><Bold size={15} /></button>
+                <button className={`spe-btn ${selected && selected.fontWeight >= 600 ? 'active' : ''}`} type="button" disabled={!selected || Boolean(selectedFontAsset)} title={selectedFontAsset ? 'Weight comes from the embedded font file.' : undefined} onClick={() => selected && patchBox(selected.id, { fontWeight: selected.fontWeight >= 600 ? 400 : 700, bold: selected.fontWeight < 600 })}><Bold size={15} /></button>
                 <button className={`spe-btn ${selected?.italic ? 'active' : ''}`} type="button" disabled={!selected || Boolean(selectedFontAsset)} title={selectedFontAsset ? 'Style comes from the embedded font file.' : undefined} onClick={() => selected && patchBox(selected.id, { italic: !selected.italic })}><Italic size={15} /></button>
+                <label>Weight</label>
+                <select className="spe-select" disabled={!selected || Boolean(selectedFontAsset)} value={selected?.fontWeight || 400} onChange={(event) => selected && patchBox(selected.id, { fontWeight: Number(event.target.value), bold: Number(event.target.value) >= 600 })}>
+                  <option value={300}>Light</option><option value={400}>Regular</option><option value={500}>Medium</option><option value={600}>Semibold</option><option value={700}>Bold</option><option value={800}>Heavy</option>
+                </select>
+                <label>Align</label>
+                <select className="spe-select" disabled={!selected} value={selected?.align || 'left'} onChange={(event) => selected && patchBox(selected.id, { align: event.target.value as TextAlign })}>
+                  <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option><option value="justify">Justify</option>
+                </select>
+                <label>Line</label>
+                <input className="spe-number small" disabled={!selected} type="number" min="0.8" max="3" step="0.05" value={numberValue(selected?.lineHeight, 1.18)} onChange={(event) => selected && patchBox(selected.id, { lineHeight: clamp(Number(event.target.value) || selected.lineHeight, 0.8, 3) })} />
+                <label>Spacing</label>
+                <input className="spe-number small" disabled={!selected} type="number" min="-3" max="12" step="0.1" value={numberValue(selected?.letterSpacing, 0)} onChange={(event) => selected && patchBox(selected.id, { letterSpacing: clamp(Number(event.target.value) || 0, -3, 12) })} />
+                <label>Rotate</label>
+                <input className="spe-number small" disabled={!selected} type="number" min="-180" max="180" step="1" value={numberValue(selected?.rotation, 0)} onChange={(event) => selected && patchBox(selected.id, { rotation: normalizeRotation(Number(event.target.value) || 0) })} />
                 <label>Color</label>
                 <input className="spe-color" disabled={!selected} type="color" value={selected?.color || '#202124'} onChange={(event) => selected && patchBox(selected.id, { color: event.target.value })} />
                 <label>X</label>
@@ -1192,6 +1670,8 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
                                   width: (box.originalWidth + 3) * cssScale,
                                   height: Math.max(box.originalHeight + 3, box.originalFontSize * 1.25) * cssScale,
                                   backgroundColor: box.background,
+                                  transform: `rotate(${box.originalRotation}deg)`,
+                                  transformOrigin: '0 0',
                                 }}
                               />
                             ) : null}
@@ -1218,9 +1698,13 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
                                 minHeight: Math.max(8, box.height * cssScale),
                                 fontFamily: `${box.fontFamily}, Arial, sans-serif`,
                                 fontSize: box.fontSize * cssScale,
-                                fontWeight: box.bold ? 700 : 400,
+                                fontWeight: box.fontWeight,
                                 fontStyle: box.italic ? 'italic' : 'normal',
-                                lineHeight: box.source === 'ocr' ? 1.08 : 1.05,
+                                lineHeight: box.lineHeight,
+                                letterSpacing: `${box.letterSpacing * cssScale}px`,
+                                textAlign: box.align,
+                                transform: `rotate(${box.rotation}deg)`,
+                                transformOrigin: '0 0',
                                 color: visible ? box.color : 'transparent',
                                 backgroundColor: visible ? box.background : 'transparent',
                               }}
