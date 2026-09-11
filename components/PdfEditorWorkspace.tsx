@@ -58,6 +58,17 @@ type OcrWord = {
   fontName: string;
 };
 
+type OcrLine = {
+  text: string;
+  confidence: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  glyphHeight: number;
+  fontName: string;
+};
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -85,9 +96,10 @@ function inferFont(fontName = '', family = '') {
   if (value.includes('calibri')) resolved = 'Calibri';
   else if (value.includes('georgia')) resolved = 'Georgia';
   else if (value.includes('courier') || value.includes('mono')) resolved = 'Courier New';
-  else if (value.includes('times') || value.includes('serif')) resolved = 'Times New Roman';
   else if (value.includes('verdana')) resolved = 'Verdana';
   else if (value.includes('helvetica')) resolved = 'Helvetica';
+  else if (value.includes('arial') || value.includes('sans-serif') || value.includes('sans serif')) resolved = 'Arial';
+  else if (value.includes('times') || /(^|[^-])serif/.test(value)) resolved = 'Times New Roman';
   return {
     family: resolved,
     bold: /bold|black|heavy|semibold|demi/.test(value),
@@ -118,6 +130,13 @@ function fontKey(box: TextBox) {
   if (family.includes('times') || family.includes('georgia')) return `TimesRoman${box.bold ? 'Bold' : ''}${box.italic ? 'Italic' : ''}`;
   if (family.includes('courier')) return `Courier${box.bold ? 'Bold' : ''}${box.italic ? 'Oblique' : ''}`;
   return `Helvetica${box.bold ? 'Bold' : ''}${box.italic ? 'Oblique' : ''}`;
+}
+
+function fitSingleLineFontSize(text: string, font: any, size: number, maxWidth: number) {
+  if (!text.trim() || text.includes('\n')) return size;
+  const measured = font.widthOfTextAtSize(text, size);
+  if (!Number.isFinite(measured) || measured <= maxWidth) return size;
+  return clamp(size * (maxWidth / measured) * 0.985, 4, size);
 }
 
 function wrapText(text: string, font: any, size: number, maxWidth: number) {
@@ -184,52 +203,57 @@ function sampleColors(canvas: HTMLCanvasElement, x: number, top: number, width: 
     const index = (py * w + px) * 4;
     return [image[index], image[index + 1], image[index + 2]] as [number, number, number];
   };
+  const median = (values: number[]) => {
+    if (!values.length) return 255;
+    const sorted = [...values].sort((a, b) => a - b);
+    return sorted[Math.floor(sorted.length / 2)];
+  };
+  const medianColor = (pixels: Array<[number, number, number]>) => [
+    median(pixels.map((item) => item[0])),
+    median(pixels.map((item) => item[1])),
+    median(pixels.map((item) => item[2])),
+  ] as [number, number, number];
+
   const edges: Array<[number, number, number]> = [];
-  const xStep = Math.max(1, Math.floor(w / 12));
-  const yStep = Math.max(1, Math.floor(h / 7));
+  const xStep = Math.max(1, Math.floor(w / 14));
+  const yStep = Math.max(1, Math.floor(h / 9));
   for (let px = 0; px < w; px += xStep) edges.push(pixel(px, 0), pixel(px, h - 1));
   for (let py = 0; py < h; py += yStep) edges.push(pixel(0, py), pixel(w - 1, py));
-  const background = edges.reduce(
-    (sum, item) => [sum[0] + item[0], sum[1] + item[1], sum[2] + item[2]] as [number, number, number],
-    [0, 0, 0] as [number, number, number],
-  ).map((value) => value / Math.max(1, edges.length)) as [number, number, number];
-  let foreground: [number, number, number] = [32, 33, 36];
-  let distance = 0;
-  for (let py = 0; py < h; py += Math.max(1, Math.floor(h / 12))) {
-    for (let px = 0; px < w; px += Math.max(1, Math.floor(w / 24))) {
+  const background = medianColor(edges);
+
+  const samples: Array<{ color: [number, number, number]; distance: number }> = [];
+  const sampleX = Math.max(1, Math.floor(w / 28));
+  const sampleY = Math.max(1, Math.floor(h / 16));
+  for (let py = 0; py < h; py += sampleY) {
+    for (let px = 0; px < w; px += sampleX) {
       const candidate = pixel(px, py);
-      const next = Math.hypot(candidate[0] - background[0], candidate[1] - background[1], candidate[2] - background[2]);
-      if (next > distance) {
-        distance = next;
-        foreground = candidate;
-      }
+      const distance = Math.hypot(candidate[0] - background[0], candidate[1] - background[1], candidate[2] - background[2]);
+      samples.push({ color: candidate, distance });
     }
   }
+  const strongest = samples
+    .filter((item) => item.distance > 20)
+    .sort((a, b) => b.distance - a.distance)
+    .slice(0, Math.max(4, Math.ceil(samples.length * 0.16)))
+    .map((item) => item.color);
+  const foreground = strongest.length ? medianColor(strongest) : [32, 33, 36] as [number, number, number];
   return {
-    color: distance > 24 ? hex(...foreground) : '#202124',
+    color: strongest.length ? hex(...foreground) : '#202124',
     background: hex(...background),
   };
 }
 
-function extractOcrWords(blocks: any[] | null | undefined): OcrWord[] {
-  if (!Array.isArray(blocks)) return [];
-  const words: OcrWord[] = [];
-  for (const block of blocks) {
-    for (const paragraph of block?.paragraphs || []) {
-      for (const line of paragraph?.lines || []) {
-        for (const word of line?.words || []) {
-          if (!word?.bbox || typeof word.text !== 'string') continue;
-          words.push({
-            text: word.text,
-            confidence: typeof word.confidence === 'number' ? word.confidence : 0,
-            bbox: word.bbox,
-            fontName: typeof word.font_name === 'string' ? word.font_name : '',
-          });
-        }
-      }
-    }
-  }
-  return words;
+function toOcrWord(word: any): OcrWord | null {
+  if (!word?.bbox || typeof word.text !== 'string') return null;
+  const bbox = word.bbox;
+  if (![bbox.x0, bbox.y0, bbox.x1, bbox.y1].every(Number.isFinite)) return null;
+  if (bbox.x1 <= bbox.x0 || bbox.y1 <= bbox.y0) return null;
+  return {
+    text: word.text,
+    confidence: typeof word.confidence === 'number' ? word.confidence : 0,
+    bbox,
+    fontName: typeof word.font_name === 'string' ? word.font_name : '',
+  };
 }
 
 function dominantFontName(words: OcrWord[]) {
@@ -237,7 +261,8 @@ function dominantFontName(words: OcrWord[]) {
   for (const word of words) {
     const name = word.fontName.trim();
     if (!name) continue;
-    counts.set(name, (counts.get(name) || 0) + 1);
+    const weight = Math.max(1, word.text.trim().length);
+    counts.set(name, (counts.get(name) || 0) + weight);
   }
   let best = '';
   let bestCount = 0;
@@ -250,35 +275,54 @@ function dominantFontName(words: OcrWord[]) {
   return best;
 }
 
-function groupOcrWords(words: OcrWord[]) {
-  const valid = words.filter((word) => word.text?.trim() && word.confidence >= 18 && word.bbox.x1 > word.bbox.x0 && word.bbox.y1 > word.bbox.y0);
-  const heights = valid.map((word) => word.bbox.y1 - word.bbox.y0).sort((a, b) => a - b);
-  const median = heights.length ? heights[Math.floor(heights.length / 2)] : 20;
-  const lines: OcrWord[][] = [];
-  for (const word of [...valid].sort((a, b) => ((a.bbox.y0 + a.bbox.y1) / 2) - ((b.bbox.y0 + b.bbox.y1) / 2) || a.bbox.x0 - b.bbox.x0)) {
-    const center = (word.bbox.y0 + word.bbox.y1) / 2;
-    let line = lines.find((candidate) => {
-      const lineCenter = candidate.reduce((sum, item) => sum + (item.bbox.y0 + item.bbox.y1) / 2, 0) / candidate.length;
-      return Math.abs(lineCenter - center) <= Math.max(median * 0.58, (word.bbox.y1 - word.bbox.y0) * 0.58);
-    });
-    if (!line) {
-      line = [];
-      lines.push(line);
+function extractOcrLines(blocks: any[] | null | undefined): OcrLine[] {
+  if (!Array.isArray(blocks)) return [];
+  const lines: OcrLine[] = [];
+  for (const block of blocks) {
+    for (const paragraph of block?.paragraphs || []) {
+      for (const line of paragraph?.lines || []) {
+        const words: OcrWord[] = (line?.words || [])
+          .map((word: any) => toOcrWord(word))
+          .filter((word: OcrWord | null): word is OcrWord => Boolean(word && word.text.trim() && word.confidence >= 18));
+        if (!words.length) continue;
+        words.sort((a, b) => a.bbox.x0 - b.bbox.x0);
+        const text = words.map((word) => word.text.trim()).filter(Boolean).join(' ');
+        if (!text) continue;
+        const weights = words.map((word) => Math.max(1, word.text.trim().length));
+        const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+        const confidence = words.reduce((sum, word, index) => sum + word.confidence * weights[index], 0) / Math.max(1, totalWeight);
+        const heights = words.map((word) => word.bbox.y1 - word.bbox.y0).sort((a, b) => a - b);
+        lines.push({
+          text,
+          confidence,
+          x0: Math.min(...words.map((word) => word.bbox.x0)),
+          y0: Math.min(...words.map((word) => word.bbox.y0)),
+          x1: Math.max(...words.map((word) => word.bbox.x1)),
+          y1: Math.max(...words.map((word) => word.bbox.y1)),
+          glyphHeight: heights[Math.floor(heights.length / 2)] || 1,
+          fontName: dominantFontName(words),
+        });
+      }
     }
-    line.push(word);
   }
-  return lines.map((line) => {
-    line.sort((a, b) => a.bbox.x0 - b.bbox.x0);
-    return {
-      text: line.map((word) => word.text.trim()).join(' '),
-      confidence: line.reduce((sum, word) => sum + word.confidence, 0) / line.length,
-      x0: Math.min(...line.map((word) => word.bbox.x0)),
-      y0: Math.min(...line.map((word) => word.bbox.y0)),
-      x1: Math.max(...line.map((word) => word.bbox.x1)),
-      y1: Math.max(...line.map((word) => word.bbox.y1)),
-      fontName: dominantFontName(line),
-    };
-  }).filter((line) => line.text);
+  return lines;
+}
+
+function estimateOcrFontSize(line: OcrLine, width: number, family: string, bold: boolean, italic: boolean) {
+  const glyphHeight = Math.max(1, line.glyphHeight / OCR_SCALE);
+  const heightEstimate = clamp(glyphHeight * 1.08, 6, 72);
+  if (typeof window === 'undefined' || !line.text.trim() || width <= 0) return heightEstimate;
+  const canvas = window.document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) return heightEstimate;
+  context.font = (italic ? 'italic ' : '') + (bold ? '700 ' : '400 ') + '100px "' + family + '", Arial, sans-serif';
+  const measured = context.measureText(line.text.replace(/\s+/g, ' ')).width;
+  canvas.width = 0;
+  canvas.height = 0;
+  if (!Number.isFinite(measured) || measured <= 0) return heightEstimate;
+  const widthEstimate = clamp((width / measured) * 100, 4, 96);
+  if (widthEstimate < heightEstimate * 0.58 || widthEstimate > heightEstimate * 1.65) return heightEstimate;
+  return clamp(heightEstimate * 0.62 + widthEstimate * 0.38, 6, 72);
 }
 
 export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
@@ -545,7 +589,7 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
           // structured blocks output explicitly so scanned PDFs keep word
           // boxes, confidence values and font metadata for editable regions.
           const recognized = await worker.recognize(sample, {}, { blocks: true });
-          const lines = groupOcrWords(extractOcrWords(recognized.data.blocks));
+          const lines = extractOcrLines(recognized.data.blocks);
           const boxes: TextBox[] = lines.map((line, index) => {
             const x = line.x0 / OCR_SCALE;
             const top = line.y0 / OCR_SCALE;
@@ -553,8 +597,8 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
             const rawHeight = Math.max(6, (line.y1 - line.y0) / OCR_SCALE);
             const height = rawHeight * 1.14;
             const sampled = sampleColors(sample, x, top, width, rawHeight, OCR_SCALE);
-            const size = clamp(rawHeight * 0.9, 6, 72);
             const meta = inferFont(line.fontName);
+            const size = estimateOcrFontSize(line, width, meta.family, meta.bold, meta.italic);
             return {
               id: `ocr-${pageIndex}-${index}`,
               page: pageIndex,
@@ -691,19 +735,26 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
           font = await pdfDocument.embedFont(standard[key] || standard.Helvetica);
           fonts.set(key, font);
         }
+        const maxWidth = Math.max(8, box.width);
         let size = clamp(box.fontSize, 4, 96);
-        let lines = wrapText(box.text, font, size, Math.max(8, box.width));
-        while (size > 5 && lines.length * size * 1.18 > Math.max(box.height * 2.6, size * 1.3)) {
+        size = fitSingleLineFontSize(box.text, font, size, maxWidth);
+        let lines = box.text.includes('\n') ? wrapText(box.text, font, size, maxWidth) : [box.text];
+        let lineHeight = box.source === 'ocr' ? size * 1.08 : size * 1.18;
+        while (size > 5 && lines.length * lineHeight > Math.max(box.height * 2.6, size * 1.3)) {
           size -= 0.5;
-          lines = wrapText(box.text, font, size, Math.max(8, box.width));
+          lines = box.text.includes('\n') ? wrapText(box.text, font, size, maxWidth) : [box.text];
+          lineHeight = box.source === 'ocr' ? size * 1.08 : size * 1.18;
         }
         const fg = rgb(box.color);
-        const baseline = pageHeight - box.top - size;
+        const baselineOffset = box.source === 'ocr'
+          ? clamp(box.height * 0.82, size * 0.72, size * 1.02)
+          : size;
+        const baseline = pageHeight - box.top - baselineOffset;
         lines.forEach((line, index) => {
           if (!line) return;
           pdfPage.drawText(line, {
             x: clamp(box.x, 0, pageWidth),
-            y: baseline - index * size * 1.18,
+            y: baseline - index * lineHeight,
             size,
             font,
             color: pdfLib.rgb(fg.r, fg.g, fg.b),
@@ -922,6 +973,7 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
                                 fontSize: box.fontSize * cssScale,
                                 fontWeight: box.bold ? 700 : 400,
                                 fontStyle: box.italic ? 'italic' : 'normal',
+                                lineHeight: box.source === 'ocr' ? 1.08 : 1.05,
                                 color: visible ? box.color : 'transparent',
                                 backgroundColor: visible ? box.background : 'transparent',
                               }}
