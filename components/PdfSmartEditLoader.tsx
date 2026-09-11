@@ -1,6 +1,6 @@
 'use client';
 
-import { type DragEvent, type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { FileUp, LoaderCircle } from 'lucide-react';
 import { PdfEditorWorkspace } from '@/components/PdfEditorWorkspace';
 
@@ -67,18 +67,10 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
     setFileError(message);
     if (!message) return;
 
-    event.preventDefault();
-    event.stopPropagation();
+    // Clear the invalid selection before PdfEditorWorkspace receives the same
+    // change event. That keeps the workspace as the single event owner while
+    // preventing an oversized/non-PDF file from reaching PDF.js or OCR.
     input.value = '';
-  }
-
-  function onDropCapture(event: DragEvent<HTMLDivElement>) {
-    const message = validatePdf(event.dataTransfer.files?.[0] || null);
-    setFileError(message);
-    if (!message) return;
-
-    event.preventDefault();
-    event.stopPropagation();
   }
 
   if (error) {
@@ -113,11 +105,7 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
   }
 
   return (
-    <div
-      data-native-upload-ui="true"
-      onChangeCapture={onFileChangeCapture}
-      onDropCapture={onDropCapture}
-    >
+    <div data-native-upload-ui="true" onChangeCapture={onFileChangeCapture}>
       {fileError ? (
         <div className="spe-file-error" role="alert">
           <FileUp size={18} />
