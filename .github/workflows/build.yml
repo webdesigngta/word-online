@@ -37,6 +37,9 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      - name: Verify Edit PDF reliability contract
+        run: node qa/check-pdf-editor.mjs
+
       - name: Production build
         run: npm run build
 
@@ -48,3 +51,9 @@ jobs:
           test -d out/_next
           test -f out/robots.txt
           grep -q 'Allow: /' out/robots.txt
+
+          # Edit PDF must ship both its static route and the Apache-safe PDF.js
+          # worker required after a user actually chooses a PDF.
+          test -f out/edit-pdf/index.html
+          test -f out/pdf.worker.min.js
+          grep -q 'data-native-upload-ui' out/edit-pdf/index.html
