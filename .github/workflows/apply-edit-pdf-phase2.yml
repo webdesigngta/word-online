@@ -6,6 +6,7 @@ on:
       - feat/edit-pdf-ocr-style-accuracy
     paths:
       - 'scripts/apply-edit-pdf-phase2.mjs'
+      - 'scripts/fix-edit-pdf-phase2-generated.mjs'
       - '.github/workflows/apply-edit-pdf-phase2.yml'
 
 permissions:
@@ -31,6 +32,9 @@ jobs:
 
       - name: Apply Phase 2 patch
         run: node scripts/apply-edit-pdf-phase2.mjs
+
+      - name: Fix generated TypeScript details
+        run: node scripts/fix-edit-pdf-phase2-generated.mjs
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps --no-audit --no-fund
