@@ -6,6 +6,7 @@ on:
       - feat/edit-pdf-phase4-layout-fidelity
     paths:
       - 'scripts/apply-edit-pdf-phase4.py'
+      - 'scripts/fix-edit-pdf-phase4-generated.py'
       - '.github/workflows/apply-edit-pdf-phase4.yml'
 
 permissions:
@@ -34,6 +35,9 @@ jobs:
 
       - name: Apply Phase 4 patch
         run: python3 scripts/apply-edit-pdf-phase4.py
+
+      - name: Fix generated TypeScript details
+        run: python3 scripts/fix-edit-pdf-phase4-generated.py
 
       - name: Typecheck
         run: npm run typecheck
