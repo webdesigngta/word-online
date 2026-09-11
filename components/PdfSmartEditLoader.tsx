@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { FileUp, LoaderCircle } from 'lucide-react';
 import { PdfEditorWorkspace } from '@/components/PdfEditorWorkspace';
+
+const MAX_PDF_BYTES = 50 * 1024 * 1024;
 
 function workerUrl() {
   const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/+$/, '');
@@ -15,9 +17,21 @@ function workerUrl() {
   return new URL(path, window.location.origin).toString();
 }
 
+function validatePdf(file: File | null) {
+  if (!file) return '';
+  if (!(file.type === 'application/pdf' || /\.pdf$/i.test(file.name))) {
+    return 'Please choose a PDF file.';
+  }
+  if (file.size > MAX_PDF_BYTES) {
+    return 'This PDF is larger than 50 MB. Choose a smaller file so the browser editor can process it reliably.';
+  }
+  return '';
+}
+
 export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
+  const [fileError, setFileError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const mounted = useRef(true);
 
@@ -45,6 +59,19 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
       mounted.current = false;
     };
   }, [attempt]);
+
+  function onFileChangeCapture(event: FormEvent<HTMLDivElement>) {
+    const input = event.target as HTMLInputElement | null;
+    if (!input || input.type !== 'file') return;
+    const message = validatePdf(input.files?.[0] || null);
+    setFileError(message);
+    if (!message) return;
+
+    // Clear the invalid selection before PdfEditorWorkspace receives the same
+    // change event. That keeps the workspace as the single event owner while
+    // preventing an oversized/non-PDF file from reaching PDF.js or OCR.
+    input.value = '';
+  }
 
   if (error) {
     return (
@@ -78,7 +105,17 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
   }
 
   return (
-    <div data-native-upload-ui="true">
+    <div data-native-upload-ui="true" onChangeCapture={onFileChangeCapture}>
+      {fileError ? (
+        <div className="spe-file-error" role="alert">
+          <FileUp size={18} />
+          <span>{fileError}</span>
+          <style jsx>{`
+            .spe-file-error{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 12px;border:1px solid #f1c7c3;border-radius:10px;background:#fff8f7;color:#8c1d18;font-size:12px;font-weight:700}
+            .spe-file-error>svg{flex:0 0 auto;color:#b3261e}
+          `}</style>
+        </div>
+      ) : null}
       <PdfEditorWorkspace toolId={toolId} />
     </div>
   );
