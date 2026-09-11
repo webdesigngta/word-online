@@ -158,7 +158,7 @@ function estimateOcrFontSize(line: OcrLine, width: number, family: string, bold:
   const canvas = window.document.createElement('canvas');
   const context = canvas.getContext('2d');
   if (!context) return heightEstimate;
-  context.font = `${italic ? 'italic ' : ''}${bold ? '700 ' : '400 '}100px "${family}", Arial, sans-serif`;
+  context.font = (italic ? 'italic ' : '') + (bold ? '700 ' : '400 ') + '100px "' + family + '", Arial, sans-serif';
   const measured = context.measureText(line.text.replace(/\\s+/g, ' ')).width;
   canvas.width = 0;
   canvas.height = 0;
