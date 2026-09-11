@@ -6,6 +6,7 @@ on:
       - feat/edit-pdf-phase3-custom-fonts
     paths:
       - 'scripts/apply-edit-pdf-phase3.py'
+      - 'scripts/fix-edit-pdf-phase3-generated.py'
       - '.github/workflows/apply-edit-pdf-phase3.yml'
 
 permissions:
@@ -31,6 +32,9 @@ jobs:
 
       - name: Apply Phase 3 patch
         run: python3 scripts/apply-edit-pdf-phase3.py
+
+      - name: Fix generated TypeScript details
+        run: python3 scripts/fix-edit-pdf-phase3-generated.py
 
       - name: Add fontkit dependency
         run: npm install @pdf-lib/fontkit@1.1.1 --save --legacy-peer-deps --no-audit --no-fund
