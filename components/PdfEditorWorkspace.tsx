@@ -55,6 +55,7 @@ type OcrWord = {
   text: string;
   confidence: number;
   bbox: { x0: number; y0: number; x1: number; y1: number };
+  fontName: string;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -210,6 +211,45 @@ function sampleColors(canvas: HTMLCanvasElement, x: number, top: number, width: 
   };
 }
 
+function extractOcrWords(blocks: any[] | null | undefined): OcrWord[] {
+  if (!Array.isArray(blocks)) return [];
+  const words: OcrWord[] = [];
+  for (const block of blocks) {
+    for (const paragraph of block?.paragraphs || []) {
+      for (const line of paragraph?.lines || []) {
+        for (const word of line?.words || []) {
+          if (!word?.bbox || typeof word.text !== 'string') continue;
+          words.push({
+            text: word.text,
+            confidence: typeof word.confidence === 'number' ? word.confidence : 0,
+            bbox: word.bbox,
+            fontName: typeof word.font_name === 'string' ? word.font_name : '',
+          });
+        }
+      }
+    }
+  }
+  return words;
+}
+
+function dominantFontName(words: OcrWord[]) {
+  const counts = new Map<string, number>();
+  for (const word of words) {
+    const name = word.fontName.trim();
+    if (!name) continue;
+    counts.set(name, (counts.get(name) || 0) + 1);
+  }
+  let best = '';
+  let bestCount = 0;
+  for (const [name, count] of counts) {
+    if (count > bestCount) {
+      best = name;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
 function groupOcrWords(words: OcrWord[]) {
   const valid = words.filter((word) => word.text?.trim() && word.confidence >= 18 && word.bbox.x1 > word.bbox.x0 && word.bbox.y1 > word.bbox.y0);
   const heights = valid.map((word) => word.bbox.y1 - word.bbox.y0).sort((a, b) => a - b);
@@ -236,6 +276,7 @@ function groupOcrWords(words: OcrWord[]) {
       y0: Math.min(...line.map((word) => word.bbox.y0)),
       x1: Math.max(...line.map((word) => word.bbox.x1)),
       y1: Math.max(...line.map((word) => word.bbox.y1)),
+      fontName: dominantFontName(line),
     };
   }).filter((line) => line.text);
 }
@@ -500,8 +541,11 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
             });
             await worker.setParameters?.({ preserve_interword_spaces: '1' });
           }
-          const recognized = await worker.recognize(sample);
-          const lines = groupOcrWords(recognized.data.words || []);
+          // Tesseract.js 6+ returns only plain text by default. Request the
+          // structured blocks output explicitly so scanned PDFs keep word
+          // boxes, confidence values and font metadata for editable regions.
+          const recognized = await worker.recognize(sample, {}, { blocks: true });
+          const lines = groupOcrWords(extractOcrWords(recognized.data.blocks));
           const boxes: TextBox[] = lines.map((line, index) => {
             const x = line.x0 / OCR_SCALE;
             const top = line.y0 / OCR_SCALE;
@@ -510,6 +554,7 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
             const height = rawHeight * 1.14;
             const sampled = sampleColors(sample, x, top, width, rawHeight, OCR_SCALE);
             const size = clamp(rawHeight * 0.9, 6, 72);
+            const meta = inferFont(line.fontName);
             return {
               id: `ocr-${pageIndex}-${index}`,
               page: pageIndex,
@@ -523,14 +568,14 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
               originalTop: top,
               originalWidth: width,
               originalHeight: height,
-              fontFamily: 'Arial',
-              originalFontFamily: 'Arial',
+              fontFamily: meta.family,
+              originalFontFamily: meta.family,
               fontSize: size,
               originalFontSize: size,
-              bold: false,
-              originalBold: false,
-              italic: false,
-              originalItalic: false,
+              bold: meta.bold,
+              originalBold: meta.bold,
+              italic: meta.italic,
+              originalItalic: meta.italic,
               color: sampled.color,
               originalColor: sampled.color,
               background: sampled.background,
