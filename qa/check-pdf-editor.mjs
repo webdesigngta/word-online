@@ -38,7 +38,11 @@ expect(workspace, 'event.dataTransfer.files?.[0] || null', 'Drag and drop PDF op
 expect(workspace, "pdfjs.getDocument({ data: new Uint8Array(await next.arrayBuffer()) }).promise", 'Selected PDFs must be opened through PDF.js.');
 expect(workspace, "await import('tesseract.js')", 'Scanned PDFs must retain OCR fallback.');
 expect(workspace, "worker.recognize(sample, {}, { blocks: true })", 'Tesseract.js 6+ must explicitly request structured blocks for editable OCR geometry.');
-expect(workspace, 'extractOcrWords(recognized.data.blocks)', 'OCR regions must be rebuilt from the current Tesseract blocks hierarchy.');
+expect(workspace, 'extractOcrLines(recognized.data.blocks)', 'OCR regions must preserve Tesseract line boundaries from the current blocks hierarchy.');
+expect(workspace, 'estimateOcrFontSize(line, width, meta.family, meta.bold, meta.italic)', 'OCR font size must combine glyph-height and rendered-width estimates.');
+expect(workspace, "value.includes('sans-serif')", 'Generic sans-serif PDF fonts must not be misclassified as serif fonts.');
+expect(workspace, 'fitSingleLineFontSize(box.text, font, size, maxWidth)', 'Edited single-line text should shrink to fit its detected region before wrapping.');
+expect(workspace, "box.source === 'ocr' ? 1.08 : 1.05", 'OCR preview must use calibrated line height.');
 expect(workspace, 'font_name', 'OCR font metadata should be retained when Tesseract provides it.');
 reject(workspace, 'recognized.data.words || []', 'Do not use the pre-v6 Tesseract data.words output; it is no longer returned by default.');
 expect(workspace, "await import('pdf-lib')", 'Edited PDF export must remain available.');
