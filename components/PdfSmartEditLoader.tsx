@@ -20,7 +20,6 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const mounted = useRef(true);
-  const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     mounted.current = true;
@@ -29,6 +28,11 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
 
     void import('pdfjs-dist/legacy/build/pdf.mjs')
       .then((pdfjs) => {
+        // Keep PDF engine initialization here, but let PdfEditorWorkspace own
+        // the actual file input and user click. Having the loader intercept
+        // the Choose PDF button created two competing picker implementations
+        // and could leave users with a selected file that never reached the
+        // workspace change handler.
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl();
         if (mounted.current) setReady(true);
       })
@@ -41,45 +45,6 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
       mounted.current = false;
     };
   }, [attempt]);
-
-  useEffect(() => {
-    if (!ready) return;
-    const host = hostRef.current;
-    if (!host) return;
-
-    const onChoosePdf = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const button = target?.closest<HTMLElement>('.smart-pdf-editor .spe-drop .spe-btn.primary');
-      if (!button || !host.contains(button)) return;
-
-      const input = host.querySelector<HTMLInputElement>('input[type="file"][accept*="pdf"]');
-      if (!input || input.disabled) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      input.value = '';
-      input.hidden = false;
-      input.style.position = 'fixed';
-      input.style.left = '-10000px';
-      input.style.top = '0';
-      input.style.width = '1px';
-      input.style.height = '1px';
-      input.style.opacity = '0';
-      input.style.pointerEvents = 'none';
-
-      try {
-        const picker = input as HTMLInputElement & { showPicker?: () => void };
-        if (typeof picker.showPicker === 'function') picker.showPicker();
-        else input.click();
-      } catch {
-        input.click();
-      }
-    };
-
-    host.addEventListener('click', onChoosePdf, true);
-    return () => host.removeEventListener('click', onChoosePdf, true);
-  }, [ready]);
 
   if (error) {
     return (
@@ -113,7 +78,7 @@ export function PdfSmartEditLoader({ toolId }: { toolId: string }) {
   }
 
   return (
-    <div ref={hostRef} data-native-upload-ui="true">
+    <div data-native-upload-ui="true">
       <PdfEditorWorkspace toolId={toolId} />
     </div>
   );
