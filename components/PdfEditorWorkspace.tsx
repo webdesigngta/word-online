@@ -9,6 +9,7 @@ const OCR_SCALE = 3;
 const SAMPLE_SCALE = 1.75;
 const HISTORY_LIMIT = 24;
 const FONT_CHOICES = ['Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Calibri', 'Verdana', 'Courier New'];
+const MAX_CUSTOM_FONT_BYTES = 12 * 1024 * 1024;
 
 type SourceKind = 'native' | 'ocr' | 'added';
 
@@ -33,6 +34,9 @@ type TextBox = {
   originalBold: boolean;
   italic: boolean;
   originalItalic: boolean;
+  detectedFontName: string;
+  fontAssetId: string | null;
+  originalFontAssetId: string | null;
   color: string;
   originalColor: string;
   background: string;
@@ -67,6 +71,22 @@ type OcrLine = {
   y1: number;
   glyphHeight: number;
   fontName: string;
+};
+
+type FontAsset = {
+  id: string;
+  kind: 'embedded' | 'custom';
+  family: string;
+  fullName: string;
+  postscriptName: string;
+  subfamilyName: string;
+  previewFamily: string;
+  previewLoaded: boolean;
+  bytes: Uint8Array;
+  characters: Set<number> | null;
+  bold: boolean;
+  italic: boolean;
+  fileName: string | null;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -107,6 +127,98 @@ function inferFont(fontName = '', family = '') {
   };
 }
 
+function cleanFontLabel(value = '') {
+  return value
+    .replace(/^['\"]|['\"]$/g, '')
+    .replace(/^[A-Z]{6}\+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeFontIdentity(value = '') {
+  return cleanFontLabel(value)
+    .toLowerCase()
+    .replace(/(?:regular|normal|roman|book|medium)$/g, '')
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+function detectedFontName(...values: Array<string | null | undefined>) {
+  const generic = new Set(['serif', 'sans-serif', 'sans serif', 'monospace', 'cursive', 'fantasy', 'system-ui']);
+  for (const value of values) {
+    const cleaned = cleanFontLabel(value || '');
+    if (!cleaned || generic.has(cleaned.toLowerCase()) || /^g_d\d+_f\d+$/i.test(cleaned)) continue;
+    return cleaned;
+  }
+  return cleanFontLabel(values.find(Boolean) || '') || 'Unknown font';
+}
+
+function toFontBytes(value: unknown): Uint8Array | null {
+  if (value instanceof Uint8Array) return new Uint8Array(value);
+  if (value instanceof ArrayBuffer) return new Uint8Array(value.slice(0));
+  if (ArrayBuffer.isView(value)) {
+    const view = value as ArrayBufferView;
+    return new Uint8Array(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength));
+  }
+  return null;
+}
+
+function fontSupportsText(asset: FontAsset, text: string) {
+  if (!asset.characters?.size) return true;
+  for (const character of text) {
+    if (/\s/.test(character)) continue;
+    const codePoint = character.codePointAt(0);
+    if (codePoint != null && !asset.characters.has(codePoint)) return false;
+  }
+  return true;
+}
+
+async function createFontAsset(
+  bytes: Uint8Array,
+  kind: FontAsset['kind'],
+  id: string,
+  hintedName = '',
+  fileName: string | null = null,
+): Promise<FontAsset | null> {
+  try {
+    const fontkitModule = await import('@pdf-lib/fontkit');
+    const fontkit = fontkitModule.default as any;
+    const parsed = fontkit.create(bytes);
+    const family = detectedFontName(parsed.familyName, parsed.fullName, parsed.postscriptName, hintedName) || 'Custom font';
+    const fullName = cleanFontLabel(parsed.fullName || family);
+    const postscriptName = cleanFontLabel(parsed.postscriptName || '');
+    const subfamilyName = cleanFontLabel(parsed.subfamilyName || '');
+    const styleIdentity = `${fullName} ${postscriptName} ${subfamilyName}`.toLowerCase();
+    const previewFamily = `DOC321-${id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+    let previewLoaded = false;
+    try {
+      const faceBytes = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+      const face = new FontFace(previewFamily, faceBytes);
+      await face.load();
+      document.fonts.add(face);
+      previewLoaded = true;
+    } catch {
+      previewLoaded = false;
+    }
+    return {
+      id,
+      kind,
+      family,
+      fullName,
+      postscriptName,
+      subfamilyName,
+      previewFamily,
+      previewLoaded,
+      bytes,
+      characters: Array.isArray(parsed.characterSet) ? new Set<number>(parsed.characterSet) : null,
+      bold: /bold|black|heavy|semibold|demi/.test(styleIdentity),
+      italic: /italic|oblique/.test(styleIdentity),
+      fileName,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function changed(box: TextBox) {
   return box.isNew
     || box.text !== box.originalText
@@ -114,6 +226,7 @@ function changed(box: TextBox) {
     || Math.abs(box.fontSize - box.originalFontSize) > 0.05
     || box.bold !== box.originalBold
     || box.italic !== box.originalItalic
+    || box.fontAssetId !== box.originalFontAssetId
     || box.color !== box.originalColor
     || Math.abs(box.x - box.originalX) > 0.05
     || Math.abs(box.top - box.originalTop) > 0.05
@@ -327,10 +440,12 @@ function estimateOcrFontSize(line: OcrLine, width: number, family: string, bold:
 
 export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
   const fileInput = useRef<HTMLInputElement>(null);
+  const fontInput = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pdfRef = useRef<any>(null);
   const renderToken = useRef(0);
   const pagesRef = useRef<PageModel[]>([]);
+  const fontAssetsRef = useRef<Map<string, FontAsset>>(new Map());
   const textEditSnapshot = useRef<PageModel[] | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<PageModel[]>([]);
@@ -343,13 +458,83 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
   const [dragging, setDragging] = useState(false);
   const [undoStack, setUndoStack] = useState<PageModel[][]>([]);
   const [redoStack, setRedoStack] = useState<PageModel[][]>([]);
+  const [customFonts, setCustomFonts] = useState<FontAsset[]>([]);
   const [status, setStatus] = useState('Choose or drop a PDF. DOC321 keeps the original page visible and only redraws regions you actually edit.');
 
   const page = pages.find((item) => item.pageNumber === pageNumber) || null;
   const selected = useMemo(() => page?.boxes.find((box) => box.id === selectedId) || null, [page, selectedId]);
+  const selectedFontAsset = selected?.fontAssetId ? fontAssetsRef.current.get(selected.fontAssetId) || null : null;
+  const originalFontAsset = selected?.originalFontAssetId ? fontAssetsRef.current.get(selected.originalFontAssetId) || null : null;
   const editCount = useMemo(() => pages.reduce((total, item) => total + item.boxes.filter(changed).length, 0), [pages]);
   const regionCount = useMemo(() => pages.reduce((total, item) => total + item.boxes.length, 0), [pages]);
   const cssScale = BASE_SCALE * zoom;
+
+  async function loadCustomFont(next: File | null) {
+    if (!next || busy) return;
+    if (!/\.(?:ttf|otf|woff2?)$/i.test(next.name)) {
+      setStatus('Choose a TTF, OTF, WOFF, or WOFF2 font file.');
+      return;
+    }
+    if (next.size > MAX_CUSTOM_FONT_BYTES) {
+      setStatus('That font is too large. Choose a font file under 12 MB.');
+      return;
+    }
+    const targetId = selected?.id || null;
+    try {
+      const bytes = new Uint8Array(await next.arrayBuffer());
+      const asset = await createFontAsset(bytes, 'custom', `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, next.name.replace(/\.[^.]+$/, ''), next.name);
+      if (!asset) throw new Error('DOC321 could not read that font file.');
+      fontAssetsRef.current.set(asset.id, asset);
+      setCustomFonts((current) => [...current.filter((item) => item.id !== asset.id), asset]);
+      if (targetId) {
+        patchBox(targetId, {
+          fontAssetId: asset.id,
+          fontFamily: asset.previewLoaded ? asset.previewFamily : inferFont(asset.fullName, asset.family).family,
+          bold: asset.bold,
+          italic: asset.italic,
+        });
+      }
+      setStatus(`Loaded ${asset.fullName || asset.family}. It will be embedded directly into edited PDF text${targetId ? ' for the selected region' : ''}.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'DOC321 could not load that font.');
+    } finally {
+      if (fontInput.current) fontInput.current.value = '';
+    }
+  }
+
+  function applyFontChoice(value: string) {
+    if (!selected) return;
+    if (value.startsWith('asset:')) {
+      const asset = fontAssetsRef.current.get(value.slice(6));
+      if (!asset) return;
+      patchBox(selected.id, {
+        fontAssetId: asset.id,
+        fontFamily: asset.previewLoaded ? asset.previewFamily : inferFont(asset.fullName, asset.family).family,
+        bold: asset.bold,
+        italic: asset.italic,
+      });
+      return;
+    }
+    patchBox(selected.id, { fontAssetId: null, fontFamily: value });
+  }
+
+  async function resolveEmbeddedFontAsset(pdfPage: any, pageIndex: number, fontName: string, style: any) {
+    const key = `embedded-${fontName}`;
+    const cached = fontAssetsRef.current.get(key);
+    if (cached) return cached;
+    try {
+      const fontObject = pdfPage.commonObjs?.get?.(fontName);
+      const bytes = toFontBytes(fontObject?.data);
+      if (!bytes?.byteLength) return null;
+      const hinted = detectedFontName(fontObject?.name, fontObject?.cssFontInfo?.fontFamily, style?.fontFamily, fontName);
+      const asset = await createFontAsset(bytes, 'embedded', key, hinted);
+      if (!asset) return null;
+      fontAssetsRef.current.set(asset.id, asset);
+      return asset;
+    } catch {
+      return null;
+    }
+  }
 
   function setPagesNow(next: PageModel[]) {
     pagesRef.current = next;
@@ -431,6 +616,7 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
       fontSize: selected.originalFontSize,
       bold: selected.originalBold,
       italic: selected.originalItalic,
+      fontAssetId: selected.originalFontAssetId,
       color: selected.originalColor,
     });
   }
@@ -461,6 +647,9 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
       originalBold: false,
       italic: false,
       originalItalic: false,
+      detectedFontName: 'Arial',
+      fontAssetId: null,
+      originalFontAssetId: null,
       color: '#202124',
       originalColor: '#202124',
       background: '#ffffff',
@@ -533,11 +722,19 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
         const thumbnail = makeThumbnail(sample);
 
         if (hasNativeText) {
+          await pdfPage.getOperatorList().catch(() => undefined);
+          const embeddedAssets = new Map<string, FontAsset | null>();
+          for (const fontName of new Set<string>(items.map((item: any) => item.fontName).filter(Boolean))) {
+            const style = (textContent.styles as Record<string, any>)[fontName] || {};
+            embeddedAssets.set(fontName, await resolveEmbeddedFontAsset(pdfPage, pageIndex, fontName, style));
+          }
           const boxes: TextBox[] = items.map((item: any, index: number) => {
             const tx = pdfjs.Util.transform(viewport.transform, item.transform);
             const fontSize = Math.max(4, Math.hypot(tx[2], tx[3]));
             const style = (textContent.styles as Record<string, any>)[item.fontName] || {};
-            const meta = inferFont(item.fontName, style.fontFamily);
+            const embeddedAsset = embeddedAssets.get(item.fontName) || null;
+            const sourceName = detectedFontName(embeddedAsset?.fullName, embeddedAsset?.family, style.fontFamily, item.fontName);
+            const meta = inferFont(sourceName, style.fontFamily);
             const x = clamp(tx[4], 0, viewport.width);
             const top = clamp(tx[5] - fontSize, 0, viewport.height);
             const width = clamp(Math.max(Math.abs(item.width || 0), fontSize * 0.45), 6, Math.max(6, viewport.width - x));
@@ -556,14 +753,17 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
               originalTop: top,
               originalWidth: width,
               originalHeight: height,
-              fontFamily: meta.family,
-              originalFontFamily: meta.family,
+              fontFamily: embeddedAsset?.previewLoaded ? embeddedAsset.previewFamily : meta.family,
+              originalFontFamily: embeddedAsset?.previewLoaded ? embeddedAsset.previewFamily : meta.family,
               fontSize,
               originalFontSize: fontSize,
               bold: meta.bold,
               originalBold: meta.bold,
-              italic: meta.italic,
-              originalItalic: meta.italic,
+              italic: embeddedAsset?.italic ?? meta.italic,
+              originalItalic: embeddedAsset?.italic ?? meta.italic,
+              detectedFontName: sourceName,
+              fontAssetId: embeddedAsset?.id || null,
+              originalFontAssetId: embeddedAsset?.id || null,
               color: sampled.color,
               originalColor: sampled.color,
               background: sampled.background,
@@ -620,6 +820,9 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
               originalBold: meta.bold,
               italic: meta.italic,
               originalItalic: meta.italic,
+              detectedFontName: detectedFontName(line.fontName, meta.family),
+              fontAssetId: null,
+              originalFontAssetId: null,
               color: sampled.color,
               originalColor: sampled.color,
               background: sampled.background,
@@ -656,6 +859,8 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
     }
     setBusy(true);
     setPagesNow([]);
+    fontAssetsRef.current = new Map();
+    setCustomFonts([]);
     setUndoStack([]);
     setRedoStack([]);
     setSelectedId(null);
@@ -706,6 +911,13 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
       const pdfLib = await import('pdf-lib');
       const pdfDocument = await pdfLib.PDFDocument.load(new Uint8Array(await file.arrayBuffer()));
       const fonts = new Map<string, any>();
+      const needsCustomEmbedding = edits.some((box) => box.fontAssetId && fontAssetsRef.current.has(box.fontAssetId));
+      if (needsCustomEmbedding) {
+        const fontkitModule = await import('@pdf-lib/fontkit');
+        pdfDocument.registerFontkit(fontkitModule.default as any);
+      }
+      let embeddedFontRegions = 0;
+      let fallbackFontRegions = 0;
       for (const box of edits) {
         const pdfPage = pdfDocument.getPage(box.page - 1);
         const pageWidth = pdfPage.getWidth();
@@ -728,12 +940,30 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
         }
 
         if (!box.text.trim()) continue;
-        const key = fontKey(box);
-        let font = fonts.get(key);
+        let font: any = null;
+        const asset = box.fontAssetId ? fontAssetsRef.current.get(box.fontAssetId) || null : null;
+        if (asset && fontSupportsText(asset, box.text)) {
+          const assetKey = `asset:${asset.id}`;
+          font = fonts.get(assetKey);
+          if (!font) {
+            try {
+              font = await pdfDocument.embedFont(asset.bytes, { subset: true });
+              fonts.set(assetKey, font);
+            } catch {
+              font = null;
+            }
+          }
+          if (font) embeddedFontRegions += 1;
+        }
         if (!font) {
-          const standard = pdfLib.StandardFonts as unknown as Record<string, string>;
-          font = await pdfDocument.embedFont(standard[key] || standard.Helvetica);
-          fonts.set(key, font);
+          if (asset) fallbackFontRegions += 1;
+          const key = fontKey(box);
+          font = fonts.get(key);
+          if (!font) {
+            const standard = pdfLib.StandardFonts as unknown as Record<string, string>;
+            font = await pdfDocument.embedFont(standard[key] || standard.Helvetica);
+            fonts.set(key, font);
+          }
         }
         const maxWidth = Math.max(8, box.width);
         let size = clamp(box.fontSize, 4, 96);
@@ -770,7 +1000,7 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
       anchor.download = `${file.name.replace(/\.pdf$/i, '') || 'document'}-edited.pdf`;
       anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 2500);
-      setStatus(`Done. Downloaded an edited copy with ${edits.length} changed region${edits.length === 1 ? '' : 's'}.`);
+      setStatus(`Done. Downloaded an edited copy with ${edits.length} changed region${edits.length === 1 ? '' : 's'}.${embeddedFontRegions ? ` Embedded original/custom fonts in ${embeddedFontRegions} region${embeddedFontRegions === 1 ? '' : 's'}.` : ''}${fallbackFontRegions ? ` ${fallbackFontRegions} region${fallbackFontRegions === 1 ? '' : 's'} used a safe fallback because the embedded font could not represent the replacement text.` : ''}`);
       trackToolEvent('tool_success', {
         toolId,
         fileType: 'pdf',
@@ -791,6 +1021,8 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
     pdfRef.current = null;
     setFile(null);
     setPagesNow([]);
+    fontAssetsRef.current = new Map();
+    setCustomFonts([]);
     setPageNumber(1);
     setSelectedId(null);
     setUndoStack([]);
@@ -815,6 +1047,13 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
         type="file"
         accept="application/pdf,.pdf"
         onChange={(event) => void chooseFile(event.target.files?.[0] || null)}
+      />
+      <input
+        ref={fontInput}
+        hidden
+        type="file"
+        accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"
+        onChange={(event) => void loadCustomFont(event.target.files?.[0] || null)}
       />
 
       <div
@@ -895,13 +1134,21 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
 
               <div className="spe-style">
                 <label>Font</label>
-                <select className="spe-select" disabled={!selected} value={selected?.fontFamily || 'Arial'} onChange={(event) => selected && patchBox(selected.id, { fontFamily: event.target.value })}>
-                  {FONT_CHOICES.map((font) => <option key={font}>{font}</option>)}
+                <select
+                  className="spe-select"
+                  disabled={!selected}
+                  value={selected?.fontAssetId ? `asset:${selected.fontAssetId}` : selected?.fontFamily || 'Arial'}
+                  onChange={(event) => applyFontChoice(event.target.value)}
+                >
+                  {originalFontAsset ? <option value={`asset:${originalFontAsset.id}`}>Original · {originalFontAsset.fullName || originalFontAsset.family}</option> : null}
+                  {FONT_CHOICES.map((font) => <option key={font} value={font}>{font}</option>)}
+                  {customFonts.map((font) => <option key={font.id} value={`asset:${font.id}`}>Embedded · {font.fullName || font.family}</option>)}
                 </select>
+                <button className="spe-btn" type="button" disabled={busy} onClick={() => { if (fontInput.current) { fontInput.current.value = ''; fontInput.current.click(); } }}><FileUp size={14} />Load font</button>
                 <label>Size</label>
                 <input className="spe-number small" disabled={!selected} type="number" min="4" max="96" step="0.5" value={numberValue(selected?.fontSize, 12)} onChange={(event) => selected && patchBox(selected.id, { fontSize: clamp(Number(event.target.value) || selected.fontSize, 4, 96) })} />
-                <button className={`spe-btn ${selected?.bold ? 'active' : ''}`} type="button" disabled={!selected} onClick={() => selected && patchBox(selected.id, { bold: !selected.bold })}><Bold size={15} /></button>
-                <button className={`spe-btn ${selected?.italic ? 'active' : ''}`} type="button" disabled={!selected} onClick={() => selected && patchBox(selected.id, { italic: !selected.italic })}><Italic size={15} /></button>
+                <button className={`spe-btn ${selected?.bold ? 'active' : ''}`} type="button" disabled={!selected || Boolean(selectedFontAsset)} title={selectedFontAsset ? 'Weight comes from the embedded font file.' : undefined} onClick={() => selected && patchBox(selected.id, { bold: !selected.bold })}><Bold size={15} /></button>
+                <button className={`spe-btn ${selected?.italic ? 'active' : ''}`} type="button" disabled={!selected || Boolean(selectedFontAsset)} title={selectedFontAsset ? 'Style comes from the embedded font file.' : undefined} onClick={() => selected && patchBox(selected.id, { italic: !selected.italic })}><Italic size={15} /></button>
                 <label>Color</label>
                 <input className="spe-color" disabled={!selected} type="color" value={selected?.color || '#202124'} onChange={(event) => selected && patchBox(selected.id, { color: event.target.value })} />
                 <label>X</label>
@@ -913,7 +1160,7 @@ export function PdfEditorWorkspace({ toolId }: { toolId: string }) {
                 <label>H</label>
                 <input className="spe-number small" disabled={!selected} type="number" min="8" step="1" value={numberValue(selected?.height, 20)} onChange={(event) => selected && patchBox(selected.id, { height: clamp(Number(event.target.value) || selected.height, 8, page.height) })} />
                 <button className="spe-btn" type="button" disabled={!selected || (!changed(selected) && !selected.isNew)} onClick={resetSelected}><RotateCcw size={15} />Reset region</button>
-                <span className="spe-detail">{selected ? `${selected.source === 'native' ? 'PDF metadata' : selected.source === 'ocr' ? 'OCR estimate' : 'New text'}${selected.confidence != null ? ` · ${Math.round(selected.confidence)}%` : ''}` : 'Click a text region to edit it'}</span>
+                <span className="spe-detail">{selected ? `${selected.source === 'native' ? 'PDF metadata' : selected.source === 'ocr' ? 'OCR estimate' : 'New text'}${selected.confidence != null ? ` · ${Math.round(selected.confidence)}%` : ''} · Detected: ${selected.detectedFontName}${selectedFontAsset ? ` · Embedded: ${selectedFontAsset.fullName || selectedFontAsset.family}` : ''}` : 'Click a text region to edit it'}</span>
               </div>
 
               <div className="spe-editor-shell">
