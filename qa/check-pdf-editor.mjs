@@ -46,6 +46,13 @@ expect(workspace, "box.source === 'ocr' ? 1.08 : 1.05", 'OCR preview must use ca
 expect(workspace, 'font_name', 'OCR font metadata should be retained when Tesseract provides it.');
 reject(workspace, 'recognized.data.words || []', 'Do not use the pre-v6 Tesseract data.words output; it is no longer returned by default.');
 expect(workspace, "await import('pdf-lib')", 'Edited PDF export must remain available.');
+expect(workspace, "await import('@pdf-lib/fontkit')", 'Phase 3 must load fontkit for original/custom font parsing and embedding.');
+expect(workspace, 'pdfPage.commonObjs?.get?.(fontName)', 'Digital PDFs should attempt to reuse embedded source font bytes when PDF.js exposes them.');
+expect(workspace, "pdfDocument.registerFontkit(fontkitModule.default as any)", 'Custom font embedding must register fontkit with pdf-lib.');
+expect(workspace, "pdfDocument.embedFont(asset.bytes, { subset: true })", 'Original or user-provided fonts must be embedded as subsets in the exported PDF.');
+expect(workspace, 'fontSupportsText(asset, box.text)', 'Subset fonts must be checked for replacement glyph coverage before export.');
+expect(workspace, 'accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"', 'Users must be able to load a local custom font without uploading it to a server.');
+expect(workspace, "detectedFontName: sourceName", 'Native PDF regions must retain a human-readable detected font identity.');
 
 // The build must continue copying the PDF.js module worker to a .js filename
 // because the production Apache host may serve .mjs with the wrong MIME type.
