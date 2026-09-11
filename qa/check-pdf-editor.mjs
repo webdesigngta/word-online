@@ -37,6 +37,10 @@ expect(workspace, "fileInput.current.value = ''; fileInput.current.click();", 'C
 expect(workspace, 'event.dataTransfer.files?.[0] || null', 'Drag and drop PDF opening must remain supported.');
 expect(workspace, "pdfjs.getDocument({ data: new Uint8Array(await next.arrayBuffer()) }).promise", 'Selected PDFs must be opened through PDF.js.');
 expect(workspace, "await import('tesseract.js')", 'Scanned PDFs must retain OCR fallback.');
+expect(workspace, "worker.recognize(sample, {}, { blocks: true })", 'Tesseract.js 6+ must explicitly request structured blocks for editable OCR geometry.');
+expect(workspace, 'extractOcrWords(recognized.data.blocks)', 'OCR regions must be rebuilt from the current Tesseract blocks hierarchy.');
+expect(workspace, 'font_name', 'OCR font metadata should be retained when Tesseract provides it.');
+reject(workspace, 'recognized.data.words || []', 'Do not use the pre-v6 Tesseract data.words output; it is no longer returned by default.');
 expect(workspace, "await import('pdf-lib')", 'Edited PDF export must remain available.');
 
 // The build must continue copying the PDF.js module worker to a .js filename
