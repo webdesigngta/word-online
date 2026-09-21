@@ -25,4 +25,12 @@ export const liveImageWordTools: readonly PlatformToolDefinition[] = [
     secondaryKeywords: ['png to word converter', 'convert png to word', 'convert from png to word', 'png to docx'],
     input: ['png'], output: ['docx', 'txt'], processor: 'imageToWordProcessor', launchState: 'live', indexable: true,
   },
+  {
+    id: 'image-to-excel', route: '/image-to-excel', name: 'Image to Excel',
+    title: 'Image to Excel – Convert Image Tables to XLSX Online',
+    description: 'Convert tables in JPG, JPEG, PNG, or WEBP images into editable Excel XLSX or CSV files with browser-based OCR and a cell-by-cell preview.',
+    eyebrow: 'IMAGE TO EXCEL', primaryIntent: 'Extract a table from an image and convert it to an editable Excel spreadsheet', kind: 'ocr', cluster: 'Image OCR', priority: 'P0', stage: 'Traffic Expansion',
+    secondaryKeywords: ['image to excel', 'image to excel converter', 'convert image to excel', 'jpg to excel', 'jpeg to excel', 'screenshot to excel', 'photo to excel', 'picture to excel', 'table image to excel'],
+    input: ['jpg', 'jpeg', 'png', 'webp'], output: ['xlsx', 'csv'], processor: 'imageTableOcr', launchState: 'live', indexable: true,
+  },
 ];
