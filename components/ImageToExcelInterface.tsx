@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardPaste, Download, FileSpreadsheet, FileUp, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { trackToolEvent } from '@/lib/toolAnalytics';
@@ -479,7 +479,7 @@ export function ImageToExcelInterface({ toolId }: { toolId: string }) {
 
       {file ? (
         <div className="ite-file">
-          {previewUrl ? <Image className="ite-preview" src={previewUrl} alt="Selected table preview" width={86} height={64} unoptimized /> : <div className="ite-preview" />}
+          {previewUrl ? <NextImage className="ite-preview" src={previewUrl} alt="Selected table preview" width={86} height={64} unoptimized /> : <div className="ite-preview" />}
           <div>
             <strong>{file.name}</strong>
             <div className="ite-meta">{formatBytes(file.size)} · JPG, PNG, or WEBP</div>
