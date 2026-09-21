@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardPaste, Download, FileSpreadsheet, FileUp, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { trackToolEvent } from '@/lib/toolAnalytics';
@@ -250,6 +251,17 @@ function fallbackTextGrid(text: string) {
     .filter((row) => row.length);
 }
 
+function columnLabel(index: number) {
+  let value = index + 1;
+  let label = '';
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    label = String.fromCharCode(65 + remainder) + label;
+    value = Math.floor((value - 1) / 26);
+  }
+  return label;
+}
+
 function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -467,7 +479,7 @@ export function ImageToExcelInterface({ toolId }: { toolId: string }) {
 
       {file ? (
         <div className="ite-file">
-          {previewUrl ? <img className="ite-preview" src={previewUrl} alt="Selected table preview" /> : <div className="ite-preview" />}
+          {previewUrl ? <Image className="ite-preview" src={previewUrl} alt="Selected table preview" width={86} height={64} unoptimized /> : <div className="ite-preview" />}
           <div>
             <strong>{file.name}</strong>
             <div className="ite-meta">{formatBytes(file.size)} · JPG, PNG, or WEBP</div>
@@ -505,7 +517,7 @@ export function ImageToExcelInterface({ toolId }: { toolId: string }) {
               <thead>
                 <tr>
                   <th>#</th>
-                  {Array.from({ length: columnCount }, (_, index) => <th key={index}>{String.fromCharCode(65 + (index % 26))}{index >= 26 ? Math.floor(index / 26) : ''}</th>)}
+                  {Array.from({ length: columnCount }, (_, index) => <th key={index}>{columnLabel(index)}</th>)}
                 </tr>
               </thead>
               <tbody>
